@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/meow-hook" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/meow-hook/third_party/asmjit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/meow-hook/third_party/zydis" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/meow-hook/third_party/zydis/dependencies/zycore" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/meow-hook/tools/lavender" vcs="Git" />
+  </component>
+</project>

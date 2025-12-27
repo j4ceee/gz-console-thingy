@@ -1,0 +1,6 @@
+[submodule "deps/meow-hook"]
+	path = deps/meow-hook
+	url = https://github.com/xforce/meow-hook.git
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git
