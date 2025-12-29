@@ -38,6 +38,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             }
 
             bool is_steam = !strstr(GetCommandLine(), "-epicusername") && GetModuleHandle("steam_api64.dll");
+            gz::Log("Is Steam version: %s", is_steam ? "true" : "false");
             gz::InitAddresses(is_steam);
             if (!gz::InitPatchesAndHooks()) {
                 gz::Log("Failed to initialize patches and hooks - exiting");

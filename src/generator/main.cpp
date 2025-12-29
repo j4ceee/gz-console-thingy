@@ -328,7 +328,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     FindPattern("CONSUME_AMMO", result, [&] {
-        auto match = pattern("85 D2 0F ? ? ? ? ? 4C 8B DC 41 56 48 83 ? ? 49", game_file)
+        auto match = pattern("85 D2 0F ? ? ? ? ? 4C ? ? 41 ? 48 83 ? ? 49 C7 43 ? ? ? ? ? 49 89 ? ? 49 89 ? ? 49 89 ? ? 49 89 ? ? 44", game_file)
             .count(1)
             .get(0)
             .adjust(0)
@@ -479,7 +479,7 @@ void WriteSource(const std::filesystem::path& path, FindPatternResult& steam_add
 int main()
 {
     auto steam_addresses = Generate("Steam", R"(C:\Program Files (x86)\Steam\steamapps\common\GenerationZero\GenerationZero_F.exe)");
-    auto epic_addresses  = Generate("Epic Store", R"(C:\Program Files (x86)\Steam\steamapps\common\GenerationZero\GenerationZero_F.exe)"); // TODO: change path
+    auto xbox_addresses  = Generate("Microsoft Store", R"(C:\XboxGames\Generation Zero\Content\GenerationZero_F.exe)");
 
     assert(steam_addresses.size() == epic_addresses.size());
 
@@ -490,6 +490,6 @@ int main()
     std::filesystem::path base_path = path.parent_path().parent_path().parent_path().parent_path() / "src";
     std::cout << "Writing to " << base_path << "\n";
     WriteHeader(base_path / "addresses.h", steam_addresses);
-    WriteSource(base_path / "addresses.cpp", steam_addresses, epic_addresses);
+    WriteSource(base_path / "addresses.cpp", steam_addresses, xbox_addresses);
     return 0;
 }
