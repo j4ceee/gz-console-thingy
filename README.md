@@ -17,11 +17,15 @@
 - in-game GUI console accessible via a hotkey (F1 by default)
 - built with ImGui for easy integration and ease of use for players
 - allows players to modify game values and execute commands in real-time
+- Supported game versions / platforms:
+  - PC - Steam, Microsoft Store / Xbox
+  - Steam Deck / Linux
 
 ### Player Settings
 - **Health Modification** & **Invincibility**
 - **Infinite Stamina**
-- **Unlimited Ammo** (including no reload) and **Infinite Deployables**
+- **Unlimited Ammo** (including no reload)
+- **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)
 - **Hiding the HUD** for a cleaner experience (Hotkey: F3 by default)
 - **Disabling Detection** by enemies
@@ -44,11 +48,12 @@
   - adjust time speed
   - set specific time
 - **Weather / GFX Control**
-  - set atmospheric conditions, including wind, fog & cloud cover (rain or snow cannot trigger directly)
+  - set atmospheric conditions, including wind, fog & cloud cover (rain or snow cannot be triggered directly)
   - apply various post-processing effects & filters (allows you to apply any effect from photo mode or the binoculars)
 - **Spawn System**
   - Vehicles
-  - Buildings
+  - Items & Deployables
+  - Buildings (like base defenses that will help you in battle or the different stations, like the workbenches or the crate) 
   - Human NPCs
   - Machines (very limited, most machines are currently spawned without AI)
 

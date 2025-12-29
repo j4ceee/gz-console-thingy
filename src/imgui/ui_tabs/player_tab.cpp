@@ -78,8 +78,9 @@ void RenderPlayerTab()
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // -- AMMO & DEPLOYABLES --
-    if (ImGui::CollapsingHeader(ICON_MD_LIST " Ammo & Deployables", ImGuiTreeNodeFlags_DefaultOpen)) {
+    // -- INVENTORY --
+    if (ImGui::CollapsingHeader(ICON_MD_LIST " Inventory", ImGuiTreeNodeFlags_DefaultOpen)) {
+        // -- ammo
         if (AmmoDeployableConsumption::IsAmmoHookInitialized()) {
             bool infiniteAmmo = AmmoDeployableConsumption::IsAmmoConsumptionDisabled();
             if (ImGui::Checkbox("Infinite Ammo", &infiniteAmmo)) {
@@ -88,29 +89,26 @@ void RenderPlayerTab()
             ImGui::SameLine();
             UI::HelpMarker("Prevents ammo from being consumed when firing weapons.");
         }
+        // -- deployables / consumables
         if (AmmoDeployableConsumption::IsDeployableHookInitialized()) {
             bool infiniteDeployables = AmmoDeployableConsumption::IsDeployableConsumptionDisabled();
-            if (ImGui::Checkbox("Infinite Deployables", &infiniteDeployables)) {
+            if (ImGui::Checkbox("Infinite Deployables & Consumables", &infiniteDeployables)) {
                 AmmoDeployableConsumption::ToggleDeployableConsumption();
             }
             ImGui::SameLine();
-            UI::HelpMarker("Prevents deployable items (like turrets, mines, etc.) from being consumed when placed.");
+            UI::HelpMarker("Prevents deployable / consumable items (like turrets, mines, medkits etc.) from being used up.");
         }
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // -- RESOURCES --
-    if (ImGui::CollapsingHeader(ICON_MD_HANDYMAN " Resources", ImGuiTreeNodeFlags_DefaultOpen) && ResourcePatches::IsInitialized()) {
-        bool unlimitedResources = ResourcePatches::IsUnlimitedResourcesEnabled();
-        if (ImGui::Checkbox("Unlimited Resources", &unlimitedResources)) {
-            ResourcePatches::ToggleUnlimitedResources();
+        // -- resources
+        if (ResourcePatches::IsInitialized()) {
+            bool unlimitedResources = ResourcePatches::IsUnlimitedResourcesEnabled();
+            if (ImGui::Checkbox("Unlimited Resources", &unlimitedResources)) {
+                ResourcePatches::ToggleUnlimitedResources();
+            }
+            ImGui::SameLine();
+            UI::HelpMarker("Prevents resources from being consumed when building structures or crafting items.",
+                "Notice: You still need to have at least the required resources in your inventory to build or craft, they just won't be consumed."
+                " (May not work in some cases)");
         }
-        ImGui::SameLine();
-        UI::HelpMarker("Prevents resources from being consumed when building structures or crafting items.",
-            "Notice: You still need to have at least the required resources in your inventory to build or craft, they just won't be consumed."
-            " (May not work in some cases)");
     }
 
     ImGui::Spacing();
