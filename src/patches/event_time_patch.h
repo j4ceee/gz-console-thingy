@@ -28,7 +28,7 @@ private:
 public:
     // event timestamps
     static constexpr time_t WINTER_TIME = 1608865200;      // Dec 25, 2020
-    static constexpr time_t LUNAR_TIME = 1707015600;       // Feb 4, 2024
+    static constexpr time_t LUNAR_TIME = 1707966000;       // Feb 15, 2024
     static constexpr time_t SEMLA_TIME = 1582772400;       // Feb 27, 2020
     static constexpr time_t ANNIVERSARY_TIME = 1712196000; // Apr 4, 2024
     static constexpr time_t HALLOWEEN_TIME = 1667185200;   // Oct 31, 2022
