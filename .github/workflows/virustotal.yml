@@ -1,4 +1,4 @@
-name: released
+name: virustotal
 
 permissions:
   contents: read
@@ -7,6 +7,12 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to scan (e.g., v1.0.0)'
+        required: true
+        type: string
 
 jobs:
   virustotal:
@@ -17,7 +23,7 @@ jobs:
       - name: Download release assets
         uses: robinraju/release-downloader@v1
         with:
-          latest: true
+          tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}
           fileName: "*.zip"
           
       - name: Extract DLL from ZIP
