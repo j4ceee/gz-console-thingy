@@ -28,6 +28,7 @@
 - **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)
 - **Hiding the HUD** for a cleaner experience (Hotkey: F3 by default)
+- **Fast Travel Anywhere**: travel to any discovered location **and** to your own waypoint over the in-game map
 - **Disabling Detection** by enemies
 - **Unrestricted Base Building** (removing build limits and restrictions)
 - Adding **Command Tokens**

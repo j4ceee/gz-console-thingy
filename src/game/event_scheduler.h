@@ -8,8 +8,6 @@
 
 namespace gz
 {
-    // -- CLASS & STRUCT DEFINITIONS --
-
     // known event hashes
     namespace Events {
         inline uint32_t WINTER = 0;
@@ -26,7 +24,6 @@ namespace gz
             ANNIVERSARY = Utils::HashString("anniversary_event_active");
         }
     }
-
 
     class EventManager
     {
@@ -75,6 +72,82 @@ namespace gz
             // reset current pointer to start (empties the vector)
             activeEventsCurrent = activeEventsStart;
         }
+
+    // -- HOOK SETUP & MANAGEMENT --
+
+    private:
+        using EventSchedulerFunc = void(__fastcall*)(EventManager* mgr);
+        static inline EventSchedulerFunc s_originalEventScheduler;
+        static inline bool s_blockScheduler;
+        static inline bool s_requestedEventChange;
+
+        // hooked function that captures the EventManager pointer
+        static void HookedEventScheduler(EventManager* mgr) {
+            // call original function if not blocked
+            if ((!s_blockScheduler || s_requestedEventChange) && s_originalEventScheduler) {
+                if (s_requestedEventChange) {
+                    s_requestedEventChange = false;
+                }
+                s_originalEventScheduler(mgr);
+            }
+        }
+
+        static bool SetupEventManagerHook() {
+            if (s_originalEventScheduler != nullptr) {
+                return true; // already hooked
+            }
+            s_originalEventScheduler = MH_STATIC_DETOUR(GetAddress(EVENT_SCHEDULER), HookedEventScheduler);
+            return s_originalEventScheduler != nullptr;
+        }
+
+    public:
+        static bool Initialize() {
+            bool success = SetupEventManagerHook();
+            if (success) {
+                Events::InitializeHashes();
+                s_blockScheduler = true;
+                s_requestedEventChange = false;
+            }
+            return success;
+        }
+
+        static void SetCustomEvent(uint32_t eventHash) {
+            time_t fakeTime = 0;
+
+            if (eventHash == Events::WINTER) {
+                fakeTime = EventTimePatch::WINTER_TIME;
+            } else if (eventHash == Events::LUNAR_NEW_YEAR) {
+                fakeTime = EventTimePatch::LUNAR_TIME;
+            } else if (eventHash == Events::SEMLA) {
+                fakeTime = EventTimePatch::SEMLA_TIME;
+            } else if (eventHash == Events::ANNIVERSARY) {
+                fakeTime = EventTimePatch::ANNIVERSARY_TIME;
+            } else if (eventHash == Events::HALLOWEEN) {
+                fakeTime = EventTimePatch::HALLOWEEN_TIME;
+            }
+
+            if (fakeTime != 0) {
+                EventTimePatch::SetFakeTime(fakeTime);
+                s_requestedEventChange = true;
+            }
+        }
+
+        static bool IsSchedulerBlocked() {
+            return s_blockScheduler;
+        }
+
+        static void SetSchedulerBlocked(bool blocked) {
+            s_blockScheduler = blocked;
+        }
+
+        static const char* GetEventName(uint32_t hash) {
+            if (hash == Events::WINTER) return "Winter";
+            if (hash == Events::LUNAR_NEW_YEAR) return "Lunar New Year";
+            if (hash == Events::SEMLA) return "Semla Event";
+            if (hash == Events::HALLOWEEN) return "Halloween";
+            if (hash == Events::ANNIVERSARY) return "Anniversary";
+            return "Unknown Event";
+        }
     };
 
     class CSocialManager
@@ -82,81 +155,15 @@ namespace gz
     public:
         char            _pad[0x18];         // 0x00 → 0x18
         EventManager*   m_eventManager;     // 0x18 → 0x20
+
+        static CSocialManager* instance()
+        {
+            return *(CSocialManager**)(GetAddress(INST_SOCIAL_MANAGER));
+        }
+
+        EventManager* GetEventManager()
+        {
+            return m_eventManager;
+        }
     };
-
-    // -- EVENT LOGIC --
-
-    // captured global pointer to the EventManager instance
-    inline EventManager* g_eventManager = nullptr;
-
-    // original function pointer
-    using EventSchedulerFunc = void(__fastcall*)(EventManager* mgr);
-    inline EventSchedulerFunc g_originalEventScheduler = nullptr;
-
-    // flag to block scheduler updates
-    inline bool g_blockScheduler = true;
-    inline bool g_requestedEventChange = false;
-
-    // hooked function that captures the EventManager pointer
-    inline void HookedEventScheduler(EventManager* mgr) {
-        // capture pointer on first valid call
-        if (mgr && !g_eventManager) {
-            g_eventManager = mgr;
-        }
-
-        // call original function if not blocked
-        if ((!g_blockScheduler || g_requestedEventChange) && g_originalEventScheduler) {
-            if (g_requestedEventChange) {
-                g_requestedEventChange = false;
-            }
-            g_originalEventScheduler(mgr);
-        }
-    }
-
-    inline bool SetupEventManagerHook() {
-        g_originalEventScheduler = MH_STATIC_DETOUR(GetAddress(EVENT_SCHEDULER), HookedEventScheduler);
-        return true;
-    }
-
-    inline EventManager* GetEventManager() {
-        return g_eventManager;
-    }
-
-    inline void SetCustomEvent(uint32_t eventHash) {
-        time_t fakeTime = 0;
-
-        if (eventHash == Events::WINTER) {
-            fakeTime = EventTimePatch::WINTER_TIME;
-        } else if (eventHash == Events::LUNAR_NEW_YEAR) {
-            fakeTime = EventTimePatch::LUNAR_TIME;
-        } else if (eventHash == Events::SEMLA) {
-            fakeTime = EventTimePatch::SEMLA_TIME;
-        } else if (eventHash == Events::ANNIVERSARY) {
-            fakeTime = EventTimePatch::ANNIVERSARY_TIME;
-        } else if (eventHash == Events::HALLOWEEN) {
-            fakeTime = EventTimePatch::HALLOWEEN_TIME;
-        }
-
-        if (fakeTime != 0) {
-            EventTimePatch::SetFakeTime(fakeTime);
-            g_requestedEventChange = true;
-        }
-    }
-
-    inline bool IsSchedulerBlocked() {
-        return g_blockScheduler;
-    }
-
-    inline void SetSchedulerBlocked(bool blocked) {
-        g_blockScheduler = blocked;
-    }
-
-    inline const char* GetEventName(uint32_t hash) {
-        if (hash == Events::WINTER) return "Winter";
-        if (hash == Events::LUNAR_NEW_YEAR) return "Lunar New Year";
-        if (hash == Events::SEMLA) return "Semla Event";
-        if (hash == Events::HALLOWEEN) return "Halloween";
-        if (hash == Events::ANNIVERSARY) return "Anniversary";
-        return "Unknown Event";
-    }
 }

@@ -74,11 +74,18 @@ namespace gz
         t_suppressVsnprintfLog = false;
     }
 
-    inline void SetupLoggingHooks() {
+    inline bool SetupLoggingHooks() {
+        if (g_origVsnprintf != nullptr && g_origScriptError != nullptr) {
+            return true; // already hooked
+        }
+
         g_origVsnprintf = MH_STATIC_DETOUR(GetAddress(FUNC_VSNPRINTF), HookedVsnprintfInternal);
         g_origScriptError = MH_STATIC_DETOUR(GetAddress(FUNC_SCRIPT_ERROR_REPORT), HookedScriptError);
-        
-        Log("Logging hooks initialized. monitoring game output...");
+
+        if (g_origVsnprintf == nullptr || g_origScriptError == nullptr) {
+            return false;
+        }
+        return true;
     }
 }
 #pragma pack(pop)

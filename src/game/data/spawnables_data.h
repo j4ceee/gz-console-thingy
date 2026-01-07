@@ -31,7 +31,7 @@ namespace gz::Data
     };
 
     static const SpawnCategory spawnCategories[] = { // type ids: 'v' = vehicles, 'm' = machines, 'd' = default
-        {"Vehicles", Spawnables::all_vehicles, 3, 'v'},
+        {"Vehicles", Spawnables::all_vehicles, 4, 'v'},
         {"Items & Deployables", Spawnables::all_deployables, 2, 'd'},
         {"Buildings & Props", Spawnables::buildings, 2, 'd'},
         {"Machines", Spawnables::all_machines, 10, 'm'},

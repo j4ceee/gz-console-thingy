@@ -28,8 +28,6 @@ public:
         m_initialized = PatchUtils::VerifyAll(m_patches, m_patchCount);
         if (!m_initialized) {
             Log("PatchGroup '%s' failed to initialize: original bytes do not match expected values.", m_name);
-        } else {
-            Log("PatchGroup '%s' initialized successfully.", m_name);
         }
         return m_initialized;
     }

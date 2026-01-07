@@ -30,14 +30,22 @@ namespace gz::AmmoDeployableConsumption
         }
     }
 
-    inline void SetupAmmoHook()
+    inline bool SetupAmmoHook()
     {
+        if (g_consumeAmmo != nullptr) {
+            return true; // already set up
+        }
         g_consumeAmmo = MH_STATIC_DETOUR(GetAddress(CONSUME_AMMO), HookedConsumeAmmo);
+        return g_consumeAmmo != nullptr;
     }
 
-    inline void SetupDeployableHook()
+    inline bool SetupDeployableHook()
     {
+        if (g_consumeDeployables != nullptr) {
+            return true; // already set up
+        }
         g_consumeDeployables = MH_STATIC_DETOUR(GetAddress(CONSUME_DEPLOYABLES), HookedConsumeDeployables);
+        return g_consumeDeployables != nullptr;
     }
 
     inline bool IsAmmoConsumptionDisabled()
@@ -50,6 +58,11 @@ namespace gz::AmmoDeployableConsumption
         ammoConsumptionDisabled = !ammoConsumptionDisabled;
     }
 
+    inline void EnableInfiniteAmmo(bool v)
+    {
+        ammoConsumptionDisabled = v;
+    }
+
     inline bool IsDeployableConsumptionDisabled()
     {
         return deployableConsumptionDisabled;
@@ -58,6 +71,11 @@ namespace gz::AmmoDeployableConsumption
     inline void ToggleDeployableConsumption()
     {
         deployableConsumptionDisabled = !deployableConsumptionDisabled;
+    }
+
+    inline void EnableInfiniteDeployables(bool v)
+    {
+        deployableConsumptionDisabled = v;
     }
 
     inline bool IsAmmoHookInitialized()

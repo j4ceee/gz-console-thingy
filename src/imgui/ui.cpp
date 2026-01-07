@@ -32,6 +32,9 @@ void UI::Initialize()
 
     SetupUiLook();
 
+    // set default settings
+    m_settings.ApplyDefaults();
+
     // register custom settings handler
     ImGuiSettingsHandler ini_handler;
     ini_handler.TypeName = "GZConsoleThingy";
@@ -271,41 +274,14 @@ void* UI::SettingsHandlerReadOpen(ImGuiContext*, ImGuiSettingsHandler* handler, 
 void UI::SettingsHandlerReadLine(ImGuiContext*, ImGuiSettingsHandler*, void* entry, const char* line)
 {
     auto* settings = (ConsoleSettings*)entry;
-    int i;
-
-    if (sscanf_s(line, "ToggleUIKey=%d", &i) == 1) {
-        settings->toggleUIKey = i;
-    }
-    else if (sscanf_s(line, "TeleportToAimKey=%d", &i) == 1) {
-        settings->teleportToAimKey = i;
-    }
-    else if (sscanf_s(line, "HideHUDKey=%d", &i) == 1) {
-        settings->hideHUDKey = i;
-    }
-    else if (sscanf_s(line, "ShowDebugInfo=%d", &i) == 1) {
-        settings->showDebugInfo = (i != 0);
-    }
-    else if (sscanf_s(line, "ShowCTHint=%d", &i) == 1) {
-        settings->showHint = (i != 0);
-    }
-    else if (sscanf_s(line, "DisableAutoEvents=%d", &i) == 1) {
-        settings->disableAutoEvents = (i != 0);
-        SetSchedulerBlocked(settings->disableAutoEvents);
-    }
+    settings->ReadLine(line);
 }
 
 void UI::SettingsHandlerWriteAll(ImGuiContext*, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buf)
 {
     UI* ui = (UI*)handler->UserData;
-    const ConsoleSettings& settings = ui->m_settings;
-
     buf->appendf("[%s][Settings]\n", handler->TypeName);
-    buf->appendf("ToggleUIKey=%d\n", settings.toggleUIKey);
-    buf->appendf("TeleportToAimKey=%d\n", settings.teleportToAimKey);
-    buf->appendf("HideHUDKey=%d\n", settings.hideHUDKey);
-    buf->appendf("ShowDebugInfo=%d\n", settings.showDebugInfo ? 1 : 0);
-    buf->appendf("ShowCTHint=%d\n", settings.showHint ? 1 : 0);
-    buf->appendf("DisableAutoEvents=%d\n", settings.disableAutoEvents ? 1 : 0);
+    ui->m_settings.WriteAll(buf);
     buf->append("\n");
 }
 } // namespace gz

@@ -136,7 +136,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-
     FindPattern("INST_SPAWN_SYSTEM", result, [&] {
         auto match = pattern("48 89 73 ? 48 89 73 ? 48 8B 05 ? ? ? ? FF 88 ? ? ? ?", game_file)
             .count(1)
@@ -155,6 +154,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(14);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("INST_SOCIAL_MANAGER", result, [&] {
+        auto match = pattern("0F ? ? F3 0F ? ? ? 48 ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? 45 ? ? ? 45", game_file)
+            .count(1)
+            .get(0)
+            .adjust(15);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -257,11 +264,24 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("TELEPORT", result, [&] { // works ✅ (not needed)
+    // vftable function of CGameWorld at index 21 (Ghidra)
+    // teleport function used when falling into water
+    FindPattern("TELEPORT", result, [&] {
         auto match = pattern("48 89 5c ? ? 48 89 6c ? ? 48 89 74 ? ? 48 89 7c ? ? ? ? 48 83 ? ? 48 8b 05 ? ? ? ? 33 db 49 8b e8", game_file)
             .count(1)
             .get(0)
             .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    // vftable function of CGameWorld at index 19 (Ghidra)
+    // fast travel function used by map & on dlc islands
+    FindPattern("FAST_TRAVEL", result, [&] {
+        auto match = pattern("F3 0F ? ? ? ? ? ? ? F3 0F ? ? ? ? 88 ? ? ? E8 ? ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(19)
+            .extract_call();
         return rebase(game_file, match);
     });
 
@@ -361,6 +381,33 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    // fast travel patches
+    FindPattern("PATCH_MAP_FAST_TRAVEL_VALIDATION", result, [&] { // fast travel validation check when clicking fast travel button on map
+    auto match = pattern("48 ? ? 0f ? ? ? ? ? 80 ? ? ? 0f ? ? ? ? ? F2", game_file)
+            .count(1)
+            .get(0)
+            .adjust(13)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+    FindPattern("PATCH_MAP_FAST_TRAVEL_BUTTON", result, [&] { // patch to always display fast travel button on map
+    auto match = pattern("4D ? ? 41 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? E8 ? ? ? ? 45 ? ? ? ?", game_file)
+            .count(1)
+            .get(0)
+            .adjust(23)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("PATCH_DLC_BOUNDARY", result, [&] { // patch to allow player entering dlc island
+    auto match = pattern("49 ? ? 48 ? ? ? 48 ? ? 75 ? B0 ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 48 ? ? ? ? 32 C0 48 ? ? ? ? 48 ? ? ? 5F C3", game_file)
+            .count(1)
+            .get(0)
+            .adjust(35)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
     // resource cheat
     FindPattern("PATCH_RESOURCE_CONSUMPTION", result, [&] { // reduces resources after building placement / crafting
         auto match = pattern("2B D7 41 ? ? ? 49 8B ?", game_file).count(1).get(0).adjust(0).as<uintptr_t>();
@@ -439,7 +486,7 @@ void WriteHeader(const std::filesystem::path& path, FindPatternResult& addresses
 }
 
 void WriteSource(const std::filesystem::path& path, FindPatternResult& steam_addresses,
-                 FindPatternResult& epic_addresses)
+                 FindPatternResult& xbox_addresses)
 {
     std::ofstream stream(path);
 
@@ -461,9 +508,9 @@ void WriteSource(const std::filesystem::path& path, FindPatternResult& steam_add
     for (int i = 0; i < steam_addresses.size(); ++i) {
         const std::string& name       = steam_addresses[i].first;
         const uintptr_t    steam_addr = steam_addresses[i].second;
-        const uintptr_t    epic_addr  = epic_addresses[i].second;
+        const uintptr_t    xbox_addr  = xbox_addresses[i].second;
 
-        stream << "    g_Address[" << name << "] = (is_steam ? 0x" << std::hex << steam_addr << " : 0x" << std::hex << epic_addr << ") + offset;\n";
+        stream << "    g_Address[" << name << "] = (is_steam ? 0x" << std::hex << steam_addr << " : 0x" << std::hex << xbox_addr << ") + offset;\n";
     }
 
     stream << "}\n\n";
@@ -481,7 +528,7 @@ int main()
     auto steam_addresses = Generate("Steam", R"(C:\Program Files (x86)\Steam\steamapps\common\GenerationZero\GenerationZero_F.exe)");
     auto xbox_addresses  = Generate("Microsoft Store", R"(C:\XboxGames\Generation Zero\Content\GenerationZero_F.exe)");
 
-    assert(steam_addresses.size() == epic_addresses.size());
+    assert(steam_addresses.size() == xbox_addresses.size());
 
     char tmp[MAX_PATH] = {0};
     GetModuleFileName(nullptr, tmp, sizeof(tmp));
