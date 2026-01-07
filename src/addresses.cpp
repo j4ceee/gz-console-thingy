@@ -23,6 +23,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_SPAWN_SYSTEM] = (is_steam ? 0x142abed20 : 0x142bcc2d0) + offset;
     g_Address[INST_WORLDTIME] = (is_steam ? 0x142abdb48 : 0x142bcb0f8) + offset;
     g_Address[INST_MAP] = (is_steam ? 0x142adfec8 : 0x142bed558) + offset;
+    g_Address[INST_SOCIAL_MANAGER] = (is_steam ? 0x142abebe8 : 0x142bcc198) + offset;
     g_Address[INST_VEHICLE_MANAGER] = (is_steam ? 0x142abefe8 : 0x142bcc598) + offset;
     g_Address[WND_PROC] = (is_steam ? 0x1400a4b40 : 0x1400a3430) + offset;
     g_Address[GRAPHICS_FLIP] = (is_steam ? 0x141784320 : 0x14181a860) + offset;
@@ -36,6 +37,7 @@ void InitAddresses(bool is_steam)
     g_Address[SPAWN_VEHICLE_OWNERSHIP_CALLBACK] = (is_steam ? 0x140937b80 : 0x140937860) + offset;
     g_Address[EVENT_SCHEDULER] = (is_steam ? 0x140a02a10 : 0x140a0d4b0) + offset;
     g_Address[TELEPORT] = (is_steam ? 0x14085d210 : 0x14085cd60) + offset;
+    g_Address[FAST_TRAVEL] = (is_steam ? 0x14085d000 : 0x14085cb50) + offset;
     g_Address[SET_WEATHER_PRESET_FROM_HASH] = (is_steam ? 0x140129820 : 0x1401292b0) + offset;
     g_Address[RESTORE_DYNAMIC_WEATHER] = (is_steam ? 0x140134a00 : 0x140134490) + offset;
     g_Address[WEATHER_UPDATE] = (is_steam ? 0x14012ca80 : 0x14012c510) + offset;
@@ -48,6 +50,9 @@ void InitAddresses(bool is_steam)
     g_Address[PATCH_BUILDING_UI_CHECK_2] = (is_steam ? 0x140725816 : 0x1407254d6) + offset;
     g_Address[PATCH_BUILDING_CHECK_COLLISION] = (is_steam ? 0x140bbb00c : 0x140bc933c) + offset;
     g_Address[PATCH_BUILDING_CHECK_MASTER] = (is_steam ? 0x140716080 : 0x140715d40) + offset;
+    g_Address[PATCH_MAP_FAST_TRAVEL_VALIDATION] = (is_steam ? 0x140c26438 : 0x140c33168) + offset;
+    g_Address[PATCH_MAP_FAST_TRAVEL_BUTTON] = (is_steam ? 0x140c6e742 : 0x140c7a902) + offset;
+    g_Address[PATCH_DLC_BOUNDARY] = (is_steam ? 0x140c38f57 : 0x140c45937) + offset;
     g_Address[PATCH_RESOURCE_CONSUMPTION] = (is_steam ? 0x1407460ce : 0x140745d8e) + offset;
     g_Address[PATCH_HEALTH_GOD] = (is_steam ? 0x140654710 : 0x140654320) + offset;
     g_Address[PATCH_INFINITE_FUEL] = (is_steam ? 0x140d488f4 : 0x140d54184) + offset;

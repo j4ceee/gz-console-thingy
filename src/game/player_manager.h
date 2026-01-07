@@ -56,7 +56,9 @@ public:
     {
         auto& inst = instance();
         if (inst.m_localPlayerStructure) {
-            return inst.m_localPlayerStructure->m_characterPtr + 0x08; // actual character is at +0x08
+            return reinterpret_cast<CCharacter*>(
+                reinterpret_cast<uintptr_t>(inst.m_localPlayerStructure->m_characterPtr) + 0x08 // actual character is at +0x08
+            );
         }
         return nullptr;
     }

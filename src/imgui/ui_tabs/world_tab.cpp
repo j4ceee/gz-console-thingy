@@ -26,13 +26,14 @@ void RenderWorldTab()
     ConsoleSettings& settings = ui->GetSettings();
 
     // --- EVENTS ---
-    EventManager* eventMgr = GetEventManager();
+    CSocialManager* socialMgr = CSocialManager::instance();
+    EventManager* eventMgr = socialMgr ? socialMgr->GetEventManager() : nullptr;
     if (ImGui::CollapsingHeader(ICON_MD_EVENT " Events", ImGuiTreeNodeFlags_DefaultOpen) && eventMgr) {
         auto events = eventMgr->GetActiveEvents();
 
-        bool schedulerBlocked = IsSchedulerBlocked();
+        bool schedulerBlocked = EventManager::IsSchedulerBlocked();
         if (ImGui::Checkbox("Block automatic event scheduling", &schedulerBlocked)) {
-            SetSchedulerBlocked(schedulerBlocked);
+            EventManager::SetSchedulerBlocked(schedulerBlocked);
             settings.disableAutoEvents = schedulerBlocked;
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
@@ -46,22 +47,23 @@ void RenderWorldTab()
 
             if (ImGui::Combo("Select Event", &selectedEvent, eventNames, IM_ARRAYSIZE(eventNames))) {
                 switch(selectedEvent) {
-                    case 1: SetCustomEvent(Events::WINTER); break;
-                    case 2: SetCustomEvent(Events::LUNAR_NEW_YEAR); break;
-                    case 3: SetCustomEvent(Events::SEMLA); break;
-                    case 4: SetCustomEvent(Events::HALLOWEEN); break;
-                    case 5: SetCustomEvent(Events::ANNIVERSARY); break;
+                    case 1: EventManager::SetCustomEvent(Events::WINTER); break;
+                    case 2: EventManager::SetCustomEvent(Events::LUNAR_NEW_YEAR); break;
+                    case 3: EventManager::SetCustomEvent(Events::SEMLA); break;
+                    case 4: EventManager::SetCustomEvent(Events::HALLOWEEN); break;
+                    case 5: EventManager::SetCustomEvent(Events::ANNIVERSARY); break;
                     default: break;
                 }
             }
         } else {
-            ImGui::Text("Active Event: %s", GetEventName(events[0]));
+            ImGui::Text("Active Event: %s", EventManager::GetEventName(events[0]));
             ImGui::SameLine();
             UI::HelpMarker("Currently active events in the game.",
             "Note: Events can only be changed once per game session. Restart your game if an event is already active and you want to change it.");
         }
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Events")) {
+            ImGui::Text("Social Manager: %p", socialMgr);
             ImGui::Text("EventManager: %p", eventMgr);
             ImGui::Text("activeEventsStart: %p", eventMgr->activeEventsStart);
             ImGui::Text("activeEventsCurrent: %p", eventMgr->activeEventsCurrent);
@@ -71,7 +73,7 @@ void RenderWorldTab()
             ImGui::Text("Active Events: %zu", events.size());
 
             for (uint32_t hash : events) {
-                ImGui::BulletText("%s (0x%08X)", GetEventName(hash), hash);
+                ImGui::BulletText("%s (0x%08X)", EventManager::GetEventName(hash), hash);
             }
             ImGui::TreePop();
         }
@@ -102,11 +104,7 @@ void RenderWorldTab()
         if (ImGui::Button("Teleport")) {
             gameWorld->TeleportToPositionXYZ(x, y, z);
         }
-        UI::HoverTooltip("Teleport the player to the specified XYZ coordinates.",
-            "Warning: Teleporting too far from your current location may cause you to be stuck in the air.\n"
-            "If this happens, you have to fast travel via the map to be able to move again.\n"
-            "Unless you know that your destination is nearby it is generally recommended to primarily use the "
-            "'Teleport to Aim Position' button or hotkey for safer teleportation.");
+        UI::HoverTooltip("Teleport the player to the specified XYZ coordinates.");
 
         ImGui::SameLine();
 
@@ -180,9 +178,6 @@ void RenderWorldTab()
                                     ImGui::Separator();
                                     ImGui::PushTextWrapPos(400.0f);
                                     ImGui::TextWrapped("%s", Data::TruncateText(collectible.description, 500));
-                                    ImGui::Separator();
-                                    UI::WarningText("Warning: Teleporting too far from your current location may cause you to be stuck in the air.\n"
-                                        "If this happens, you have to fast travel via the map to be able to move again.");
                                     ImGui::PopTextWrapPos();
                                 }
                                 ImGui::EndTooltip();

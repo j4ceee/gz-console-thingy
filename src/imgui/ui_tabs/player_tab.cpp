@@ -2,16 +2,18 @@
 #include "../fonts/IconsMaterialDesign.h"
 #include "game/player_manager.h"
 #include "patches/building_patches.h"
-#include "patches/health_patch.h"
 #include "patches/resource_patch.h"
 
 #include <imgui.h>
 
+#include "game/map.h"
 #include "game/player_info.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/weapon_consumption.h"
 #include "patches/detection_patch.h"
+#include "patches/fasttravel_patches.h"
+#include "patches/health_patch.h"
 #include "patches/ui_patches.h"
 #include "patches/vehicle_patches.h"
 
@@ -85,6 +87,9 @@ void RenderPlayerTab()
             bool infiniteAmmo = AmmoDeployableConsumption::IsAmmoConsumptionDisabled();
             if (ImGui::Checkbox("Infinite Ammo", &infiniteAmmo)) {
                 AmmoDeployableConsumption::ToggleAmmoConsumption();
+                // save setting
+                settings.enableInfiniteAmmo = infiniteAmmo;
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
             }
             ImGui::SameLine();
             UI::HelpMarker("Prevents ammo from being consumed when firing weapons.");
@@ -94,6 +99,9 @@ void RenderPlayerTab()
             bool infiniteDeployables = AmmoDeployableConsumption::IsDeployableConsumptionDisabled();
             if (ImGui::Checkbox("Infinite Deployables & Consumables", &infiniteDeployables)) {
                 AmmoDeployableConsumption::ToggleDeployableConsumption();
+                // save setting
+                settings.enableInfiniteDeployables = infiniteDeployables;
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
             }
             ImGui::SameLine();
             UI::HelpMarker("Prevents deployable / consumable items (like turrets, mines, medkits etc.) from being used up.");
@@ -129,6 +137,32 @@ void RenderPlayerTab()
     ImGui::Spacing();
     ImGui::Spacing();
 
+    // -- MAP --
+    if (ImGui::CollapsingHeader(ICON_MD_MAP " MAP", ImGuiTreeNodeFlags_DefaultOpen) && FastTravelPatches::IsInitialized()) {
+        bool enableFastTravelAnywhere = FastTravelPatches::IsFastTravelAnywhereEnabled();
+        if (ImGui::Checkbox("Enable Fast Travel Anywhere", &enableFastTravelAnywhere)) {
+            FastTravelPatches::ToggleFastTravelAnywhere();
+            // save setting
+            settings.enableFastTravelAnywhere = enableFastTravelAnywhere;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Allows fast traveling to any icon on the map. You can even place custom waypoints and fast travel to them.");
+
+        CMap* map = CMap::instance();
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##map") && map)
+        {
+            ImGui::Text("CMap Address: 0x%p", map);
+            ImGui::Text("Map Center: (%.2f, %.2f, %.2f)", map->mapCenterX, map->mapCenterY, map->mapCenterZ);
+            ImGui::Text("Cursor Screen Position: (%.2f, %.2f)", map->cursorScreenX, map->cursorScreenY);
+            ImGui::Text("Map Scale: %.2f / Map Scale 2: %.2f", map->mapScale, map->mapScale2);
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
     // -- VISIBILITY --
     if (ImGui::CollapsingHeader(ICON_MD_VISIBILITY " Visibility", ImGuiTreeNodeFlags_DefaultOpen) && DetectionPatch::IsInitialized())
     {
@@ -153,6 +187,9 @@ void RenderPlayerTab()
             bool freeBuild = BuildingPatches::IsFreeBuildEnabled();
             if (ImGui::Checkbox("Unrestricted Building", &freeBuild)) {
                 BuildingPatches::ToggleFreeBuild();
+                // save setting
+                settings.enableUnrestrictedBuilding = freeBuild;
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
             }
             ImGui::SameLine();
             UI::HelpMarker("Allows building structures without collision checks and ignores building limits.",

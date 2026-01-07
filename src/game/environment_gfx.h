@@ -151,6 +151,9 @@ namespace gz
 
     static bool SetupWeatherUpdateHook()
     {
+        if (g_originalWeatherUpdate) {
+            return true; // already set up
+        }
         g_originalWeatherUpdate = MH_STATIC_DETOUR(GetAddress(WEATHER_UPDATE), HookedWeatherUpdate);
         return g_originalWeatherUpdate != nullptr;
     }

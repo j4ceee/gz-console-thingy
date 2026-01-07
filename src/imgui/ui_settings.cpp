@@ -1,7 +1,155 @@
 #include "ui_settings.h"
 
+#include "game/event_scheduler.h"
+#include "game/weapon_consumption.h"
+#include "patches/building_patches.h"
+#include "patches/fasttravel_patches.h"
+#include "patches/resource_patch.h"
+#include "patches/vehicle_patches.h"
+
 namespace gz
 {
+    const std::vector<Setting>& ConsoleSettings::GetSettings() const
+    {
+        if (!m_cacheInitialized)
+        {
+            m_settingsCache.reserve(12); // pre-allocate space
+
+            m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
+                nullptr
+            });
+            m_settingsCache.push_back({"TeleportToAimKey",'i',const_cast<int*>(&teleportToAimKey),
+                nullptr
+            });
+            m_settingsCache.push_back({"HideHUDKey",'i',const_cast<int*>(&hideHUDKey),
+                nullptr
+            });
+            m_settingsCache.push_back({"ShowDebugInfo",'b',const_cast<bool*>(&showDebugInfo),
+                nullptr
+            });
+            m_settingsCache.push_back({"ShowCTHint",'b',const_cast<bool*>(&showHint),
+                nullptr
+            });
+            m_settingsCache.push_back({"DisableAutoEvents",'b',const_cast<bool*>(&disableAutoEvents),
+                [this]() {
+                if (EventManager::Initialize()) {
+                    EventManager::SetSchedulerBlocked(disableAutoEvents);
+                }
+            }});
+            m_settingsCache.push_back({"EnableInfiniteAmmo",'b',const_cast<bool*>(&enableInfiniteAmmo),
+                [this]() {
+                if (AmmoDeployableConsumption::IsAmmoHookInitialized()) {
+                    AmmoDeployableConsumption::EnableInfiniteAmmo(enableInfiniteAmmo);
+                }
+            }});
+            m_settingsCache.push_back({"EnableInfiniteDeployables",'b',const_cast<bool*>(&enableInfiniteDeployables),
+                [this]() {
+                if (AmmoDeployableConsumption::IsDeployableHookInitialized()) {
+                    AmmoDeployableConsumption::EnableInfiniteDeployables(enableInfiniteDeployables);
+                }
+            }});
+            m_settingsCache.push_back({"EnableFastTravelAnywhere",'b',const_cast<bool*>(&enableFastTravelAnywhere),
+                [this]() {
+                if (FastTravelPatches::IsInitialized()) {
+                    if (enableFastTravelAnywhere) {
+                        FastTravelPatches::EnableFastTravelAnywhere();
+                    } else {
+                        FastTravelPatches::DisableFastTravelAnywhere();
+                    }
+                }
+            }});
+            m_settingsCache.push_back({"DisableBuildingRestrictions",'b',const_cast<bool*>(&enableUnrestrictedBuilding),
+                [this]() {
+                if (BuildingPatches::IsInitialized()) {
+                    if (enableUnrestrictedBuilding) {
+                        BuildingPatches::EnableFreeBuild();
+                    } else {
+                        BuildingPatches::DisableFreeBuild();
+                    }
+                }
+            }});
+            m_settingsCache.push_back({"EnableUnlimitedResources",'b',const_cast<bool*>(&enableUnlimitedResources),
+                [this]() {
+                if (ResourcePatches::IsInitialized()) {
+                    if (enableUnlimitedResources) {
+                        ResourcePatches::EnableUnlimitedResources();
+                    } else {
+                        ResourcePatches::DisableUnlimitedResources();
+                    }
+                }
+            }});
+            m_settingsCache.push_back({"EnableInfiniteVehicleFuel",'b',const_cast<bool*>(&enableInfiniteFuel),
+                [this]() {
+                if (VehiclePatches::IsInitialized()) {
+                    if (enableInfiniteFuel) {
+                        VehiclePatches::EnableInfiniteFuel();
+                    } else {
+                        VehiclePatches::DisableInfiniteFuel();
+                    }
+                }
+            }});
+
+            m_cacheInitialized = true;
+        }
+
+        return m_settingsCache;
+    }
+
+    void ConsoleSettings::ReadLine(const char* line)
+    {
+        const auto& settings = GetSettings();
+
+        for (auto& setting : settings)
+        {
+            char format[64];
+            snprintf(format, sizeof(format), "%s=%%d", setting.name);
+
+            int value;
+            if (sscanf_s(line, format, &value) == 1)
+            {
+                if (setting.type == 'i') {
+                    *(int*)setting.ptr = value;
+                }
+                else if (setting.type == 'b') {
+                    *(bool*)setting.ptr = (value != 0);
+                }
+
+                if (setting.onLoad) {
+                    setting.onLoad();
+                }
+
+                return;
+            }
+        }
+    }
+
+    void ConsoleSettings::WriteAll(ImGuiTextBuffer* buf)
+    {
+        const auto& settings = GetSettings();
+
+        for (const auto& setting : settings)
+        {
+            if (setting.type == 'i') {
+                buf->appendf("%s=%d\n", setting.name, *(int*)setting.ptr);
+            }
+            else if (setting.type == 'b') {
+                buf->appendf("%s=%d\n", setting.name, *(bool*)setting.ptr ? 1 : 0);
+            }
+        }
+    }
+
+    void ConsoleSettings::ApplyDefaults()
+    {
+        const auto& settings = GetSettings();
+
+        for (auto& setting : settings)
+        {
+            if (setting.onLoad)
+            {
+                setting.onLoad();
+            }
+        }
+    }
 
     std::string ConsoleSettings::GetKeyName(int vkCode)
     {

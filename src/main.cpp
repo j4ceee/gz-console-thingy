@@ -3,8 +3,6 @@
 
 #include "xinput9_1_0.h"
 
-#include "input.h"
-
 #include "addresses.h"
 #include "patches.h"
 #include "log.h"

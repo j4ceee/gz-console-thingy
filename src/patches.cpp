@@ -21,6 +21,8 @@
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
 #include "patches/detection_patch.h"
+#include "patches/dlc_patches.h"
+#include "patches/fasttravel_patches.h"
 #include "patches/ui_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -110,13 +112,25 @@ bool InitPatchesAndHooks()
 
     // game patches
     try {
-        SetupLoggingHooks();
-        Utils::SetupHashFunction();
-        Events::InitializeHashes();
-        SetupEventManagerHook();
-        SetupWeatherUpdateHook();
-        AmmoDeployableConsumption::SetupAmmoHook();
-        AmmoDeployableConsumption::SetupDeployableHook();
+        if (!SetupLoggingHooks())
+            Log("Failed to setup logging hooks");
+
+        if (!Utils::SetupHashFunction()) {
+            // required for several patches -> fail initialization
+            throw std::runtime_error("Failed to setup hash function");
+        }
+
+        if (!EventManager::Initialize())
+            Log("Failed to setup EventManager hook");
+
+        if (!SetupWeatherUpdateHook())
+            Log("Failed to setup WeatherUpdate hook");
+
+        if (!AmmoDeployableConsumption::SetupAmmoHook())
+            Log("Failed to setup Ammo Consumption hook");
+
+        if (!AmmoDeployableConsumption::SetupDeployableHook())
+            Log("Failed to setup Deployable Consumption hook");
 
         EventTimePatch::Initialize();
         UIPatches::Initialize();
@@ -126,6 +140,10 @@ bool InitPatchesAndHooks()
         VehiclePatches::Initialize();
         CloudPatch::Initialize();
         DetectionPatch::Initialize();
+        FastTravelPatches::Initialize();
+        if (DLCPatch::Initialize())
+            DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)
+
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());
         return false;

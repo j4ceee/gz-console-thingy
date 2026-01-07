@@ -4,8 +4,16 @@
 
 namespace gz::Data::Spawnables
 {
-    /* DLC
+
     static const SpawnableData vehicles_flakmoped[] = {
+        {"Default (Red)",       "v015_bike_flakmoped_red",                  0x55e07972},
+        {"Default (Yellow)",    "v015_bike_flakmoped_yellow",               0xec9df9d4},
+        {"Default (Green)",     "v015_bike_flakmoped_green",                0x5da7d38f},
+        {"Default (Blue)",      "v015_bike_flakmoped_default",              0xdc7bf493},
+        {"Default (Purple)",    "v015_bike_flakmoped_purple",               0xbf331ad5},
+        {"Default (Pink)",      "v015_bike_flakmoped_pink",                 0xb3b98a81},
+
+        /* DLC
         {"Utility (Red)",       "v018_bike_utility_flakmoped_red",          0xda3eb466},
         {"Utility (Yellow)",    "v018_bike_utility_flakmoped_yellow",       0xf4d896be},
         {"Utility (Green)",     "v018_bike_utility_flakmoped_green",        0x73ed42f6},
@@ -26,15 +34,8 @@ namespace gz::Data::Spawnables
         {"Ramming (Blue)",      "v017_bike_ramming_flakmoped_blue",         0xb9b3689d},
         {"Ramming (Purple)",    "v017_bike_ramming_flakmoped_purple",       0xfa76bcd2},
         {"Ramming (Pink)",      "v017_bike_ramming_flakmoped_pink",         0x3a485e6c},
-
-        {"Default (Red)",       "v015_bike_flakmoped_red",                  0x55e07972},
-        {"Default (Yellow)",    "v015_bike_flakmoped_yellow",               0xec9df9d4},
-        {"Default (Green)",     "v015_bike_flakmoped_green",                0x5da7d38f},
-        {"Default (Blue)",      "v015_bike_flakmoped_default",              0xdc7bf493},
-        {"Default (Purple)",    "v015_bike_flakmoped_purple",               0xbf331ad5},
-        {"Default (Pink)",      "v015_bike_flakmoped_pink",                 0xb3b98a81},
+        */
     };
-    */
 
     static const SpawnableData vehicles_bike[] = {
         {"Moped (Red)",         "v012_bike_moped_red_01",                   0xcbb23698},
@@ -92,6 +93,7 @@ namespace gz::Data::Spawnables
         //{"Bikes", 25, vehicles_bike},
         {"Bikes", 6, vehicles_bike},
         //{"Flakmopeds", 24, vehicles_flakmoped},
+        {"Flakmopeds", 6, vehicles_flakmoped},
         {"Misc", 3, vehicles_misc},
     };
 
