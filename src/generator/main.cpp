@@ -91,7 +91,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     // clang-format off
 
     FindPattern("SANITY_CHECK", result, [&] {
-        auto match = pattern("48 8D 05 ? ? ? ? 48 89 81 ? ? ? ? 4C 89 B9 ? ? ? ? C7 81 ? ? ? ? ? ? ? ?", game_file).count(1).get(0).adjust(3);
+        auto match = pattern("48 8D ? ? ? ? ? 48 ? ? ? ? ? ? 4C ? ? ? ? ? ? C7 81 ? ? ? ? ? ? ? ?", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -111,7 +111,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     FindPattern("INST_NETWORK_PLAYER_MANAGER", result, [&] {
-        auto match = pattern("48 8B ? ? ? ? ? 48 8B ? ? 48 85 ? 0F 84 ? ? ? ? 4C ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? B8", game_file).count(1).get(0).adjust(3);
+        auto match = pattern("48 ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? 0f ? ? ? ? ? ? 48 ? ? 38", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -174,11 +174,11 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     FindPattern("WND_PROC", result, [&] {
-        auto match = pattern("40 53 55 56 57 48 83 EC ? 48 8B ? ? ? ? ? 48 33 C4 48 89 44 ? ? 49 8B D9", game_file)
+        auto match = pattern("E9 ? ? ? ? 48 ? ? ? ? ? ? ? 48 8D 05 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
             .count(1)
             .get(0)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
+            .adjust(16);
+        return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
     FindPattern("GRAPHICS_FLIP", result, [&] {

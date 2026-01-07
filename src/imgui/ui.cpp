@@ -137,7 +137,7 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
 {
     UI* ui = Get();
 
-    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey) {
+    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey && !ui->m_isCapturingHideHUDKey) {
         return false;
     }
 
