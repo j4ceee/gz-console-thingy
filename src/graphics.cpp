@@ -44,22 +44,47 @@ void Graphics::GraphicsFlipCallback(void* param_1)
 
     // Use cached context from now on
     if (gfx->m_ready && gfx->m_deviceContext) {
-        // Only create RTV if we don't have one cached
+        if (gfx->m_cachedBackBufferRTV) {
+            // check if swap chain backbuffer has changed (fullscreen toggle, alt-tab, resize)
+            ID3D11Texture2D* currentBackBuffer = nullptr;
+            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&currentBackBuffer))) {
+                ID3D11Resource* rtvResource = nullptr;
+                gfx->m_cachedBackBufferRTV->GetResource(&rtvResource);
+
+                if (rtvResource != currentBackBuffer) {
+                    // backbuffer changed - release old RTV
+                    gz::Log("Backbuffer changed - recreating RTV");
+                    gfx->m_cachedBackBufferRTV->Release();
+                    gfx->m_cachedBackBufferRTV = nullptr;
+
+                    // Update screen resolution
+                    DXGI_SWAP_CHAIN_DESC desc;
+                    if (SUCCEEDED(gfx->m_swapChain->GetDesc(&desc))) {
+                        gfx->m_screenWidth = desc.BufferDesc.Width;
+                        gfx->m_screenHeight = desc.BufferDesc.Height;
+                        gz::Log("New resolution: %dx%d", gfx->m_screenWidth, gfx->m_screenHeight);
+                    }
+                }
+
+                if (rtvResource) rtvResource->Release();
+                currentBackBuffer->Release();
+            }
+        }
+
+        // create RTV if we don't have one (or if we just released it)
         if (!gfx->m_cachedBackBufferRTV) {
-            gz::Log("Creating cached backbuffer RTV...");
             ID3D11Texture2D* backBuffer = nullptr;
-            HRESULT hr = gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
-            if (SUCCEEDED(hr)) {
-                hr = gfx->m_device->CreateRenderTargetView(backBuffer, nullptr, &gfx->m_cachedBackBufferRTV);
-                gz::Log("CreateRenderTargetView result: 0x%X, RTV=%p", hr, (void*)gfx->m_cachedBackBufferRTV);
+            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer))) {
+                HRESULT hr = gfx->m_device->CreateRenderTargetView(backBuffer, nullptr, &gfx->m_cachedBackBufferRTV);
+                if (FAILED(hr)) {
+                    gz::Log("Failed to create RTV: 0x%X", hr);
+                }
                 backBuffer->Release();
-            } else {
-                gz::Log("GetBuffer failed: 0x%X", hr);
             }
         }
 
         if (gfx->m_cachedBackBufferRTV) {
-            // Save the game's current render target and viewport
+            // save the game's current render target and viewport
             ID3D11RenderTargetView* oldRTV = nullptr;
             ID3D11DepthStencilView* oldDSV = nullptr;
             D3D11_VIEWPORT oldViewport;

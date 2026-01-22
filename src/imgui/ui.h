@@ -3,10 +3,10 @@
 #include "imgui.h"
 #include "ui_settings.h"
 
-#include <string>
 #include <Windows.h>
 
 #include "imgui_internal.h"
+#include "game/player_manager.h"
 
 namespace gz
 {
@@ -61,8 +61,8 @@ namespace gz
     // tab rendering functions (implemented in separate files)
     namespace UITabs
     {
-        void RenderPlayerTab();
-        void RenderWorldTab();
+        void RenderPlayerTab(CNetworkPlayerManager* manager);
+        void RenderWorldTab(CNetworkPlayerManager* manager);
         void RenderSettingsTab();
     }
 

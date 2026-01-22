@@ -11,16 +11,17 @@
 #include <meow_hook/detour.h>
 #include <imgui.h>
 
+#include "game/clock.h"
+#include "game/damageable.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
 #include "game/environment_gfx.h"
+#include "game/game_state.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
-#include "patches/health_patch.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
-#include "patches/detection_patch.h"
 #include "patches/dlc_patches.h"
 #include "patches/fasttravel_patches.h"
 #include "patches/ui_patches.h"
@@ -36,8 +37,9 @@ static decltype(WndProc) *                pfn_WndProc     = nullptr;
 LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     const auto &input = Input::Get();
-    const uint32_t game_state   = *(uint32_t *)GetAddress(VAR_GAME_STATE);
     const auto &ui = UI::Get();
+
+    bool isInGame = GameState::IsInGame();
 
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
         return true;
@@ -79,7 +81,7 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
     }
 
-    if (game_state == 11) {
+    if (isInGame) {
         if (input->FeedEvent(msg, wParam, lParam)) {
             return true;
         }
@@ -112,6 +114,9 @@ bool InitPatchesAndHooks()
 
     // game patches
     try {
+        if (!CClock::SetupUpdateGameHook())
+            Log("Failed to setup Clock UpdateGame hook");
+
         if (!SetupLoggingHooks())
             Log("Failed to setup logging hooks");
 
@@ -135,11 +140,9 @@ bool InitPatchesAndHooks()
         EventTimePatch::Initialize();
         UIPatches::Initialize();
         BuildingPatches::Initialize();
-        HealthPatches::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
         CloudPatch::Initialize();
-        DetectionPatch::Initialize();
         FastTravelPatches::Initialize();
         if (DLCPatch::Initialize())
             DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)

@@ -3,47 +3,59 @@
 #pragma pack(push, 1)
 #include <cmath>
 
+#include "meow_hook/util.h"
+
 namespace gz
 {
+    class CDamageable;
+
+    class CAvatar {};
+
     class CCharacter
     {
     public:
-        char    _pad[0x208];
-        int     m_maxHealth;
-        char    _pad2[0x80];
-        int     m_health;
+        char        _pad_damageable[0x2C4]; // 0x000 → 0x2C4 (CDamageable)
+        char        _pad3[0x5E4];           // 0x2C4 → 0x8A8
+        int         m_originalFaction;      // 0x8A8 → 0x8AC
+        char        _pad4[0x3048];          // 0x8AC → 0x38F4
+        bool        m_detectable;           // 0x38F4 → 0x38F5
+        char        _pad5[0xEF];            // 0x38F5 → 0x39E4
+        float       m_currentGravity[2];    // 0x39E4 → 0x39EC (array of 2 floats)
+        char        _pad6[0xC];             // 0x39EC → 0x39F8
+        int         m_faction;              // 0x39F8 → 0x39FC
+        char        _pad7[0x22C];           // 0x39FC → 0x3C28
+        CAvatar*    m_avatar;               // 0x3C28 → 0x3C30
 
-        int GetHealth() const { return m_health; }
-        void SetHealth(int health) { m_health = health; }
-        int GetMaxHealth() const { return m_maxHealth; }
-        void SetMaxHealth(int maxHealth) { m_maxHealth = maxHealth; }
+        int GetOriginalFaction() const { return m_originalFaction; }
+        int GetFaction() const { return m_faction; }
 
-        /// <summary>
-        /// Gets the health of the character as a percentage (0-100).
-        /// </summary>
-        /// @return Health percentage as an integer.
-        int GetHealthInPercentage() const
+        void SetFaction(int faction) { m_faction = faction; }
+        void ResetFaction() { m_faction = m_originalFaction; }
+
+        bool IsDetectable() const { return m_detectable; }
+        void SetDetectable(bool detectable) { m_detectable = detectable; }
+
+        void Revive()
         {
-            if (m_maxHealth == 0)
-            {
-                return 0;
-            }
-            return static_cast<int>(std::round(
-                (static_cast<float>(m_health) / static_cast<float>(m_maxHealth)) * 100.0f));
+            meow_hook::func_call<void>(
+                GetAddress(CHARACTER_REVIVE),
+                this,
+                true,       // call CDamageable::RestoreHealth()
+                false,      // unknown
+                1.0f        // health percentage
+            );
         }
 
-        void SetHealthInPercentage(int percentage)
+        void SetGhostMode(bool enable)
         {
-            if (percentage < 0)
-            {
-                percentage = 0;
-            }
-            else if (percentage > 100)
-            {
-                percentage = 100;
-            }
-            m_health = static_cast<int>((static_cast<float>(percentage) / 100.0f) * static_cast<float>(m_maxHealth));
+            meow_hook::func_call<void>(
+                GetAddress(CHARACTER_GHOST_MODE),
+                this,
+                enable
+            );
         }
+
+        CDamageable* GetDamageable() { return reinterpret_cast<CDamageable*>(this); }
     };
 }; // namespace gz
 #pragma pack(pop)

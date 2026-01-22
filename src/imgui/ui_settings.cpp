@@ -1,6 +1,7 @@
 #include "ui_settings.h"
 
 #include "game/event_scheduler.h"
+#include "game/player.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
 #include "patches/fasttravel_patches.h"
@@ -13,7 +14,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(12); // pre-allocate space
+            m_settingsCache.reserve(14); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -86,6 +87,16 @@ namespace gz
                     } else {
                         VehiclePatches::DisableInfiniteFuel();
                     }
+                }
+            }});
+            m_settingsCache.push_back({"EnableInfiniteVehicleHealth",'b',const_cast<bool*>(&enableInfiniteBikeHealth),
+                []() {}}); // handled in game update hook
+            m_settingsCache.push_back({"FPPlayerShadow",'b',const_cast<bool*>(&fpPlayerShadow),
+                [this]() {
+                if (fpPlayerShadow) {
+                    CPlayer::SetFPPlayerShadowEnabled(true);
+                } else {
+                    CPlayer::SetFPPlayerShadowEnabled(false);
                 }
             }});
 

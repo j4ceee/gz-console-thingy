@@ -31,6 +31,8 @@ namespace gz
         bool enableUnrestrictedBuilding = true;
         bool enableUnlimitedResources = false;
         bool enableInfiniteFuel = false;
+        bool enableInfiniteBikeHealth = false;
+        bool fpPlayerShadow = false;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

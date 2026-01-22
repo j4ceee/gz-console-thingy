@@ -20,7 +20,7 @@ namespace gz::UITabs
 static char searchBuffer[256];
 static std::string lastSearchTerm;
 
-void RenderWorldTab()
+void RenderWorldTab(CNetworkPlayerManager* playerMgr)
 {
     UI* ui = UI::Get();
     ConsoleSettings& settings = ui->GetSettings();
@@ -83,7 +83,7 @@ void RenderWorldTab()
     ImGui::Spacing();
 
     // --- TELEPORTATION ---
-    auto* player = CNetworkPlayerManager::GetLocalPlayer();
+    auto* player = playerMgr->GetPlayer();
     auto* gameWorld = CGameWorld::instance();
     if (ImGui::CollapsingHeader(ICON_MD_PIN_DROP " Teleportation", ImGuiTreeNodeFlags_DefaultOpen) && player && gameWorld) {
         CVector3f    playerPos = player->GetPositionVector();
@@ -480,6 +480,12 @@ void RenderWorldTab()
                 spawnSys->SpawnTagAtAimPosition(tagBuffer, typeId);
             }
         }
+
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Spawning")) {
+            ImGui::Text("CSpawnSystem: %p", spawnSys);
+            ImGui::TreePop();
+        }
+
         ImGui::Unindent();
     }
 }

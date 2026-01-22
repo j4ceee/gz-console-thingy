@@ -28,7 +28,8 @@ public:
     void TeleportToAimPosition(CPlayer* player = nullptr)
     {
         if (!player) {
-            player = CNetworkPlayerManager::GetLocalPlayer();
+            auto playerMgr = CNetworkPlayerManager::instance();
+            player = playerMgr->GetPlayer();
         }
         if (!player) {
             return;
@@ -42,7 +43,8 @@ public:
     void SafeTeleportToPosition(CVector3f targetPos, CPlayer* player = nullptr)
     {
         if (!player) {
-            player = CNetworkPlayerManager::GetLocalPlayer();
+            auto playerMgr = CNetworkPlayerManager::instance();
+            player = playerMgr->GetPlayer();
         }
         if (!player) {
             return;

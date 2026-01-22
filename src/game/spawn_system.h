@@ -63,7 +63,8 @@ class CSpawnSystem
 
     void SpawnTagAtAimPosition(const char* tag, uint32_t type_id = 0x37C, success_t callback = nullptr)
     {
-        CPlayer* player = CNetworkPlayerManager::GetLocalPlayer();
+        CNetworkPlayerManager* playerMgr = CNetworkPlayerManager::instance();
+        CPlayer* player = playerMgr->GetPlayer();
         CVector3f aimPos = player->GetAimPosition();
         CMatrix4f worldTransform = player->GetTransform();
         worldTransform.m[3].x = aimPos.x;
@@ -79,7 +80,8 @@ class CSpawnSystem
 
     void SpawnHashAtAimPosition(uint32_t hash, uint32_t type_id = 0x37C, success_t callback = nullptr)
     {
-        CPlayer* player = CNetworkPlayerManager::GetLocalPlayer();
+        CNetworkPlayerManager* playerMgr = CNetworkPlayerManager::instance();
+        CPlayer* player = playerMgr->GetPlayer();
         CVector3f aimPos = player->GetAimPosition();
         CMatrix4f worldTransform = player->GetTransform();
         // only set position & keep current rotation/scale

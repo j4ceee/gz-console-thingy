@@ -2,6 +2,7 @@
 #include "../../addresses.h"
 #include <cstdint>
 
+#pragma pack(push, 1)
 namespace gz::Utils
 {
 using HashStringFunc = uint32_t(__fastcall*)(const char* str);
@@ -23,4 +24,5 @@ inline uint32_t HashString(const char* str)
     }
     return 0;
 }
-}
+} // namespace gz::Utils
+#pragma pack(pop)

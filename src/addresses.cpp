@@ -25,12 +25,16 @@ void InitAddresses(bool is_steam)
     g_Address[INST_MAP] = (is_steam ? 0x142adfec8 : 0x142bed558) + offset;
     g_Address[INST_SOCIAL_MANAGER] = (is_steam ? 0x142abebe8 : 0x142bcc198) + offset;
     g_Address[INST_VEHICLE_MANAGER] = (is_steam ? 0x142abefe8 : 0x142bcc598) + offset;
+    g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
     g_Address[WND_PROC] = (is_steam ? 0x1400a4b40 : 0x1400a3430) + offset;
     g_Address[GRAPHICS_FLIP] = (is_steam ? 0x141784320 : 0x14181a860) + offset;
-    g_Address[VAR_GAME_STATE] = (is_steam ? 0x1428444e0 : 0x1429483f8) + offset;
+    g_Address[VAR_GAME_STATE_FRONTEND] = (is_steam ? 0x1428444e0 : 0x1429483f8) + offset;
+    g_Address[VAR_GAME_STATE] = (is_steam ? 0x142adcb80 : 0x142bea130) + offset;
     g_Address[VAR_CLOUD_VISIBILITY] = (is_steam ? 0x141bada08 : 0x141c6cbd0) + offset;
+    g_Address[VAR_FP_PLAYER_SHADOW] = (is_steam ? 0x142adf1a4 : 0x142bec85c) + offset;
     g_Address[ALLOC] = (is_steam ? 0x14009ddc0 : 0x14009e230) + offset;
     g_Address[FREE] = (is_steam ? 0x14185ca84 : 0x1418f3154) + offset;
+    g_Address[CLOCK_UPDATE_GAME] = (is_steam ? 0x1400ca3e0 : 0x1400c8ce0) + offset;
     g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
     g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
     g_Address[SPAWN_SYSTEM_GET_MATCHING_RES] = (is_steam ? 0x140b53ba0 : 0x140b61f60) + offset;
@@ -41,6 +45,12 @@ void InitAddresses(bool is_steam)
     g_Address[SET_WEATHER_PRESET_FROM_HASH] = (is_steam ? 0x140129820 : 0x1401292b0) + offset;
     g_Address[RESTORE_DYNAMIC_WEATHER] = (is_steam ? 0x140134a00 : 0x140134490) + offset;
     g_Address[WEATHER_UPDATE] = (is_steam ? 0x14012ca80 : 0x14012c510) + offset;
+    g_Address[DAMAGEABLE_SET_HEALTH] = (is_steam ? 0x1406e3980 : 0x1406e3590) + offset;
+    g_Address[DAMAGEABLE_RESTORE_HEALTH] = (is_steam ? 0x1406e2670 : 0x1406e2280) + offset;
+    g_Address[DAMAGEABLE_SET_INVULNERABLE] = (is_steam ? 0x1406e3b00 : 0x1406e3710) + offset;
+    g_Address[DAMAGEABLE_IS_INVULNERABLE] = (is_steam ? 0x1406db850 : 0x1406db460) + offset;
+    g_Address[CHARACTER_REVIVE] = (is_steam ? 0x140624590 : 0x1406241a0) + offset;
+    g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;
     g_Address[FUNC_VSNPRINTF] = (is_steam ? 0x140de69b0 : 0x140e2dd60) + offset;
     g_Address[FUNC_SCRIPT_ERROR_REPORT] = (is_steam ? 0x140e7eba0 : 0x140ec5770) + offset;
@@ -54,10 +64,8 @@ void InitAddresses(bool is_steam)
     g_Address[PATCH_MAP_FAST_TRAVEL_BUTTON] = (is_steam ? 0x140c6e742 : 0x140c7a902) + offset;
     g_Address[PATCH_DLC_BOUNDARY] = (is_steam ? 0x140c38f57 : 0x140c45937) + offset;
     g_Address[PATCH_RESOURCE_CONSUMPTION] = (is_steam ? 0x1407460ce : 0x140745d8e) + offset;
-    g_Address[PATCH_HEALTH_GOD] = (is_steam ? 0x140654710 : 0x140654320) + offset;
     g_Address[PATCH_INFINITE_FUEL] = (is_steam ? 0x140d488f4 : 0x140d54184) + offset;
     g_Address[PATCH_HIDE_UI] = (is_steam ? 0x1414cc501 : 0x141562a01) + offset;
-    g_Address[PATCH_DETECTION] = (is_steam ? 0x14057f1be : 0x14057edce) + offset;
 }
 
 uintptr_t GetAddress(Address address)

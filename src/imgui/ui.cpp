@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include "imgui_internal.h"
+#include "game/game_state.h"
 
 namespace gz
 {
@@ -173,19 +174,27 @@ void UI::Render()
         return;
     }
 
-    const uint32_t game_state = *(uint32_t *)GetAddress(VAR_GAME_STATE);
-    if (game_state != 11) {
+    if (!GameState::IsInGame()) {
         SetVisible(false);
         return;
     }
 
     ImGui::Begin("Generation Zero Console Thingy", &m_visible);
-
-    CNetworkPlayerManager& playerMgr = CNetworkPlayerManager::instance();
-
     ImGui::PushFont(mainfont);
+
+    auto* playerMgr = CNetworkPlayerManager::instance();
+
+    if (!playerMgr) {
+        ImGui::Text("Error: CNetworkPlayerManager instance not found.");
+        ImGui::PopFont();
+        ImGui::End();
+        return;
+    }
+
+    auto* networkPlayer = playerMgr->GetNetworkPlayer();
+
     ImGui::Spacing();
-    ImGui::Text("Hello, %s!", playerMgr.GetLocalPlayerProfileName().c_str());
+    ImGui::Text("Hello, %s!", networkPlayer->GetProfileName().c_str());
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
@@ -194,14 +203,14 @@ void UI::Render()
         if (ImGui::BeginTabItem("Player")) {
             ImGui::BeginChild("PlayerContent", ImVec2(0, 0), false);
             ImGui::Spacing();
-            UITabs::RenderPlayerTab();
+            UITabs::RenderPlayerTab(playerMgr);
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("World")) {
             ImGui::BeginChild("WorldContent", ImVec2(0, 0), false);
             ImGui::Spacing();
-            UITabs::RenderWorldTab();
+            UITabs::RenderWorldTab(playerMgr);
             ImGui::EndChild();
             ImGui::EndTabItem();
         }

@@ -6,58 +6,109 @@
 
 #include <imgui.h>
 
+#include "game/damageable.h"
 #include "game/map.h"
 #include "game/player_info.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/weapon_consumption.h"
-#include "patches/detection_patch.h"
 #include "patches/fasttravel_patches.h"
-#include "patches/health_patch.h"
 #include "patches/ui_patches.h"
 #include "patches/vehicle_patches.h"
 
 namespace gz::UITabs
 {
-void RenderPlayerTab()
+void GetHealthModification(CDamageable* damageable, const char* identifier, const char* invulTip, const char* healthNote = "",
+    const char* reviveLabel = "", const char* reviveTip = "", std::function<void()> onRevive = []() {})
+{
+    std::string identifierStr = std::string(identifier);
+    int currentHealth = damageable->GetHealth();
+    int maxHealth = damageable->GetMaxHealth();
+    int healthPercent = damageable->GetHealthInPercentage();
+
+    ImGui::Text("Current: %d / %d (%d%%)", currentHealth, maxHealth, healthPercent);
+
+    if (!damageable->IsDestroyed() || identifierStr == "vehicle") // vehicles can never be revived
+    {
+        if (ImGui::SliderInt(("Health (%)##" + identifierStr).c_str(), &healthPercent, 0, 100)) {
+            damageable->SetHealthInPercentage(healthPercent);
+        }
+        ImGui::SameLine();
+        if (strlen(healthNote) > 0) {
+            UI::HelpMarker("Sets health as a percentage of max health.", healthNote);
+        } else
+        {
+            UI::HelpMarker("Sets health as a percentage of max health.");
+        }
+        if (ImGui::Button(("Restore Full Health##" + identifierStr).c_str())) {
+            damageable->RestoreHealth();
+        }
+    }
+    // if destroyed (and not a vehicle), show revive button
+    else
+    {
+        if (ImGui::Button((reviveLabel + std::string("##") + identifierStr).c_str())) {
+            onRevive();
+        }
+        ImGui::SameLine();
+        UI::HelpMarker(reviveTip);
+    }
+
+    // invulnerability
+    bool invulnerable = damageable->IsInvulnerable();
+    if (ImGui::Checkbox(("Invulnerable##" + identifierStr).c_str(), &invulnerable)) {
+        damageable->SetInvulnerable(invulnerable, identifierStr == "character" ? 'p' : 0);
+        // save setting for vehicles
+        if (identifierStr == "vehicle")
+        {
+            UI* ui = UI::Get();
+            ConsoleSettings& settings = ui->GetSettings();
+            settings.enableInfiniteBikeHealth = invulnerable;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+    }
+    ImGui::SameLine();
+    UI::HelpMarker(invulTip);
+}
+
+void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 {
     UI* ui = UI::Get();
     ConsoleSettings& settings = ui->GetSettings();
-    auto* character = CNetworkPlayerManager::GetLocalPlayer()->GetCharacter();
+
+    auto* character = playerMgr->GetPlayer()->GetCharacter();
 
     // -- HEALTH --
     if (ImGui::CollapsingHeader(ICON_MD_FAVORITE " Health", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (character) {
-            int currentHealth = character->GetHealth();
-            int maxHealth = character->GetMaxHealth();
-            int healthPercent = character->GetHealthInPercentage();
-
-            ImGui::Text("Current: %d / %d (%d%%)", currentHealth, maxHealth, healthPercent);
-
-            if (ImGui::SliderInt("Health (%)##character", &healthPercent, 0, 100)) {
-                character->SetHealthInPercentage(healthPercent);
-            }
-            ImGui::SameLine(); 
-            UI::HelpMarker("Sets health as a percentage of max health.");
-        }
-
-        if (HealthPatches::IsInitialized()) {
-            bool freezeHealth = HealthPatches::IsFreezeHealthEnabled();
-            if (ImGui::Checkbox("Infinite Health", &freezeHealth)) {
-                HealthPatches::ToggleFreezeHealth();
-            }
-            ImGui::SameLine(); 
-            UI::HelpMarker("Prevents your health from decreasing when taking damage.\n"
-                "Credit: aSwedishMagyar & sanitka");
+            auto* characterDmg = character->GetDamageable();
+            GetHealthModification(
+                characterDmg,
+                "character",
+                "Makes the player invulnerable to all damage.",
+                "",
+                "Revive Player",
+                "Revives the player if they are dead.",
+                [character]() { character->Revive(); }
+                );
         }
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##player"))
         {
-            ImGui::Text("CPlayer Address: 0x%p", CNetworkPlayerManager::GetLocalPlayer());
-            ImGui::Text("CCharacter Address from CPlayer: 0x%p", CNetworkPlayerManager::GetLocalPlayer()->GetCharacter());
-            ImGui::Text("CCharacter Address from CNetworkPlayerManager: 0x%p", CNetworkPlayerManager::GetLocalPlayerCharacter());
-            ImGui::Text("CNetworkPlayerComponent Address: 0x%p", CNetworkPlayerManager::GetLocalPlayerNetworkComponent());
-            ImGui::Text("Player Count: %d", CNetworkPlayerManager::instance().GetPlayerCount());
+            ImGui::Text("CPlayer Address: 0x%p", playerMgr->GetPlayer());
+            ImGui::Text("CCharacter Address from CPlayer: 0x%p", playerMgr->GetPlayer()->GetCharacter());
+            ImGui::Text("CCharacter Address from CNetworkPlayerManager: 0x%p", playerMgr->GetCharacter());
+            ImGui::Text("CNetworkPlayerComponent Address: 0x%p", playerMgr->GetPlayerNetworkComponent());
+            ImGui::Text("Player Count: %d", playerMgr->GetPlayerCount());
+
+            ImGui::Spacing();
+            CVector3f aimPos = playerMgr->GetPlayer()->GetAimPosition();
+            ImGui::Text("Aim Position: (%.2f, %.2f, %.2f)", aimPos.x, aimPos.y, aimPos.z);
+            CVector3f worldPos = playerMgr->GetPlayer()->GetWorldCoordinates();
+            ImGui::Text("World Position: (%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z);
+            float raycastDistance = playerMgr->GetPlayer()->GetAimRaycastDistance();
+            ImGui::Text("Aim Raycast Distance: %.2f", raycastDistance);
+
             ImGui::TreePop();
         }
     }
@@ -66,7 +117,7 @@ void RenderPlayerTab()
     ImGui::Spacing();
 
     // -- STAMINA --
-    auto* networkComp = CNetworkPlayerManager::GetLocalPlayerNetworkComponent();
+    auto* networkComp = playerMgr->GetPlayerNetworkComponent();
     if (ImGui::CollapsingHeader(ICON_MD_FLASH_ON " Stamina", ImGuiTreeNodeFlags_DefaultOpen) && networkComp) {
         bool infiniteStamina = networkComp->GetInfiniteStamina();
         if (ImGui::Checkbox("Infinite Stamina", &infiniteStamina)) {
@@ -138,7 +189,7 @@ void RenderPlayerTab()
     ImGui::Spacing();
 
     // -- MAP --
-    if (ImGui::CollapsingHeader(ICON_MD_MAP " MAP", ImGuiTreeNodeFlags_DefaultOpen) && FastTravelPatches::IsInitialized()) {
+    if (ImGui::CollapsingHeader(ICON_MD_MAP " Map", ImGuiTreeNodeFlags_DefaultOpen) && FastTravelPatches::IsInitialized()) {
         bool enableFastTravelAnywhere = FastTravelPatches::IsFastTravelAnywhereEnabled();
         if (ImGui::Checkbox("Enable Fast Travel Anywhere", &enableFastTravelAnywhere)) {
             FastTravelPatches::ToggleFastTravelAnywhere();
@@ -163,16 +214,39 @@ void RenderPlayerTab()
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // -- VISIBILITY --
-    if (ImGui::CollapsingHeader(ICON_MD_VISIBILITY " Visibility", ImGuiTreeNodeFlags_DefaultOpen) && DetectionPatch::IsInitialized())
+    // -- FACTIONS & DETECTION --
+    if (ImGui::CollapsingHeader(ICON_MD_FLAG " Machine Interaction", ImGuiTreeNodeFlags_DefaultOpen) && character)
     {
-        bool undetectable = DetectionPatch::IsDetectionDisabled();
-        if (ImGui::Checkbox("Undetectable by Machines", &undetectable)) {
-            DetectionPatch::ToggleDetection();
+        // -- detection
+        bool isUndetectable = !character->IsDetectable();
+        if (ImGui::Checkbox("Undetectable by Machines", &isUndetectable)) {
+            character->SetDetectable(!isUndetectable);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Makes your character undetectable by enemy machines.\n"
-            "Credit: aSwedishMagyar & sanitka");
+        UI::HelpMarker("Toggles whether the player will be detected by enemy machines.");
+
+        // -- faction
+        // factions: 0 = player / humans / default, 2 = fnix, 5 = soviets
+        const int factionValues[] = {0, 2, 5};
+        int currentIndex = 0;
+        if (character->m_faction == 2) currentIndex = 1;
+        else if (character->m_faction == 5) currentIndex = 2;
+
+        if (ImGui::Combo("Faction", &currentIndex, "Resistance\0FNIX\0Soviets\0"))
+        {
+            character->SetFaction(factionValues[currentIndex]);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Changes the player's faction. The machines of the other factions than the selected one will be hostile towards you.");
+
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##factions"))
+        {
+            ImGui::Text("CCharacter Address: 0x%p", character);
+            ImGui::Text("Original Faction: %d", character->GetOriginalFaction());
+            ImGui::Text("Current Faction: %d", character->GetFaction());
+            ImGui::Text("Is Detectable: %s", character->IsDetectable() ? "Yes" : "No");
+            ImGui::TreePop();
+        }
     }
 
     ImGui::Spacing();
@@ -227,22 +301,18 @@ void RenderPlayerTab()
         {
             auto* vehicle = vehicleManager->GetPlayerVehicle();
 
-            if (vehicle && vehicle->IsPlayerInVehicle())
+            if (vehicle)
             {
-                int currentHealth = vehicle->GetHealth();
-                int maxHealth = vehicle->GetMaxHealth();
-                int healthPercent = vehicle->GetHealthInPercentage();
+                auto* vehicleDmg = vehicle->GetDamageable();
 
-                ImGui::Text("Current: %d / %d (%d%%)", currentHealth, maxHealth, healthPercent);
-
-                if (ImGui::SliderInt("Health (%)##vehicle", &healthPercent, 0, 100)) {
-                    vehicle->SetHealthInPercentage(healthPercent);
-                }
-                ImGui::SameLine();
-                UI::HelpMarker("Sets health as a percentage of max health.",
-                    "Note: This will not make your bike drivable after it has been destroyed.");
+                GetHealthModification(
+                    vehicleDmg,
+                    "vehicle",
+                    "Makes the vehicle invulnerable to all damage.",
+                    "Note: This will not make your bike drivable after it has been destroyed."
+                );
             } else {
-                ImGui::Text("Enter a vehicle for more options.");
+                ImGui::Text("Spawn a vehicle for more options.");
             }
 
             if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##vehicleManager"))
@@ -297,6 +367,46 @@ void RenderPlayerTab()
             ImGui::Text("Active Player Data Address: 0x%p", playerInfo->GetActivePlayerData());
             ImGui::TreePop();
         }
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // -- MISCELLANEOUS --
+    if (ImGui::CollapsingHeader(ICON_MD_TUNE " Miscellaneous", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        // -- first-person shadow
+        auto player = playerMgr->GetPlayer();
+        if (player)
+        {
+            bool fpShadow = CPlayer::GetFPPlayerShadowEnabled();
+            if (ImGui::Checkbox("First-Person Shadow", &fpShadow)) {
+                CPlayer::SetFPPlayerShadowEnabled(fpShadow);
+                // save setting
+                settings.fpPlayerShadow = fpShadow;
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+            }
+            ImGui::SameLine();
+            UI::HelpMarker("Toggles the visibility of the player's shadow in first-person view.",
+                "Note: When toggling in-game you'll need to edit your character's appearance (e.g., change clothes) for the change to take effect.");
+        }
+
+        // -- ghost mode
+        if (character)
+        {
+            if (ImGui::Button("Enable Ghost Mode")) {
+                character->SetGhostMode(true);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_MD_REFRESH "##ghostMode"))
+            {
+                character->SetGhostMode(false);
+            }
+            ImGui::SameLine();
+            UI::HelpMarker("Enables ghost mode for the player, allowing to float through the environment and objects without collision.",
+                "Note: To disable ghost mode, press the refresh button or teleport (via hotkey or world tab).");
+        }
+
     }
 }
 } // namespace gz::UITabs

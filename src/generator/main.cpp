@@ -173,6 +173,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_CLOCK", result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("WND_PROC", result, [&] {
         auto match = pattern("E9 ? ? ? ? 48 ? ? ? ? ? ? ? 48 8D 05 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
             .count(1)
@@ -190,8 +198,19 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("VAR_GAME_STATE_FRONTEND", result, [&] {
+        auto match = pattern("8B ? ? ? ? ? 83 ? ?  74 ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 74", game_file)
+            .count(1)
+            .get(0)
+            .adjust(2);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("VAR_GAME_STATE", result, [&] {
-        auto match = pattern("8B 05 ? ? ? ? 83 C0 F8", game_file).count(1).get(0).adjust(2);
+        auto match = pattern("8B ? ? ? ? ? 83 ? ? 74 ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 74", game_file)
+            .count(1)
+            .get(0)
+            .adjust(2);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -201,6 +220,16 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .get(0)
             .adjust(4);
         return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("VAR_FP_PLAYER_SHADOW", result, [&] { // boolean value for first-person player shadow toggle
+        auto match = pattern("0F ? ? ? ? ? 80 ? ? ? ? ? ? 0F ? ? ? ? ? ? ? ? E8 ? ? ? ? 8B D0", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8);
+        // adjust disp_rebase for the extra trailing byte
+        auto intermediate = disp_rebase(game_file, match);
+        return (intermediate.as<uintptr_t>() + 1);  // add the missing byte
     });
 
     FindPattern("ALLOC", result, [&] {
@@ -218,6 +247,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(15)  // offset to FREE CALL
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CLOCK_UPDATE_GAME", result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(7)
             .extract_call();
         return rebase(game_file, match);
     });
@@ -308,6 +346,58 @@ FindPatternResult Generate(const char* name, const char* exepath)
            .count(1)
            .get(0)
            .adjust(4)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DAMAGEABLE_SET_HEALTH", result, [&] {
+       auto match = pattern("48 ? ? ? ? 48 ? ? ? ? 57 48 ? ? ? 48 ? ? 41 ? ? ? 8B ? ? ? ? ? 49", game_file)
+           .count(1)
+           .get(0)
+           .as<uintptr_t>();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DAMAGEABLE_RESTORE_HEALTH", result, [&] {
+       auto match = pattern("40 ? 48 ? ? ? 66 ? ? ? ? ? ? ? ? ? ? 4C ? ? 45 ? ?", game_file)
+           .count(1)
+           .get(0)
+           .as<uintptr_t>();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DAMAGEABLE_SET_INVULNERABLE", result, [&] {
+       auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
+           .count(1)
+           .get(0)
+           .adjust(28)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DAMAGEABLE_IS_INVULNERABLE", result, [&] {
+       auto match = pattern("CC 48 ? ? ? BA ? ? ? ? E8 ? ? ? ? ? ? 0F ? ? 48 ? ?  ? C3", game_file)
+           .count(1)
+           .get(0)
+           .adjust(10)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_REVIVE", result, [&] {
+       auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
+           .count(1)
+           .get(0)
+           .adjust(5)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_GHOST_MODE", result, [&] {
+       auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
+           .count(1)
+           .get(0)
+           .adjust(12)
            .extract_call();
        return rebase(game_file, match);
     });
@@ -414,16 +504,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    // health freeze cheat
-    FindPattern("PATCH_HEALTH_GOD", result, [&] { // prevents player health from changing
-        auto match = pattern("40 55 56 57 41 54 41 55 41 56 41 57 48 8D AC ? ? ? ? ? 48 81 EC ? ? ? ? 48 C7 45 ? ? ? ? ? 48 89 9C ? ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 48 8B FA 48 8B F1 45 33 FF 44 89 7C ? ?", game_file)
-            .count(1)
-            .get(0)
-            .adjust(0)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-
     // fuel at 100% cheat (take maximum of current fuel and max fuel)
     FindPattern("PATCH_INFINITE_FUEL", result, [&] { // 5D to 5F -> MAXSS XMM7, MaxFuel
         auto match = pattern("F3 0F 5F FE F3 0F 5D 3D ? ? ? ? F3 0F 11 BF", game_file)
@@ -443,17 +523,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .as<uintptr_t>();
         return rebase(game_file, match);
     });
-
-    // makes player undetectable for machines
-    FindPattern("PATCH_DETECTION", result, [&] {
-        auto match = pattern("F3 41 0F 58 07 F3 41 0F 5F C0", game_file)
-            .count(1)
-            .get(0)
-            .adjust(5)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-
 
     // clang-format on
 

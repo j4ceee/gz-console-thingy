@@ -5,6 +5,7 @@
 #include "input.h"
 
 #include "log.h"
+#include "game/game_state.h"
 #include "game/game_world.h"
 #include "imgui/ui.h"
 #include "patches/ui_patches.h"
@@ -13,12 +14,9 @@ static constexpr float   FONT_SIZE_INPUT    = 0.0155f;
 
 void Input::Draw(ID3D11DeviceContext* context)
 {
-
     if (!context) return;
 
-    const uint32_t game_state = *(uint32_t *)GetAddress(gz::VAR_GAME_STATE);
-
-    if (game_state != 11) {
+    if (!gz::GameState::IsInGame()) {
         // don't draw anything if we are not in-game
         return;
     }
