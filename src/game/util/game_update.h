@@ -2,7 +2,7 @@
 
 #include "game/damageable.h"
 #include "game/game_state.h"
-#include "game/player_manager.h"
+#include "game/player_network_manager.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "imgui/ui.h"

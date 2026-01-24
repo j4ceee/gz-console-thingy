@@ -3,6 +3,7 @@
 #include "addresses.h"
 #include "game_state.h"
 #include "meow_hook/util.h"
+#include <cmath>
 
 #pragma pack(push, 1)
 namespace gz
@@ -39,9 +40,8 @@ namespace gz
             {
                 return 0;
             }
-            return static_cast<int>(
-                (static_cast<float>(m_CurHealth) / static_cast<float>(m_MaxHealth)) * 100.0f
-            );
+            return static_cast<int>(std::round(
+                (static_cast<float>(m_CurHealth) / static_cast<float>(m_MaxHealth)) * 100.0f));
         }
 
         void SetHealthInPercentage(int percentage)

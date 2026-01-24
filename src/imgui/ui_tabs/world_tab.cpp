@@ -7,7 +7,7 @@
 #include "game/event_scheduler.h"
 #include "game/game_world.h"
 #include "game/physics_system.h"
-#include "game/player_manager.h"
+#include "game/player_network_manager.h"
 #include "game/spawn_system.h"
 #include "game/world_time.h"
 #include "game/data/collectibles_data.h"

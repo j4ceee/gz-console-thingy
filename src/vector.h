@@ -1,5 +1,17 @@
 #pragma once
 
+struct BasicVector {
+    void* first;   // pointer to start of data
+    void* last;    // pointer to current end
+    void* end;     // pointer to allocated end
+};
+
+struct BasicSharedPtr
+{
+    void* px;  // object pointer
+    void* pn;  // control block pointer
+};
+
 struct CVector2f {
     float x, y;
 };

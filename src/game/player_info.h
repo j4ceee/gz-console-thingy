@@ -19,8 +19,9 @@ namespace gz
     };
 
     // login save data structure
-    struct CLoginSaveLoader
+    class CLoginSaveLoader
     {
+    public:
         char pad_0x0[0x1F0];            // 0x000 → 0x1F0
         int32_t command_tokens;         // 0x1F0 → 0x1F4
         char pad_0x1F4[0x6AC];          // 0x1F4 → 0x8A0
@@ -32,10 +33,17 @@ namespace gz
         int32_t active_player;          // 0x21C0 (0-3 for player index)
     };
 
+    class CSkillManager
+    {
+    public:
+    };
+
     class CPlayerInformation
     {
     public:
-        char pad_0x0[0x80];             // 0x000 → 0x080
+        char pad_0x0[0x20];             // 0x000 → 0x020
+        CSkillManager* skill_manager;   // 0x020 → 0x028 (pointer to skill manager)
+        char pad_0x28[0x58];            // 0x028 → 0x080
         CLoginSaveLoader* save_loader;  // 0x080 → 0x088 (pointer to save loader)
         char pad_0x88[0x108];           // 0x088 → 0x190
         int32_t prestige_points;        // 0x190 → 0x194 (DIRECT value)

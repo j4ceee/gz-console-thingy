@@ -33,6 +33,8 @@ namespace gz
         bool enableInfiniteFuel = false;
         bool enableInfiniteBikeHealth = false;
         bool fpPlayerShadow = false;
+        bool hackingAlwaysSucceeds = false;
+        bool unlimitedHackingTime = false;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

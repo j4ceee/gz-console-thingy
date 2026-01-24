@@ -51,6 +51,7 @@ void InitAddresses(bool is_steam)
     g_Address[DAMAGEABLE_IS_INVULNERABLE] = (is_steam ? 0x1406db850 : 0x1406db460) + offset;
     g_Address[CHARACTER_REVIVE] = (is_steam ? 0x140624590 : 0x1406241a0) + offset;
     g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
+    g_Address[REQUEST_ANIMAL_HACK] = (is_steam ? 0x1409912e0 : 0x140999430) + offset;
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;
     g_Address[FUNC_VSNPRINTF] = (is_steam ? 0x140de69b0 : 0x140e2dd60) + offset;
     g_Address[FUNC_SCRIPT_ERROR_REPORT] = (is_steam ? 0x140e7eba0 : 0x140ec5770) + offset;

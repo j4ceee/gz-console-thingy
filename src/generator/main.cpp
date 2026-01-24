@@ -402,6 +402,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("REQUEST_ANIMAL_HACK", result, [&] {
+       auto match = pattern("E8 ? ? ? ? 89 ? ? ? ? ? 48 ? ? E8 ? ? ? ? 84 ?", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("HASHING_FUNC", result, [&] {
         auto match = pattern("49 8B ? FF ? ? ? ? ? ? ? ? ? ? ? 48 8D 0D ? ? ? ? E8 ? ? ? ? 89 44 24 ? 48 8B ? ?", game_file)
             .count(1)

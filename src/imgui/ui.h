@@ -6,7 +6,7 @@
 #include <Windows.h>
 
 #include "imgui_internal.h"
-#include "game/player_manager.h"
+#include "game/player_network_manager.h"
 
 namespace gz
 {

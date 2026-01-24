@@ -1,6 +1,6 @@
 #include "../ui.h"
 #include "../fonts/IconsMaterialDesign.h"
-#include "game/player_manager.h"
+#include "game/player_network_manager.h"
 #include "patches/building_patches.h"
 #include "patches/resource_patch.h"
 
@@ -296,6 +296,9 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
         UI::HelpMarker("Prevents vehicle fuel from decreasing while driving.\n"
                 "Credit: aSwedishMagyar & sanitka");
 
+        ImGui::Spacing();
+        ImGui::Spacing();
+
         auto* vehicleManager = CVehicleManager::instance();
         if (vehicleManager)
         {
@@ -367,6 +370,26 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             ImGui::Text("Active Player Data Address: 0x%p", playerInfo->GetActivePlayerData());
             ImGui::TreePop();
         }
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        if (ImGui::Checkbox("Hacking Always Succeeds", &settings.hackingAlwaysSucceeds))
+        {
+            // save setting
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Makes all hacking attempts automatically succeed.");
+
+        if (ImGui::Checkbox("Unlimited Hacking Time", &settings.unlimitedHackingTime))
+        {
+            // save setting
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Makes machines stay hacked for a really long time without needing to re-hack them.",
+            "Fun Fact: This isn't really unlimited, more like 3 hours.");
     }
 
     ImGui::Spacing();

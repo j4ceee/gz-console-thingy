@@ -2,7 +2,7 @@
 
 #include "addresses.h"
 #include "player.h"
-#include "player_manager.h"
+#include "player_network_manager.h"
 #include "../vector.h"
 #include "meow_hook/util.h"
 

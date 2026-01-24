@@ -3,8 +3,7 @@
 #include "fonts/roboto-regular.cpp"
 #include "fonts/materialicons.cpp"
 
-#include "game/player_manager.h"
-#include "game/event_scheduler.h"
+#include "game/player_network_manager.h"
 
 #include <imgui.h>
 #include "imgui_internal.h"

@@ -14,7 +14,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(14); // pre-allocate space
+            m_settingsCache.reserve(16); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -99,6 +99,10 @@ namespace gz
                     CPlayer::SetFPPlayerShadowEnabled(false);
                 }
             }});
+            m_settingsCache.push_back({"HackingAlwaysSucceeds",'b',const_cast<bool*>(&hackingAlwaysSucceeds),
+                []() {}}); // handled in hacking hook
+            m_settingsCache.push_back({"UnlimitedHackingTime",'b',const_cast<bool*>(&unlimitedHackingTime),
+                []() {}}); // handled in hacking hook
 
             m_cacheInitialized = true;
         }

@@ -11,8 +11,8 @@
 #include <meow_hook/detour.h>
 #include <imgui.h>
 
+#include "game/animal_network.h"
 #include "game/clock.h"
-#include "game/damageable.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
 #include "game/environment_gfx.h"
@@ -124,6 +124,9 @@ bool InitPatchesAndHooks()
             // required for several patches -> fail initialization
             throw std::runtime_error("Failed to setup hash function");
         }
+
+        if (!CSpawnedAnimalNetworkComponent::SetupHackRequestHook())
+            Log("Failed to setup Animal Hack Request hook");
 
         if (!EventManager::Initialize())
             Log("Failed to setup EventManager hook");

@@ -21,12 +21,6 @@ class CSpawnSystem
         char _pad[0x34]; // estimated
     };
 
-    struct FakeVector {
-        void* first;   // pointer to start of data
-        void* last;    // pointer to current end
-        void* end;     // pointer to allocated end
-    };
-
     static CSpawnSystem* instance()
     {
         return *(CSpawnSystem**)GetAddress(INST_SPAWN_SYSTEM);
@@ -158,7 +152,7 @@ class CSpawnSystem
     {
         SResourceDef* ptr_buffer[4096];
 
-        FakeVector safe_vec{};
+        BasicVector safe_vec{};
         safe_vec.first = ptr_buffer;
         safe_vec.last  = ptr_buffer; // starts empty
         safe_vec.end   = ptr_buffer + 4096; // capacity limit
