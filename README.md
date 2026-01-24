@@ -33,9 +33,13 @@
 - **Unrestricted Base Building** (removing build limits and restrictions)
 - Adding **Command Tokens**
 - **Infinite Vehicle Fuel**
-- **Vehicle Health Modification**
+- **Vehicle Health Modification** & **Vehicle Invincibility**
 - Setting **Player Level & XP**
 - Adding **Skill Points**
+- **Hacking** of machines **Always Succeeds**
+- **Unlimited Hacking Duration** for machines (machines will stay hacked for a long time)
+- **First Person Shadow** can be toggled on/off
+- **Ghost Mode**: float through walls and objects (no clipping)
 
 ### World Settings
 - **Event Control** (any event can be activated at any time + option to let game decide)
