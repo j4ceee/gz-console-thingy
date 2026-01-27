@@ -54,7 +54,7 @@
 
 #### Controllable Machines / Play as Machines
 - any machine can be controlled by the player
-- controlled machines have 2 abílities that are listed at the bottom of the screen:
+- controlled machines have 2 abilities that are listed at the bottom of the screen:
   - **Primary Ability** (usually a weapon attack)
   - **Secondary Ability** (usually a movement or special ability)
 
