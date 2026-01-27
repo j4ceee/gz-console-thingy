@@ -35,6 +35,8 @@ namespace gz
         bool fpPlayerShadow = false;
         bool hackingAlwaysSucceeds = false;
         bool unlimitedHackingTime = false;
+        bool alwaysAdvancedHacking = false;
+        bool unlimitedRcSignalStrength = true;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

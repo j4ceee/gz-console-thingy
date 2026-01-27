@@ -13,7 +13,7 @@ void RenderSettingsTab()
 
 // -- HOTKEYS --
     if (ImGui::CollapsingHeader(ICON_MD_KEYBOARD " Hotkeys", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Text("Click a button and press a key to rebind");
+        ImGui::TextWrapped("Click a button and press a key to rebind");
         ImGui::Spacing();
 
         // -- UI TOGGLE HOTKEY --

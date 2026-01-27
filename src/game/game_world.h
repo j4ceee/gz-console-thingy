@@ -4,7 +4,6 @@
 #include "player.h"
 #include "player_network_manager.h"
 #include "../vector.h"
-#include "meow_hook/util.h"
 
 #pragma pack(push, 1)
 namespace gz

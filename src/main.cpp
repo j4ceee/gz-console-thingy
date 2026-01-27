@@ -6,6 +6,7 @@
 #include "addresses.h"
 #include "patches.h"
 #include "log.h"
+#include "MinHook.h"
 
 static HMODULE g_original_module = nullptr;
 
@@ -48,6 +49,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
         case DLL_PROCESS_DETACH: {
             gz::Log("DLL unloading");
+            MH_DisableHook(MH_ALL_HOOKS);
+            MH_Uninitialize();
             if (g_original_module) {
                 FreeLibrary(g_original_module);
             }

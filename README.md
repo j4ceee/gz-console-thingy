@@ -29,6 +29,7 @@
 - **Unlimited Resources** (e.g. for crafting or base building)
 - **Hiding the HUD** for a cleaner experience (Hotkey: F3 by default)
 - **Fast Travel Anywhere**: travel to any discovered location **and** to your own waypoint over the in-game map
+- Editing **Player Faction**: machines from the selected faction will treat you as an ally (available factions: Resistance, FNIX, Soviets)
 - **Disabling Detection** by enemies
 - **Unrestricted Base Building** (removing build limits and restrictions)
 - Adding **Command Tokens**
@@ -36,10 +37,26 @@
 - **Vehicle Health Modification** & **Vehicle Invincibility**
 - Setting **Player Level & XP**
 - Adding **Skill Points**
-- **Hacking** of machines **Always Succeeds**
-- **Unlimited Hacking Duration** for machines (machines will stay hacked for a long time)
 - **First Person Shadow** can be toggled on/off
 - **Ghost Mode**: float through walls and objects (no clipping)
+
+### Machines
+- **Hacking Always Succeeds**: all hacking attempts for machines will automatically succeed
+- **Unlimited Hacking Duration**: hacked machines will stay hacked for a long time without needing to re-hack them
+- **Advanced Hacking**: machines will always attack other machines, even when the 'Hacker' specialization skill is not active
+
+#### Target Machine
+- Modify various parameters of the currently targeted machine (aim at a machine and open the console)
+  - make it **invincible**
+  - **Kill** it instantly
+  - set its **Faction** (Resistance, FNIX, Soviets)
+  - **Control Targeted Machine**
+
+#### Controllable Machines / Play as Machines
+- any machine can be controlled by the player
+- controlled machines have 2 abilities that are listed at the bottom of the screen:
+  - **Primary Ability** (usually a weapon attack)
+  - **Secondary Ability** (usually a movement or special ability)
 
 ### World Settings
 - **Event Control** (any event can be activated at any time + option to let game decide)

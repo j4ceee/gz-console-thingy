@@ -2,10 +2,11 @@
 #include <cstdint>
 #include <vector>
 #include "addresses.h"
-#include "meow_hook/detour.h"
+#include "hook_helpers.h"
 #include "patches/event_time_patch.h"
 #include "util/hash_utils.h"
 
+#pragma pack(push, 1)
 namespace gz
 {
     // known event hashes
@@ -96,8 +97,7 @@ namespace gz
             if (s_originalEventScheduler != nullptr) {
                 return true; // already hooked
             }
-            s_originalEventScheduler = MH_STATIC_DETOUR(GetAddress(EVENT_SCHEDULER), HookedEventScheduler);
-            return s_originalEventScheduler != nullptr;
+            return MH_CreateHookGZ(EVENT_SCHEDULER, &HookedEventScheduler, &s_originalEventScheduler);
         }
 
     public:
@@ -166,4 +166,5 @@ namespace gz
             return m_eventManager;
         }
     };
-}
+} // namespace gz
+#pragma pack(pop)

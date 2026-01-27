@@ -42,7 +42,7 @@ public:
     /// Get the D3D11 device context from GZ's internal structures.
     /// </summary>
     static ID3D11DeviceContext* GetDeviceContext(void* base) {
-        RenderParams* params = (RenderParams*)base;
+        auto* params = (RenderParams*)base;
         return params->internalStruct->m_deviceContext;
     }
 
@@ -50,9 +50,9 @@ public:
     /// Get the DXGI swap chain from GZ's internal structures.
     /// </summary>
     static IDXGISwapChain* GetSwapChain(void* base) {
-        RenderParams* params = (RenderParams*)base;
+        auto* params = (RenderParams*)base;
         return params->swapChain;
     }
 };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

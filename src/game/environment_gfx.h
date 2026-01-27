@@ -2,12 +2,10 @@
 #include "addresses.h"
 #include <cstdint>
 
-#include "log.h"
 #include "data/weather_data.h"
-#include "meow_hook/detour.h"
-#include "meow_hook/util.h"
 #include "util/hash_utils.h"
 
+#pragma pack(push, 1)
 namespace gz
 {
     class CEnvironmentGfxManager
@@ -154,7 +152,7 @@ namespace gz
         if (g_originalWeatherUpdate) {
             return true; // already set up
         }
-        g_originalWeatherUpdate = MH_STATIC_DETOUR(GetAddress(WEATHER_UPDATE), HookedWeatherUpdate);
-        return g_originalWeatherUpdate != nullptr;
+        return MH_CreateHookGZ(WEATHER_UPDATE, &HookedWeatherUpdate, &g_originalWeatherUpdate);
     }
-}
+} // namespace gz
+#pragma pack(pop)

@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 #include "imgui_internal.h"
+#include "game/damageable.h"
 #include "game/game_state.h"
 
 namespace gz
@@ -206,6 +207,13 @@ void UI::Render()
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
+        if (ImGui::BeginTabItem("Machines")) {
+            ImGui::BeginChild("MachineContent", ImVec2(0, 0), false);
+            ImGui::Spacing();
+            UITabs::RenderMachineTab(playerMgr);
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
         if (ImGui::BeginTabItem("World")) {
             ImGui::BeginChild("WorldContent", ImVec2(0, 0), false);
             ImGui::Spacing();
@@ -291,5 +299,58 @@ void UI::SettingsHandlerWriteAll(ImGuiContext*, ImGuiSettingsHandler* handler, I
     buf->appendf("[%s][Settings]\n", handler->TypeName);
     ui->m_settings.WriteAll(buf);
     buf->append("\n");
+}
+
+void UI::GetHealthModification(CDamageable* damageable, const char* identifier, const char* invulTip, const char* healthNote,
+const char* reviveLabel, const char* reviveTip, std::function<void()> onRevive)
+{
+    std::string identifierStr = std::string(identifier);
+    int currentHealth = damageable->GetHealth();
+    int maxHealth = damageable->GetMaxHealth();
+    int healthPercent = damageable->GetHealthInPercentage();
+
+    ImGui::Text("Current: %d / %d (%d%%)", currentHealth, maxHealth, healthPercent);
+
+    if (!damageable->IsDestroyed() || identifierStr != "character") // only characters can be revived
+    {
+        if (ImGui::SliderInt(("Health (%)##" + identifierStr).c_str(), &healthPercent, 0, 100)) {
+            damageable->SetHealthInPercentage(healthPercent);
+        }
+        ImGui::SameLine();
+        if (strlen(healthNote) > 0) {
+            UI::HelpMarker("Sets health as a percentage of max health.", healthNote);
+        } else
+        {
+            UI::HelpMarker("Sets health as a percentage of max health.");
+        }
+        if (ImGui::Button(("Restore Full Health##" + identifierStr).c_str())) {
+            damageable->RestoreHealth();
+        }
+    }
+    // if destroyed (and not a vehicle), show revive button
+    else
+    {
+        if (ImGui::Button((reviveLabel + std::string("##") + identifierStr).c_str())) {
+            onRevive();
+        }
+        ImGui::SameLine();
+        UI::HelpMarker(reviveTip);
+    }
+
+    // invulnerability
+    bool invulnerable = damageable->IsInvulnerable();
+    if (ImGui::Checkbox(("Invulnerable##" + identifierStr).c_str(), &invulnerable)) {
+        damageable->SetInvulnerable(invulnerable, identifierStr == "character" ? 'p' : 0);
+        // save setting for vehicles
+        if (identifierStr == "vehicle")
+        {
+            UI* ui = UI::Get();
+            ConsoleSettings& settings = ui->GetSettings();
+            settings.enableInfiniteBikeHealth = invulnerable;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+    }
+    ImGui::SameLine();
+    UI::HelpMarker(invulTip);
 }
 } // namespace gz
