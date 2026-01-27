@@ -2,7 +2,8 @@
 
 #include <cstdint>
 #include "addresses.h"
-#include "meow_hook/detour.h"
+#include "hook_helpers.h"
+#include "imgui/ui.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -48,6 +49,8 @@ namespace gz
                 requestData->hackSuccessProbability = 10.0f;
             if (settings.unlimitedHackingTime)
                 requestData->hackDurationMs = 10000000; // 2.7 hours
+            if (settings.alwaysAdvancedHacking)
+                requestData->hasAdvancedHackSkill = 1;
 
             g_requestHack(comp, requestData);
         }
@@ -57,8 +60,7 @@ namespace gz
             if (g_requestHack != nullptr) {
                 return true; // already set up
             }
-            g_requestHack = MH_STATIC_DETOUR(GetAddress(REQUEST_ANIMAL_HACK), HookedRequestHack);
-            return g_requestHack != nullptr;
+            return MH_CreateHookGZ(REQUEST_ANIMAL_HACK, &HookedRequestHack, &g_requestHack);
         }
     };
 } // namespace gz

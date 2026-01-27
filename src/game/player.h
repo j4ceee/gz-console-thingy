@@ -2,7 +2,6 @@
 
 #include "character.h"
 #include "vector.h"
-#include "meow_hook/util.h"
 
 #pragma pack(push, 1)
 
@@ -22,35 +21,26 @@ namespace gz
         CCharacter* m_owner;          // 0x1E0 → 0x1E8
     };
 
-    struct PlayerCoordinateStructure
-    {
-        char _pad0[0x3AD8]; // 0x000 → 0x3AD8
-        float worldPosX; // 0x3AD8 - base world X coordinate
-        float worldPosY; // 0x3ADC - base world Y coordinate
-        float worldPosZ; // 0x3AE0 - base world Z coordinate
-    };
-
     class CPlayer
     {
     public:
-        char _pad[0x58];                             // 0x000 → 0x58
-        PlayerCoordinateStructure* m_coordStructure; // 0x58 → 0x60 - pointer to coordinate data structure
-        char _pad1[0x88];                            // 0x60 → 0xE8
-        CMatrix4f m_transform;                       // 0xE8 → 0x128 (64 bytes) - player position
-        char _pad2[0x78];                            // 0x128 → 0x1A0
-        CCharacter* m_character;                     // 0x1A0 → 0x1A8
-        char _pad3[0x8];                             // 0x1A8 → 0x1B0
-        CPlayerAimControl* m_aimControl;             // 0x1B0 → 0x1B8
+        // CPlayer-specific data (before CAvatar)
+        char _pad_player[0x10];             //  0x00 → 0x10
+        // CAvatar starts here
+        char _pad[0x58];                    //  0x00 → 0x68
+        CCharacter* m_character;            //  0x68 → 0x70
+        char _pad1[0x88];                   //  0x70 → 0xF8
+        CMatrix4f m_transform;              //  0xF8 → 0x138 (64 bytes) - player position
+        char _pad2[0x78];                   // 0x138 → 0x1B0
+        CCharacter* m_character2;           // 0x1B0 → 0x1B8 (same as m_character but +0x08 from base)
+        char _pad3[0x8];                    // 0x1B8 → 0x1C0
+        CPlayerAimControl* m_aimControl;    // 0x1C0 → 0x1C8
 
         CCharacter* GetCharacter() const
         {
-            // m_character points to CCharacter portion (+0x08 from base)
-            // so we need to subtract 0x08 to get the actual base pointer
             if (m_character)
             {
-                return reinterpret_cast<CCharacter*>(
-                    reinterpret_cast<uintptr_t>(m_character) - 0x08
-                );
+                return m_character;
             }
             return nullptr;
         }
@@ -88,19 +78,6 @@ namespace gz
         CMatrix4f GetTransform() const
         {
             return m_transform;
-        }
-
-        CVector3f GetWorldCoordinates() const
-        {
-            if (m_coordStructure)
-            {
-                return CVector3f{
-                    m_coordStructure->worldPosX,
-                    m_coordStructure->worldPosY,
-                    m_coordStructure->worldPosZ
-                };
-            }
-            return CVector3f{0.0f, 0.0f, 0.0f};
         }
 
         static bool GetFPPlayerShadowEnabled()

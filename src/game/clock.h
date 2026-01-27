@@ -2,8 +2,6 @@
 
 #include "addresses.h"
 #include "util/game_update.h"
-#include "meow_hook/detour.h"
-#include "meow_hook/util.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -35,8 +33,11 @@ namespace gz
             if (g_updateGame != nullptr) {
                 return true; // already set up
             }
-            g_updateGame = MH_STATIC_DETOUR(GetAddress(CLOCK_UPDATE_GAME), Hooked_UpdateGame);
-            return g_updateGame != nullptr;
+            return MH_CreateHookGZ(
+                CLOCK_UPDATE_GAME,
+                &Hooked_UpdateGame,
+                &g_updateGame
+            );
         }
     };
 } // namespace gz

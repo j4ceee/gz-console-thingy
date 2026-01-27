@@ -8,10 +8,11 @@
 
 #include <iostream>
 #include <__msvc_ostream.hpp>
-#include <meow_hook/detour.h>
 #include <imgui.h>
 
 #include "game/animal_network.h"
+#include "game/animal_spotting_manager.h"
+#include "game/camera_collision_modifier.h"
 #include "game/clock.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
@@ -97,23 +98,52 @@ bool InitPatchesAndHooks()
 
     Log("Checking sanity check address: %p", (void *)GetAddress(SANITY_CHECK));
 
-    // basic sanity check, ensure the game version is what we are expecting.
-    // this will prevent crashes if the game updates, but someone is using an old version of this mod.
+    // basic sanity check
     if (strcmp((const char *)GetAddress(SANITY_CHECK), "Avalanche Engine") != 0) {
         return false;
     }
     Log("Sanity check passed, setting up hooks...");
 
+    if (MH_Initialize() != MH_OK)
+    {
+        Log("Failed to initialize MinHook");
+        return false;
+    }
+
     Log("Hooking WndProc...");
     // WndProc
-    pfn_WndProc = MH_STATIC_DETOUR(GetAddress(WND_PROC), WndProc);
+    bool success = MH_CreateHookGZ(
+        WND_PROC,
+        &WndProc,
+        &pfn_WndProc
+    );
+
+    if (!success)
+    {
+        Log("Failed to hook WndProc");
+        return false;
+    }
+
     Log("WndProc hooked successfully");
 
     // Graphics::Flip
-    Graphics::pfn_Flip = MH_STATIC_DETOUR(GetAddress(GRAPHICS_FLIP), Graphics::GraphicsFlipCallback);
+    success = MH_CreateHookGZ(
+        GRAPHICS_FLIP,
+        &Graphics::GraphicsFlipCallback,
+        &Graphics::pfn_Flip
+    );
+
+    if (!success)
+    {
+        Log("Failed to hook Graphics::Flip");
+        return false;
+    }
 
     // game patches
     try {
+        if (!CCameraCollisionModifier::SetupCheckCollisionHook())
+            Log("Failed to setup Camera Distance Patch");
+
         if (!CClock::SetupUpdateGameHook())
             Log("Failed to setup Clock UpdateGame hook");
 
@@ -127,6 +157,12 @@ bool InitPatchesAndHooks()
 
         if (!CSpawnedAnimalNetworkComponent::SetupHackRequestHook())
             Log("Failed to setup Animal Hack Request hook");
+
+        if (!CAnimalSpottingManager::SetupFindTargetHook())
+            Log("Failed to setup Animal Spotting Find Target hook");
+
+        if (!CRemoteController::SetupSignalStrengthHook())
+            Log("Failed to setup Remote Controller Signal Strength hook");
 
         if (!EventManager::Initialize())
             Log("Failed to setup EventManager hook");

@@ -22,11 +22,12 @@ namespace gz::Utils
             UI* ui = UI::Get();
             ConsoleSettings& settings = ui->GetSettings();
 
-            // update player invulnerability status
             if (CNetworkPlayerManager* networkPlayerManager = CNetworkPlayerManager::instance())
             {
-                CDamageable* playerDamageable = networkPlayerManager->GetCharacter()->GetDamageable();
+                CCharacter* playerCharacter = networkPlayerManager->GetCharacter();
 
+                // update player invulnerability status
+                CDamageable* playerDamageable = playerCharacter->GetDamageable();
                 if (playerInvulnerable && !playerDamageable->IsInvulnerable())
                 {
                     playerDamageable->SetInvulnerable(true);

@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-#include <assert.h>
+#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -90,8 +90,18 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     // clang-format off
 
+    // dummy search (there are issues with first pattern search sometimes, with too many patterns the first may fail, this prevents that)
+    try {
+        pattern("4C 89 ? ? ? ? ? 48 8D ? ? ? ? ? 48", game_file).count(1).get(0);
+    } catch (...) {
+        // ignore errors from dummy search
+    }
+
     FindPattern("SANITY_CHECK", result, [&] {
-        auto match = pattern("48 8D ? ? ? ? ? 48 ? ? ? ? ? ? 4C ? ? ? ? ? ? C7 81 ? ? ? ? ? ? ? ?", game_file).count(1).get(0).adjust(3);
+        auto match = pattern("4C 89 ? ? ? ? ? 48 8D ? ? ? ? ? 48 89 ? ? ? ? ? 4C 89 ? ? ? ? ? C7", game_file)
+            .count(1)
+            .get(0)
+            .adjust(10);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -404,6 +414,49 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     FindPattern("REQUEST_ANIMAL_HACK", result, [&] {
        auto match = pattern("E8 ? ? ? ? 89 ? ? ? ? ? 48 ? ? E8 ? ? ? ? 84 ?", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("REQUEST_ANIMAL_CONTROL", result, [&] {
+       auto match = pattern("44 0F ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 8B CF E8 ? ? ? ? 44", game_file)
+           .count(1)
+           .get(0)
+           .adjust(18)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("RELEASE_ANIMAL_CONTROL", result, [&] {
+       auto match = pattern("E8 ? ? ? ? ? ? F3 0F ? ? ? ? ? ? F3 41 ? ? ? ? F3 0F ? ? ? ? ? ? 48", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("GET_SIGNAL_STRENGTH", result, [&] {
+       auto match = pattern("E8 ? ? ? ? 48 ? ? E8 ? ? ? ? 0F ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? E8", game_file)
+           .count(1)
+           .get(0)
+           .adjust(8)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("SPOTTING_FIND_TARGET", result, [&] {
+       auto match = pattern("0F ? ? ? ? ? 49 8B D4 48 ? ? E8 ? ? ? ? 48 ? ? ? ? 48", game_file)
+           .count(1)
+           .get(0)
+           .adjust(12)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CAMERA_CHECK_COLLISION", result, [&] {
+       auto match = pattern("E8 ? ? ? ? F3 0F ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? ? ? ? 48", game_file)
            .count(1)
            .get(0)
            .extract_call();

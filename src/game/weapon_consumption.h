@@ -1,7 +1,6 @@
 #pragma once
 #include <algorithm>
 
-#include "meow_hook/detour.h"
 #include "addresses.h"
 
 #pragma pack(push, 1)
@@ -35,8 +34,7 @@ namespace gz::AmmoDeployableConsumption
         if (g_consumeAmmo != nullptr) {
             return true; // already set up
         }
-        g_consumeAmmo = MH_STATIC_DETOUR(GetAddress(CONSUME_AMMO), HookedConsumeAmmo);
-        return g_consumeAmmo != nullptr;
+        return MH_CreateHookGZ(CONSUME_AMMO, &HookedConsumeAmmo, &g_consumeAmmo);
     }
 
     inline bool SetupDeployableHook()
@@ -44,8 +42,7 @@ namespace gz::AmmoDeployableConsumption
         if (g_consumeDeployables != nullptr) {
             return true; // already set up
         }
-        g_consumeDeployables = MH_STATIC_DETOUR(GetAddress(CONSUME_DEPLOYABLES), HookedConsumeDeployables);
-        return g_consumeDeployables != nullptr;
+        return MH_CreateHookGZ(CONSUME_DEPLOYABLES, &HookedConsumeDeployables, &g_consumeDeployables);
     }
 
     inline bool IsAmmoConsumptionDisabled()

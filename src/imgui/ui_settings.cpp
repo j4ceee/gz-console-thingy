@@ -14,7 +14,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(16); // pre-allocate space
+            m_settingsCache.reserve(18); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -103,6 +103,10 @@ namespace gz
                 []() {}}); // handled in hacking hook
             m_settingsCache.push_back({"UnlimitedHackingTime",'b',const_cast<bool*>(&unlimitedHackingTime),
                 []() {}}); // handled in hacking hook
+            m_settingsCache.push_back({"AdvancedHacking",'b',const_cast<bool*>(&alwaysAdvancedHacking),
+                []() {}}); // handled in hacking hook
+            m_settingsCache.push_back({"UnlimitedRCSignalStrength",'b',const_cast<bool*>(&unlimitedRcSignalStrength),
+                [this]() { g_unlimitedSignalStrength = unlimitedRcSignalStrength; }});
 
             m_cacheInitialized = true;
         }

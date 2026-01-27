@@ -16,61 +16,10 @@
 #include "patches/ui_patches.h"
 #include "patches/vehicle_patches.h"
 
+#include "game/animal_spotting_manager.h"
+
 namespace gz::UITabs
 {
-void GetHealthModification(CDamageable* damageable, const char* identifier, const char* invulTip, const char* healthNote = "",
-    const char* reviveLabel = "", const char* reviveTip = "", std::function<void()> onRevive = []() {})
-{
-    std::string identifierStr = std::string(identifier);
-    int currentHealth = damageable->GetHealth();
-    int maxHealth = damageable->GetMaxHealth();
-    int healthPercent = damageable->GetHealthInPercentage();
-
-    ImGui::Text("Current: %d / %d (%d%%)", currentHealth, maxHealth, healthPercent);
-
-    if (!damageable->IsDestroyed() || identifierStr == "vehicle") // vehicles can never be revived
-    {
-        if (ImGui::SliderInt(("Health (%)##" + identifierStr).c_str(), &healthPercent, 0, 100)) {
-            damageable->SetHealthInPercentage(healthPercent);
-        }
-        ImGui::SameLine();
-        if (strlen(healthNote) > 0) {
-            UI::HelpMarker("Sets health as a percentage of max health.", healthNote);
-        } else
-        {
-            UI::HelpMarker("Sets health as a percentage of max health.");
-        }
-        if (ImGui::Button(("Restore Full Health##" + identifierStr).c_str())) {
-            damageable->RestoreHealth();
-        }
-    }
-    // if destroyed (and not a vehicle), show revive button
-    else
-    {
-        if (ImGui::Button((reviveLabel + std::string("##") + identifierStr).c_str())) {
-            onRevive();
-        }
-        ImGui::SameLine();
-        UI::HelpMarker(reviveTip);
-    }
-
-    // invulnerability
-    bool invulnerable = damageable->IsInvulnerable();
-    if (ImGui::Checkbox(("Invulnerable##" + identifierStr).c_str(), &invulnerable)) {
-        damageable->SetInvulnerable(invulnerable, identifierStr == "character" ? 'p' : 0);
-        // save setting for vehicles
-        if (identifierStr == "vehicle")
-        {
-            UI* ui = UI::Get();
-            ConsoleSettings& settings = ui->GetSettings();
-            settings.enableInfiniteBikeHealth = invulnerable;
-            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-        }
-    }
-    ImGui::SameLine();
-    UI::HelpMarker(invulTip);
-}
-
 void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 {
     UI* ui = UI::Get();
@@ -82,7 +31,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     if (ImGui::CollapsingHeader(ICON_MD_FAVORITE " Health", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (character) {
             auto* characterDmg = character->GetDamageable();
-            GetHealthModification(
+            UI::GetHealthModification(
                 characterDmg,
                 "character",
                 "Makes the player invulnerable to all damage.",
@@ -96,15 +45,16 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##player"))
         {
             ImGui::Text("CPlayer Address: 0x%p", playerMgr->GetPlayer());
+            ImGui::Text("CAvatar Address from CCharacter: 0x%p", playerMgr->GetPlayer()->GetCharacter()->m_avatar);
             ImGui::Text("CCharacter Address from CPlayer: 0x%p", playerMgr->GetPlayer()->GetCharacter());
-            ImGui::Text("CCharacter Address from CNetworkPlayerManager: 0x%p", playerMgr->GetCharacter());
+            ImGui::Text("CCharacter Address from CNetworkPlayer: 0x%p", playerMgr->GetCharacter());
             ImGui::Text("CNetworkPlayerComponent Address: 0x%p", playerMgr->GetPlayerNetworkComponent());
             ImGui::Text("Player Count: %d", playerMgr->GetPlayerCount());
 
             ImGui::Spacing();
             CVector3f aimPos = playerMgr->GetPlayer()->GetAimPosition();
             ImGui::Text("Aim Position: (%.2f, %.2f, %.2f)", aimPos.x, aimPos.y, aimPos.z);
-            CVector3f worldPos = playerMgr->GetPlayer()->GetWorldCoordinates();
+            CVector3f worldPos = playerMgr->GetPlayer()->GetPositionVector();
             ImGui::Text("World Position: (%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z);
             float raycastDistance = playerMgr->GetPlayer()->GetAimRaycastDistance();
             ImGui::Text("Aim Raycast Distance: %.2f", raycastDistance);
@@ -229,8 +179,8 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
         // factions: 0 = player / humans / default, 2 = fnix, 5 = soviets
         const int factionValues[] = {0, 2, 5};
         int currentIndex = 0;
-        if (character->m_faction == 2) currentIndex = 1;
-        else if (character->m_faction == 5) currentIndex = 2;
+        if (character->GetFaction() == 2) currentIndex = 1;
+        else if (character->GetFaction() == 5) currentIndex = 2;
 
         if (ImGui::Combo("Faction", &currentIndex, "Resistance\0FNIX\0Soviets\0"))
         {
@@ -308,7 +258,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             {
                 auto* vehicleDmg = vehicle->GetDamageable();
 
-                GetHealthModification(
+                UI::GetHealthModification(
                     vehicleDmg,
                     "vehicle",
                     "Makes the vehicle invulnerable to all damage.",
@@ -370,26 +320,6 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             ImGui::Text("Active Player Data Address: 0x%p", playerInfo->GetActivePlayerData());
             ImGui::TreePop();
         }
-
-        ImGui::Spacing();
-        ImGui::Spacing();
-
-        if (ImGui::Checkbox("Hacking Always Succeeds", &settings.hackingAlwaysSucceeds))
-        {
-            // save setting
-            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-        }
-        ImGui::SameLine();
-        UI::HelpMarker("Makes all hacking attempts automatically succeed.");
-
-        if (ImGui::Checkbox("Unlimited Hacking Time", &settings.unlimitedHackingTime))
-        {
-            // save setting
-            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-        }
-        ImGui::SameLine();
-        UI::HelpMarker("Makes machines stay hacked for a really long time without needing to re-hack them.",
-            "Fun Fact: This isn't really unlimited, more like 3 hours.");
     }
 
     ImGui::Spacing();

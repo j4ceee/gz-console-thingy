@@ -101,5 +101,5 @@ namespace gz
             SetTime(newTime);
         }
     };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

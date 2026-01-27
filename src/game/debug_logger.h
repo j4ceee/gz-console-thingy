@@ -3,8 +3,6 @@
 
 #include "addresses.h"
 #include "log.h"
-#include "meow_hook/detour.h"
-#include <cstdarg>
 
 #pragma pack(push, 1)
 namespace gz
@@ -79,12 +77,14 @@ namespace gz
             return true; // already hooked
         }
 
-        g_origVsnprintf = MH_STATIC_DETOUR(GetAddress(FUNC_VSNPRINTF), HookedVsnprintfInternal);
-        g_origScriptError = MH_STATIC_DETOUR(GetAddress(FUNC_SCRIPT_ERROR_REPORT), HookedScriptError);
-
-        if (g_origVsnprintf == nullptr || g_origScriptError == nullptr) {
+        if (bool success1 = MH_CreateHookGZ(FUNC_VSNPRINTF, &HookedVsnprintfInternal, &g_origVsnprintf); !success1) {
             return false;
         }
+
+        if (bool success2 = MH_CreateHookGZ(FUNC_SCRIPT_ERROR_REPORT, &HookedScriptError, &g_origScriptError); !success2) {
+            return false;
+        }
+
         return true;
     }
 }

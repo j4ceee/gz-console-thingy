@@ -50,5 +50,5 @@ namespace gz
             return world;
         }
     };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

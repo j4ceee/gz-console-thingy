@@ -37,6 +37,12 @@ namespace gz
         static void HoverTooltip(const char* text, const char* warning = nullptr);
         static void InfoText(const char* text, const char* warning = nullptr);
         static void WarningText(const char* text, bool wrap = false);
+        static void StartDisabledText() { ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]); }
+        static void EndDisabledText() { ImGui::PopStyleColor(); }
+
+        static void GetHealthModification(CDamageable* damageable, const char* identifier, const char* invulTip,
+                                   const char* healthNote = "", const char* reviveLabel = "", const char* reviveTip = "",
+                                   std::function<void()> onRevive = []() {});
 
         bool m_isCapturingToggleUI = false;
         bool m_isCapturingTeleportKey = false;
@@ -63,6 +69,7 @@ namespace gz
     {
         void RenderPlayerTab(CNetworkPlayerManager* manager);
         void RenderWorldTab(CNetworkPlayerManager* manager);
+        void RenderMachineTab(CNetworkPlayerManager* manager);
         void RenderSettingsTab();
     }
 

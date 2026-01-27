@@ -2,7 +2,6 @@
 
 #include "addresses.h"
 #include "game_state.h"
-#include "meow_hook/util.h"
 #include <cmath>
 
 #pragma pack(push, 1)

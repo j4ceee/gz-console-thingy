@@ -45,5 +45,5 @@ namespace gz
     static_assert(offsetof(CMap, cursorScreenX) == 0x8C, "cursorWorldX offset mismatch!");
     static_assert(offsetof(CMap, cursorScreenY) == 0x90, "cursorWorldY offset mismatch!");
     static_assert(offsetof(CMap, mapScale) == 0x9C, "mapScale offset mismatch!");
-}// namespace gz
+} // namespace gz
 #pragma pack(pop)

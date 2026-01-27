@@ -194,5 +194,5 @@ namespace gz
             return true;
         }
     };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

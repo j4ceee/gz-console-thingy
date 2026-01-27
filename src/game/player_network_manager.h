@@ -59,5 +59,5 @@ namespace gz
             return m_playerCount;
         }
     };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

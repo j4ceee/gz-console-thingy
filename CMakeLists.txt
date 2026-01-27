@@ -22,39 +22,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out/${CMAKE_BUILD_TYPE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
 
 #
-# asmjit library
-#
-add_library(asmjit STATIC)
-target_compile_definitions(asmjit PRIVATE ASMJIT_STATIC)
-target_include_directories(asmjit PRIVATE deps/meow-hook/third_party/asmjit/src)
-file(GLOB_RECURSE ASMJIT_SOURCES "deps/meow-hook/third_party/asmjit/src/*.cpp" "deps/meow-hook/third_party/asmjit/src/*.h")
-target_sources(asmjit PRIVATE ${ASMJIT_SOURCES})
-
-#
-# zydis library
-#
-add_library(zydis STATIC)
-target_compile_definitions(zydis PRIVATE
-    ZYCORE_STATIC_DEFINE
-    ZYDIS_STATIC_DEFINE
-)
-target_include_directories(zydis PRIVATE
-    deps/meow-hook/third_party/zydis/src
-    deps/meow-hook/third_party/zydis/include
-    deps/meow-hook/third_party/zydis/msvc
-    deps/meow-hook/third_party/zydis/dependencies/zycore/include
-)
-file(GLOB_RECURSE ZYDIS_SOURCES
-    "deps/meow-hook/third_party/zydis/dependencies/zycore/src/*.c"
-    "deps/meow-hook/third_party/zydis/dependencies/zycore/src/*.h"
-    "deps/meow-hook/third_party/zydis/dependencies/zycore/include/*.h"
-    "deps/meow-hook/third_party/zydis/src/*.c"
-    "deps/meow-hook/third_party/zydis/src/*.h"
-    "deps/meow-hook/third_party/zydis/include/Zydis/*.h"
-)
-target_sources(zydis PRIVATE ${ZYDIS_SOURCES})
-
-#
 # fw1 library
 #
 add_library(fw1 STATIC)
@@ -67,30 +34,28 @@ target_sources(fw1 PRIVATE ${FW1_SOURCES})
 add_subdirectory(deps/imgui-cmake)
 
 #
+# minhook library
+#
+add_subdirectory(deps/minhook)
+
+#
 # meow-hook library
 #
 add_library(meow-hook STATIC)
-target_compile_definitions(meow-hook PRIVATE
-    NOMINMAX
-    ASMJIT_STATIC
-    ZYCORE_STATIC_DEFINE
-    ZYDIS_STATIC_DEFINE
-)
 target_include_directories(meow-hook PRIVATE
     deps/meow-hook/include
-    deps/meow-hook/third_party/asmjit/src
-    deps/meow-hook/third_party/zydis/src
-    deps/meow-hook/third_party/zydis/include
-    deps/meow-hook/third_party/zydis/msvc
-    deps/meow-hook/third_party/zydis/dependencies/zycore/include
+)
+target_compile_definitions(meow-hook PRIVATE
+    NOMINMAX
 )
 file(GLOB MEOW_HOOK_SOURCES
-    "deps/meow-hook/src/*.cc"
-    "deps/meow-hook/src/*.h"
-    "deps/meow-hook/include/meow_hook/*.h"
+    "deps/meow-hook/src/pattern_search.cc"
+    "deps/meow-hook/src/instruction_set.cc"
+    "deps/meow-hook/src/instruction_set.h"
+    "deps/meow-hook/include/meow_hook/pattern_search.h"
+    "deps/meow-hook/include/meow_hook/util.h"
 )
 target_sources(meow-hook PRIVATE ${MEOW_HOOK_SOURCES})
-target_link_libraries(meow-hook PRIVATE asmjit zydis)
 
 #
 # xinput9_1_0 main project (DLL)
@@ -100,6 +65,7 @@ target_compile_definitions(xinput9_1_0 PRIVATE NOMINMAX)
 target_include_directories(xinput9_1_0 PRIVATE
     src
     deps/fw1
+    deps/minhook/include
     deps/meow-hook/include
 )
 
@@ -113,7 +79,7 @@ file(GLOB_RECURSE GENERATOR_SOURCES "src/generator/*")
 list(REMOVE_ITEM XINPUT_SOURCES ${GENERATOR_SOURCES})
 
 target_sources(xinput9_1_0 PRIVATE ${XINPUT_SOURCES} src/xinput9_1_0.def)
-target_link_libraries(xinput9_1_0 PRIVATE fw1 meow-hook imgui)
+target_link_libraries(xinput9_1_0 PRIVATE fw1 minhook meow-hook imgui)
 
 # set the DEF file (MSVC only)
 if(MSVC)

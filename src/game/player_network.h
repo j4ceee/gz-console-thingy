@@ -31,7 +31,7 @@ namespace gz
         char _pad2[0x10];                           // 0x130 → 0x140 (16 bytes)
         CPlayer* m_playerPtr;                       // 0x140 → 0x148 (8 bytes)
         char _pad3[0x8];                            // 0x148 → 0x150
-        CCharacter* m_characterPtr;                 // 0x150 → 0x158 (base pointer, CCharacter over CPlayer starts at +0x08)
+        CCharacter* m_characterPtr;                 // 0x150 → 0x158 (same as CPlayer->m_character)
         char _pad4[0x8];                            // 0x158 → 0x160
         uint32_t m_characterNetworkId;              // 0x160 → 0x164 (4 bytes)
         char _pad5[0xC];                            // 0x164 → 0x170 (12 bytes)
@@ -46,7 +46,11 @@ namespace gz
 
         CPlayer* GetPlayer() const
         {
-            return m_playerPtr;
+            // m_playerPtr points to CAvatar portion (+0x10 from base)
+            // so we need to subtract 0x10 to get the actual base CPlayer pointer
+            return reinterpret_cast<CPlayer*>(
+                reinterpret_cast<uintptr_t>(m_playerPtr) - 0x10
+            );
         }
 
         CCharacter* GetCharacter() const

@@ -4,11 +4,14 @@
 #include <vector>
 
 #include "animal.h"
+#include "hook_helpers.h"
 #include "vector.h"
 
 #pragma pack(push, 1)
 namespace gz
 {
+    class CAnimalSpottingManager;
+
     struct SSpottedAnimal
     {
         uint32_t        m_Timer;                // 0x00 → 0x04
@@ -18,6 +21,11 @@ namespace gz
         CAnimal*        m_Animal;               // 0x10 → 0x18
         BasicSharedPtr  m_Character;            // 0x18 → 0x28 (16 bytes)
     };
+
+    using RequestFindTargetFunc = void(*)(void* casm, void* p2);
+    inline RequestFindTargetFunc g_findTarget = nullptr;
+
+    inline CAnimalSpottingManager* g_animalSpottingManager = nullptr;
 
     class CAnimalSpottingManager
     {
@@ -32,6 +40,14 @@ namespace gz
         char        _pad1[0x10];            // 0x38 → 0x48
         float       m_TargetTimer;          // 0x48 → 0x4C
         float       m_TargetAnimalDistance; // 0x4C → 0x50
+
+        static CAnimalSpottingManager* instance()
+        {
+            if (g_animalSpottingManager) {
+                return g_animalSpottingManager;
+            }
+            return nullptr;
+        }
 
         size_t GetSpottedAnimalCount() const
         {
@@ -58,6 +74,22 @@ namespace gz
         float GetTargetAnimalDistance() const
         {
             return m_TargetAnimalDistance;
+        }
+
+        static void FindTargetHook(void* p1, void* p2)
+        {
+            if (g_findTarget == nullptr) {
+                return;
+            }
+            g_animalSpottingManager = static_cast<CAnimalSpottingManager*>(p1);
+            g_findTarget(p1, p2);
+        }
+        static bool SetupFindTargetHook()
+        {
+            if (g_findTarget != nullptr) {
+                return true; // already set up
+            }
+            return MH_CreateHookGZ(SPOTTING_FIND_TARGET, &FindTargetHook, &g_findTarget);
         }
     };
 } // namespace gz
