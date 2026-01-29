@@ -13,6 +13,6 @@ class Input : public Singleton<Input>
     Input()          = default;
     virtual ~Input() = default;
 
-    void Draw(ID3D11DeviceContext* context);
-    bool FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam);
+    static void Draw(ID3D11DeviceContext* context);
+    static bool FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam);
 };

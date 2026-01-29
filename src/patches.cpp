@@ -37,7 +37,6 @@ static decltype(WndProc) *                pfn_WndProc     = nullptr;
 
 LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    const auto &input = Input::Get();
     const auto &ui = UI::Get();
 
     bool isInGame = GameState::IsInGame();
@@ -51,6 +50,8 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         // block mouse messages
         if (io.WantCaptureMouse) {
             switch (msg) {
+                case WM_MOUSEWHEEL: // allow this for changing camera distance in third person RC
+                    break;
                 case WM_INPUT:
                 case WM_LBUTTONDOWN:
                 case WM_LBUTTONUP:
@@ -61,7 +62,6 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 case WM_MBUTTONDOWN:
                 case WM_MBUTTONUP:
                 case WM_MBUTTONDBLCLK:
-                case WM_MOUSEWHEEL:
                 case WM_MOUSEHWHEEL:
                 case WM_MOUSEMOVE:
                     return true;
@@ -83,7 +83,7 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 
     if (isInGame) {
-        if (input->FeedEvent(msg, wParam, lParam)) {
+        if (Input::FeedEvent(msg, wParam, lParam)) {
             return true;
         }
     }

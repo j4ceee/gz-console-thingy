@@ -245,6 +245,16 @@ void UI::HelpMarker(const char* desc, const char* warning)
         ImGui::EndTooltip();
     }
 }
+// help marker with array of bullet points for warning
+void UI::HelpMarker(const char* desc, const std::vector<const char*>& warnings)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        InfoText(desc, warnings);
+        ImGui::EndTooltip();
+    }
+}
 
 void UI::HoverTooltip(const char* text, const char* warning)
 {
@@ -269,12 +279,48 @@ void UI::InfoText(const char* text, const char* warning)
 
     ImGui::PopTextWrapPos();
 }
+// info text with array of bullet points for warning
+void UI::InfoText(const char* text, const std::vector<const char*>& warnings)
+{
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextUnformatted(text);
+
+    if (!warnings.empty())
+    {
+        ImGui::Separator();
+        for (const char* warning : warnings)
+        {
+            StartWarningText();
+            ImGui::Bullet();
+            ImGui::SameLine();
+            ImGui::Text("%s", warning);
+            EndWarningText();
+        }
+    }
+}
+
+void UI::StartWarningText()
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+}
+
+void UI::EndWarningText()
+{
+    ImGui::PopStyleColor();
+}
 
 void UI::WarningText(const char* text, bool wrap)
 {
-    if (wrap) ImGui::PushTextWrapPos(0.0f);
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", text);
-    if (wrap) ImGui::PopTextWrapPos();
+    StartWarningText();
+    if (wrap)
+    {
+        ImGui::TextWrapped("%s", text);
+    }
+    else
+    {
+        ImGui::Text("%s", text);
+    }
+    EndWarningText();
 }
 
 // ImGui settings handlers

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "addresses.h"
+#include "animal.h"
 #include "hook_helpers.h"
 #include "imgui/ui.h"
 
@@ -29,12 +30,30 @@ namespace gz
     using RequestHackFunc = void(*)(CSpawnedAnimalNetworkComponent* comp, SHackRequestData* requestData);
     inline RequestHackFunc g_requestHack = nullptr;
 
+    inline bool g_takeControlOnHack = false;
+
     class CSpawnedAnimalNetworkComponent
     {
     public:
         char            _pad0[0x5D8];       // 0x000 → 0x5D8
         SHackedState    m_HackedState;      // 0x5D8 → 0x5E8 (embedded struct, not pointer)
-        char            _pad1[0x20];        // 0x5E8 → ...
+        CAnimal*        m_Animal;           // 0x5E8 → 0x5F0
+
+        CAnimal* GetAnimal() const
+        {
+            return m_Animal;
+        }
+
+        CCharacter* GetCharacter() const
+        {
+            if (!m_Animal) return nullptr;
+            return m_Animal->GetSpawnedCharacter();
+        }
+
+        bool IsHacked() const
+        {
+            return m_HackedState.m_IsHacked != 0;
+        }
 
         static void HookedRequestHack(CSpawnedAnimalNetworkComponent* comp, SHackRequestData* requestData)
         {
@@ -52,7 +71,27 @@ namespace gz
             if (settings.alwaysAdvancedHacking)
                 requestData->hasAdvancedHackSkill = 1;
 
+            bool isAdvancedHack = requestData->hasAdvancedHackSkill != 0;
+
             g_requestHack(comp, requestData);
+
+            CCharacter* mChar = comp->GetCharacter();
+
+            // only take control if...
+            // - the option is enabled
+            // - advanced hack (hacker skill or always advanced hack) is used
+            // - machine character exists
+            // - hack was successful
+            // - machine is not soviet (issues with controls)
+            if (g_takeControlOnHack && isAdvancedHack && mChar && !mChar->IsSoviet() && comp->IsHacked())
+            {
+                CCharacter* playerChar = CNetworkPlayerManager::instance()->GetPlayer()->GetCharacter();
+                CRemoteController* rc = playerChar ? playerChar->GetRemoteController() : nullptr;
+                if (rc && playerChar->IsWithinInteractionRangeOf(mChar))
+                {
+                    rc->RequestControlOfCharacter(mChar);
+                }
+            }
         }
 
         static bool SetupHackRequestHook()

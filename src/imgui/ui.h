@@ -34,8 +34,12 @@ namespace gz
 
         // helper functions for tabs to use
         static void HelpMarker(const char* desc, const char* warning = nullptr);
+        static void HelpMarker(const char* desc, const std::vector<const char*>& warnings);
         static void HoverTooltip(const char* text, const char* warning = nullptr);
         static void InfoText(const char* text, const char* warning = nullptr);
+        static void InfoText(const char* text, const std::vector<const char*>& warnings);
+        static void StartWarningText();
+        static void EndWarningText();
         static void WarningText(const char* text, bool wrap = false);
         static void StartDisabledText() { ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]); }
         static void EndDisabledText() { ImGui::PopStyleColor(); }

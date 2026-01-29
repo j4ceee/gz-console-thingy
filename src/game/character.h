@@ -51,6 +51,13 @@ namespace gz
             return CVector3f{worldPosX, worldPosY, worldPosZ};
         }
 
+        bool IsSoviet() const { return m_originalFaction == 5; }
+        bool IsFNIX() const { return m_originalFaction == 2; }
+        bool IsResistance() const { return m_originalFaction == 0; }
+
+        /// <summary>
+        /// Get the distance to another character in meters.
+        /// </summary>
         float GetDistanceTo(const CCharacter* other) const
         {
             if (!other) return -1.0f;
@@ -75,7 +82,11 @@ namespace gz
             return *radiusPtr;  // Returns 150.0 for this machine
         }
 
-        bool IsWithinInteractionRange(const CCharacter* other) const
+        /// <summary>
+        /// Check if the character is within interaction range of another character.\n
+        /// e.g. check if playerChar (this) is within interaction range of a machineChar (other)
+        /// </summary>
+        bool IsWithinInteractionRangeOf(const CCharacter* other) const
         {
             if (!other) return false;
 
@@ -112,6 +123,11 @@ namespace gz
         CRemoteController* GetRemoteController() const
         {
             return m_remoteController;
+        }
+
+        bool IsControllingEntity() const
+        {
+            return (m_controlFlag & 0x40) != 0;
         }
     };
 }; // namespace gz

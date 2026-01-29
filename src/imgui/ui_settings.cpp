@@ -1,5 +1,6 @@
 #include "ui_settings.h"
 
+#include "game/animal_network.h"
 #include "game/event_scheduler.h"
 #include "game/player.h"
 #include "game/weapon_consumption.h"
@@ -14,7 +15,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(18); // pre-allocate space
+            m_settingsCache.reserve(19); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -107,6 +108,8 @@ namespace gz
                 []() {}}); // handled in hacking hook
             m_settingsCache.push_back({"UnlimitedRCSignalStrength",'b',const_cast<bool*>(&unlimitedRcSignalStrength),
                 [this]() { g_unlimitedSignalStrength = unlimitedRcSignalStrength; }});
+            m_settingsCache.push_back({"TakeControlOnHack",'b',const_cast<bool*>(&takeControlOnHack),
+                [this]() { g_takeControlOnHack = takeControlOnHack; }});
 
             m_cacheInitialized = true;
         }

@@ -1,10 +1,10 @@
 #include <Windows.h>
 
-#include "addresses.h"
 #include "graphics.h"
 #include "input.h"
 
 #include "log.h"
+#include "game/camera_collision_modifier.h"
 #include "game/game_state.h"
 #include "game/game_world.h"
 #include "imgui/ui.h"
@@ -85,6 +85,22 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
         {
             gz::UIPatches::ToggleHideHUD();
             return true;
+        }
+    }
+
+    if (message == WM_MOUSEWHEEL)
+    {
+        auto* mgr = gz::CNetworkPlayerManager::instance();
+        if (mgr && mgr->GetPlayer())
+        {
+            auto* character = mgr->GetPlayer()->GetCharacter();
+            if (character && character->IsControllingEntity())
+            {
+                float delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                float normalizedDelta = delta / WHEEL_DELTA;
+                gz::CCameraCollisionModifier::ChangeThirdPersonCameraDistance(-normalizedDelta * 0.05f);
+                return true; // consume the event
+            }
         }
     }
 

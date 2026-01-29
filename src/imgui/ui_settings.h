@@ -37,6 +37,7 @@ namespace gz
         bool unlimitedHackingTime = false;
         bool alwaysAdvancedHacking = false;
         bool unlimitedRcSignalStrength = true;
+        bool takeControlOnHack = false;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

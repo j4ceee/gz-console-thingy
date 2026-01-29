@@ -47,16 +47,24 @@
 
 #### Target Machine
 - Modify various parameters of the currently targeted machine (aim at a machine and open the console)
-  - make it **invincible**
+  - make it **Invulnerable**
   - **Kill** it instantly
   - set its **Faction** (Resistance, FNIX, Soviets)
-  - **Control Targeted Machine**
+  - **Control Targeted Machine**: remote control the targeted machine
 
 #### Controllable Machines / Play as Machines
+- **Unlimited Signal Strength** for controlled machines (you can move further away without losing control)
+- **Control Machine on Hack**: seamlessly take control of a machine when you hack it with the binoculars (no need to open the mod menu)
 - any machine can be controlled by the player
 - controlled machines have 2 abilities that are listed at the bottom of the screen:
   - **Primary Ability** (usually a weapon attack)
   - **Secondary Ability** (usually a movement or special ability)
+- controlled machines can be made...
+  - **Invulnerable**
+  - **Undetectable by other Machines**
+  - or instantly **Killed**
+- you adjust the **Third Person Camera Distance** while controlling a machine (in the mod UI or by using the mouse scroll wheel)
+- please refer to the in-game tooltips for details and restrictions for the different options (hover over the `(?)`)
 
 ### World Settings
 - **Event Control** (any event can be activated at any time + option to let game decide)

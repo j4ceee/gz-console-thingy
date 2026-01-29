@@ -3,7 +3,9 @@
 
 #include <imgui.h>
 
+#include "game/animal_network.h"
 #include "game/animal_spotting_manager.h"
+#include "game/camera_collision_modifier.h"
 #include "game/damageable.h"
 
 namespace gz::UITabs
@@ -73,7 +75,7 @@ namespace gz::UITabs
 
                     ImGui::SameLine();
                     // -- kill machine
-                    if (ImGui::Button("Kill"))
+                    if (ImGui::Button("Kill##target"))
                     {
                         machineDmg->SetHealth(0);
                     }
@@ -81,25 +83,25 @@ namespace gz::UITabs
                     ImGui::Spacing();
 
                     // -- faction
-                    // factions: 0 = player / humans / default, 2 = fnix, 5 = soviets
-                    const int factionValues[] = {0, 2, 5};
                     int currentIndex = 0;
                     if (machineChar->GetFaction() == 2) currentIndex = 1;
                     else if (machineChar->GetFaction() == 5) currentIndex = 2;
 
                     if (ImGui::Combo("Faction", &currentIndex, "Resistance\0FNIX\0Soviets\0"))
                     {
+                        // factions: 0 = player / humans / default, 2 = fnix, 5 = soviets
+                        constexpr int factionValues[] = {0, 2, 5};
                         machineChar->SetFaction(factionValues[currentIndex]);
                     }
                     ImGui::SameLine();
                     UI::HelpMarker("Changes the faction of the targeted machine. It will become hostile towards all other factions than the selected one.");
 
                     // -- control machine (only if not already controlling one)
-                    if (rc && !rc->GetControlledCharacter())
+                    if (rc && !character->IsControllingEntity())
                     {
                         ImGui::Spacing();
 
-                        bool inRange = character->IsWithinInteractionRange(machineChar);
+                        bool inRange = character->IsWithinInteractionRangeOf(machineChar);
                         float distance = character->GetDistanceTo(machineChar);
                         float maxRange = machineChar->GetInteractionRadius() * 0.5f;
 
@@ -118,9 +120,13 @@ namespace gz::UITabs
 
                         ImGui::SameLine();
                         UI::HelpMarker("Take control of the targeted machine. You will play as the machine until "
-                            "you release control, your player character dies or the controlled machine dies.",
-                            "Warning: If you have used the Remote-Controlled Tick in this game session, you "
-                            "won't be able to attack while controlling any other machine. Restart your game to be able to fully control machines again.");
+                                       "you release control, your player character dies or the controlled machine dies.",
+                                       {
+                                           "Soviet machines may have limited functionality and be hard to control.",
+                                           "You can only use one primary and one secondary attack even if the machine has more weapons on it.",
+                                           "Some machines have weapons equipped but you still may not be able to use them.",
+                                           "If you have used the Remote-Controlled Tick in this game session, you won't be able to attack while controlling any other machine. Restart your game to be able to fully control machines again."
+                                       });
 
                         if (!inRange)
                         {
@@ -177,10 +183,31 @@ namespace gz::UITabs
             ImGui::SameLine();
             UI::HelpMarker("Prevents signal loss when controlling machines at any distance.");
 
+            // -- take control on hack
+            if (ImGui::Checkbox("Control Machine on Hack", &settings.takeControlOnHack))
+            {
+                g_takeControlOnHack = settings.takeControlOnHack;
+                // save setting
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+            }
+            ImGui::SameLine();
+            UI::HelpMarker(
+                "Seamlessly take control of a machine when you successfully hack it with the binoculars or hacking dart.",
+                {
+                    "You must be within interaction range of the machine (usually 75m) for this to work.",
+                    "If taking control fails, the machine will still be hacked, but you have to try taking control again.",
+                    "You need to have 'Advanced Hacking' enabled or the 'Hacker' specialization active for this to work.",
+                    "If you want to release control, use the button below or let your controlled machine die.",
+                    "Due to limited controls, soviet machines will only be hacked and never automatically remote controlled.",
+                    "Don't use this on your companion (use manual control in the 'Targeted Machine' tab instead).",
+                    "If you have used the Remote-Controlled Tick in this game session, you won't be able to attack while controlling any other machine. Restart your game to be able to fully control machines again.",
+                    "You can only use one primary and one secondary attack even if the machine has more weapons on it.",
+                    "Some machines have weapons equipped but you still may not be able to use them."
+                });
+
             ImGui::Spacing();
 
-            auto* controlledChar = rc->GetControlledCharacter();
-            if (controlledChar)
+            if (auto* controlledChar = rc->GetControlledCharacter())
             {
                 ImGui::TextWrapped("Options for the machine you are currently controlling:");
                 ImGui::Spacing();
@@ -207,10 +234,34 @@ namespace gz::UITabs
 
                 ImGui::SameLine();
                 // -- kill machine
-                if (ImGui::Button("Kill"))
+                if (ImGui::Button("Kill##controlled"))
                 {
                     machineDmg->SetHealth(0);
                 }
+
+                ImGui::Spacing();
+
+                // -- detection
+                bool isUndetectable = !controlledChar->IsDetectable();
+                if (ImGui::Checkbox("Undetectable by other Machines", &isUndetectable)) {
+                    controlledChar->SetDetectable(!isUndetectable);
+                }
+                ImGui::SameLine();
+                UI::HelpMarker("Toggles whether the player will be detected by enemy machines.");
+
+                ImGui::Spacing();
+
+                // -- camera distance
+                float cameraDistance = CCameraCollisionModifier::GetThirdPersonCameraDistance();
+                if (ImGui::SliderFloat("Third Person Camera Distance", &cameraDistance, 0.0f, 1.0f))
+                {
+                    CCameraCollisionModifier::SetThirdPersonCameraDistance(cameraDistance);
+                }
+                ImGui::SameLine();
+                UI::HelpMarker("Adjust the third person camera distance while controlling a machine (can also be changed by scrolling the mouse wheel)."
+                               "1.0 = far away, 0.0 = very close",
+                               "Note: Zooming in (scrolling up) is snappy and fast, meanwhile zooming out (scrolling down) will be slow and gradual. "
+                               "This is normal game behavior.");
             }
             else
             {
@@ -223,9 +274,10 @@ namespace gz::UITabs
             if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##remotecontrol"))
             {
                 ImGui::Text("CRemoteController Address: 0x%p", rc);
+                ImGui::Text("Player CCharacter is controlling entity: %s", character->IsControllingEntity() ? "Yes" : "No");
                 ImGui::Text("Controlled Entity CCharacter: 0x%p", rc->GetControlledCharacter());
                 ImGui::TreePop();
             }
         }
     }
-}
+} // namespace gz::UITabs
