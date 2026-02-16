@@ -57,6 +57,8 @@ void InitAddresses(bool is_steam)
     g_Address[GET_SIGNAL_STRENGTH] = (is_steam ? 0x14064d850 : 0x14064d460) + offset;
     g_Address[SPOTTING_FIND_TARGET] = (is_steam ? 0x140926440 : 0x140926120) + offset;
     g_Address[CAMERA_CHECK_COLLISION] = (is_steam ? 0x140597840 : 0x140597450) + offset;
+    g_Address[GET_BACKPACK_WEIGHT] = (is_steam ? 0x14071f630 : 0x14071f2f0) + offset;
+    g_Address[GET_EQUIPMENT_WEIGHT] = (is_steam ? 0x140721f40 : 0x140721c00) + offset;
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;
     g_Address[FUNC_VSNPRINTF] = (is_steam ? 0x140de69b0 : 0x140e2dd60) + offset;
     g_Address[FUNC_SCRIPT_ERROR_REPORT] = (is_steam ? 0x140e7eba0 : 0x140ec5770) + offset;
@@ -78,4 +80,4 @@ uintptr_t GetAddress(Address address)
 {
     return g_Address[address];
 }
-}; // namespace gz
+} // namespace gz

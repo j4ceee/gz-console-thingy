@@ -17,6 +17,7 @@
 #include "patches/vehicle_patches.h"
 
 #include "game/animal_spotting_manager.h"
+#include "game/player_eq_utils.h"
 
 namespace gz::UITabs
 {
@@ -83,6 +84,37 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 
     // -- INVENTORY --
     if (ImGui::CollapsingHeader(ICON_MD_LIST " Inventory", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        bool unlimitedStorageSize = PlayerEqUtils::IsUnlimitedStorageSize();
+        bool ignoreEncumbrance = PlayerEqUtils::IsIgnoringEncumbrance();
+
+        // -- encumbrance
+        if (unlimitedStorageSize) ImGui::BeginDisabled(); // if unlimited storage size is enabled -> disable carry weight option since it would be redundant
+        if (ImGui::Checkbox("Unlimited Carry Weight", &ignoreEncumbrance))
+        {
+            PlayerEqUtils::SetIgnoreEncumbrance(ignoreEncumbrance);
+            // save setting
+            settings.unlimitedCarryWeight = ignoreEncumbrance;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Removes the carry weight limit, allowing the player to carry unlimited items without movement penalties.");
+        if (unlimitedStorageSize) ImGui::EndDisabled();
+
+        // -- storage size
+        if (ImGui::Checkbox("Unlimited Storage Size", &unlimitedStorageSize))
+        {
+            PlayerEqUtils::SetUnlimitedStorageSize(unlimitedStorageSize);
+            // save setting
+            settings.unlimitedStorageSize = unlimitedStorageSize;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Removes the storage size limit for all containers, allowing them to hold unlimited items. This also includes the player's carry weight.",
+            "Note: Close and reopen any currently open inventory UIs for the change to take effect.");
+
+        ImGui::Spacing();
+
         // -- ammo
         if (AmmoDeployableConsumption::IsAmmoHookInitialized()) {
             bool infiniteAmmo = AmmoDeployableConsumption::IsAmmoConsumptionDisabled();

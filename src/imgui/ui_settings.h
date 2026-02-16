@@ -38,6 +38,8 @@ namespace gz
         bool alwaysAdvancedHacking = false;
         bool unlimitedRcSignalStrength = true;
         bool takeControlOnHack = false;
+        bool unlimitedCarryWeight = false;
+        bool unlimitedStorageSize = false;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

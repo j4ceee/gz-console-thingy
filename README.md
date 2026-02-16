@@ -24,6 +24,8 @@
 ### Player Settings
 - **Health Modification** & **Invincibility**
 - **Infinite Stamina**
+- **Unlimited Carry Weight** for the player inventory
+- **Unlimited Storage Size** for all containers (e.g. player inventory, companion, base storage, ...)
 - **Unlimited Ammo** (including no reload)
 - **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)

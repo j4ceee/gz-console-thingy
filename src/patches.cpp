@@ -18,6 +18,7 @@
 #include "game/debug_logger.h"
 #include "game/environment_gfx.h"
 #include "game/game_state.h"
+#include "game/player_eq_utils.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
 #include "patches/resource_patch.h"
@@ -149,6 +150,12 @@ bool InitPatchesAndHooks()
 
         if (!SetupLoggingHooks())
             Log("Failed to setup logging hooks");
+
+        if (!PlayerEqUtils::SetupGetBackpackWeightHook())
+            Log("Failed to setup GetBackpackWeight hook");
+
+        if (!PlayerEqUtils::SetupGetEquipmentWeightHook())
+            Log("Failed to setup GetEquipmentWeight hook");
 
         if (!Utils::SetupHashFunction()) {
             // required for several patches -> fail initialization
