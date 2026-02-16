@@ -463,6 +463,24 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("GET_BACKPACK_WEIGHT", result, [&] {
+       auto match = pattern("48 ? ? F3 ? ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? 0F ? ? ? ? 0F", game_file)
+           .count(1)
+           .get(0)
+           .adjust(11)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("GET_EQUIPMENT_WEIGHT", result, [&] {
+       auto match = pattern("48 ? ? 74 ? 48 ? ? E8 ? ? ? ? F3 ? ? ? 40", game_file)
+           .count(1)
+           .get(0)
+           .adjust(8)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("HASHING_FUNC", result, [&] {
         auto match = pattern("49 8B ? FF ? ? ? ? ? ? ? ? ? ? ? 48 8D 0D ? ? ? ? E8 ? ? ? ? 89 44 24 ? 48 8B ? ?", game_file)
             .count(1)
@@ -650,7 +668,7 @@ void WriteSource(const std::filesystem::path& path, FindPatternResult& steam_add
     stream << "    return g_Address[address];\n";
     stream << "}\n";
 
-    stream << "}; // namespace gz";
+    stream << "} // namespace gz";
 }
 
 int main()

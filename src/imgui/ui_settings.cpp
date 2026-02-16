@@ -3,6 +3,7 @@
 #include "game/animal_network.h"
 #include "game/event_scheduler.h"
 #include "game/player.h"
+#include "game/player_eq_utils.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
 #include "patches/fasttravel_patches.h"
@@ -15,7 +16,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(19); // pre-allocate space
+            m_settingsCache.reserve(21); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -110,6 +111,10 @@ namespace gz
                 [this]() { g_unlimitedSignalStrength = unlimitedRcSignalStrength; }});
             m_settingsCache.push_back({"TakeControlOnHack",'b',const_cast<bool*>(&takeControlOnHack),
                 [this]() { g_takeControlOnHack = takeControlOnHack; }});
+            m_settingsCache.push_back({"UnlimitedCarryWeight",'b',const_cast<bool*>(&unlimitedCarryWeight),
+                [this]() { PlayerEqUtils::g_ignoreEncumbrance = unlimitedCarryWeight; }});
+            m_settingsCache.push_back({"UnlimitedStorageSize",'b',const_cast<bool*>(&unlimitedStorageSize),
+                [this]() { PlayerEqUtils::g_unlimitedStorageSize = unlimitedStorageSize; }});
 
             m_cacheInitialized = true;
         }
