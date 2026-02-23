@@ -11,7 +11,6 @@
 #include <imgui.h>
 
 #include "game/animal_network.h"
-#include "game/animal_spotting_manager.h"
 #include "game/camera_collision_modifier.h"
 #include "game/clock.h"
 #include "game/event_scheduler.h"
@@ -26,6 +25,7 @@
 #include "patches/cloud_patch.h"
 #include "patches/dlc_patches.h"
 #include "patches/fasttravel_patches.h"
+#include "patches/map_zoom_patches.h"
 #include "patches/ui_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -165,9 +165,6 @@ bool InitPatchesAndHooks()
         if (!CSpawnedAnimalNetworkComponent::SetupHackRequestHook())
             Log("Failed to setup Animal Hack Request hook");
 
-        if (!CAnimalSpottingManager::SetupFindTargetHook())
-            Log("Failed to setup Animal Spotting Find Target hook");
-
         if (!CRemoteController::SetupSignalStrengthHook())
             Log("Failed to setup Remote Controller Signal Strength hook");
 
@@ -192,6 +189,8 @@ bool InitPatchesAndHooks()
         FastTravelPatches::Initialize();
         if (DLCPatch::Initialize())
             DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)
+        if (MapZoomPatch::Initialize())
+            MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)
 
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());
@@ -200,4 +199,4 @@ bool InitPatchesAndHooks()
 
     return true;
 }
-}; // namespace gz
+} // namespace gz

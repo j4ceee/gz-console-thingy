@@ -2,7 +2,7 @@
 
 #include "hook_helpers.h"
 #include "remote_controller.h"
-#include "vector.h"
+#include "data_types.h"
 #include "meow_hook/util.h"
 
 #pragma pack(push, 1)

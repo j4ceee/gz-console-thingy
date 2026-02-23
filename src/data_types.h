@@ -1,5 +1,19 @@
 #pragma once
 
+struct GameString {
+    union {
+        char*  ptr;        // heap pointer when capacity >= 16
+        char   buf[16];    // SSO inline buffer when capacity < 16
+    };
+    uint64_t size;
+    uint64_t capacity;
+
+    const char* c_str() const {
+        return capacity >= 0x10 ? ptr : buf;
+    }
+};
+static_assert(sizeof(GameString) == 0x20, "GameString size mismatch");
+
 struct BasicVector {
     void* first;   // pointer to start of data
     void* last;    // pointer to current end

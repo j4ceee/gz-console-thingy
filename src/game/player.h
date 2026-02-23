@@ -1,7 +1,7 @@
 #pragma once
 
 #include "character.h"
-#include "vector.h"
+#include "data_types.h"
 
 #pragma pack(push, 1)
 
@@ -90,5 +90,5 @@ namespace gz
             *reinterpret_cast<bool*>(GetAddress(VAR_FP_PLAYER_SHADOW)) = enabled;
         }
     };
-}; // namespace gz
+} // namespace gz
 #pragma pack(pop)

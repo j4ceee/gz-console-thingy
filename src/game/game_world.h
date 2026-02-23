@@ -3,7 +3,7 @@
 #include "addresses.h"
 #include "player.h"
 #include "player_network_manager.h"
-#include "../vector.h"
+#include "data_types.h"
 
 #pragma pack(push, 1)
 namespace gz

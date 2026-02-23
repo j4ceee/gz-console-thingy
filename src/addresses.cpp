@@ -26,6 +26,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_SOCIAL_MANAGER] = (is_steam ? 0x142abebe8 : 0x142bcc198) + offset;
     g_Address[INST_VEHICLE_MANAGER] = (is_steam ? 0x142abefe8 : 0x142bcc598) + offset;
     g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
+    g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
     g_Address[WND_PROC] = (is_steam ? 0x1400a4b40 : 0x1400a3430) + offset;
     g_Address[GRAPHICS_FLIP] = (is_steam ? 0x141784320 : 0x14181a860) + offset;
     g_Address[VAR_GAME_STATE_FRONTEND] = (is_steam ? 0x1428444e0 : 0x1429483f8) + offset;
@@ -55,7 +56,6 @@ void InitAddresses(bool is_steam)
     g_Address[REQUEST_ANIMAL_CONTROL] = (is_steam ? 0x1406492d0 : 0x140648ee0) + offset;
     g_Address[RELEASE_ANIMAL_CONTROL] = (is_steam ? 0x14065f780 : 0x14065f390) + offset;
     g_Address[GET_SIGNAL_STRENGTH] = (is_steam ? 0x14064d850 : 0x14064d460) + offset;
-    g_Address[SPOTTING_FIND_TARGET] = (is_steam ? 0x140926440 : 0x140926120) + offset;
     g_Address[CAMERA_CHECK_COLLISION] = (is_steam ? 0x140597840 : 0x140597450) + offset;
     g_Address[GET_BACKPACK_WEIGHT] = (is_steam ? 0x14071f630 : 0x14071f2f0) + offset;
     g_Address[GET_EQUIPMENT_WEIGHT] = (is_steam ? 0x140721f40 : 0x140721c00) + offset;
@@ -74,6 +74,7 @@ void InitAddresses(bool is_steam)
     g_Address[PATCH_RESOURCE_CONSUMPTION] = (is_steam ? 0x1407460ce : 0x140745d8e) + offset;
     g_Address[PATCH_INFINITE_FUEL] = (is_steam ? 0x140d488f4 : 0x140d54184) + offset;
     g_Address[PATCH_HIDE_UI] = (is_steam ? 0x1414cc501 : 0x141562a01) + offset;
+    g_Address[PATCH_MAP_ZOOM] = (is_steam ? 0x140c3f1ee : 0x140c4b91e) + offset;
 }
 
 uintptr_t GetAddress(Address address)

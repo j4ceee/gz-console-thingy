@@ -191,6 +191,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_RESERVE_WORLD", result, [&] {
+        auto match = pattern("48 8B ? ? ? ? ? 48 ? ? ? 4C ? ? ? 4C ? ? ? ? 45", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("WND_PROC", result, [&] {
         auto match = pattern("E9 ? ? ? ? 48 ? ? ? ? ? ? ? 48 8D 05 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
             .count(1)
@@ -446,15 +454,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("SPOTTING_FIND_TARGET", result, [&] {
-       auto match = pattern("0F ? ? ? ? ? 49 8B D4 48 ? ? E8 ? ? ? ? 48 ? ? ? ? 48", game_file)
-           .count(1)
-           .get(0)
-           .adjust(12)
-           .extract_call();
-       return rebase(game_file, match);
-    });
-
     FindPattern("CAMERA_CHECK_COLLISION", result, [&] {
        auto match = pattern("E8 ? ? ? ? F3 0F ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? ? ? ? 48", game_file)
            .count(1)
@@ -599,6 +598,16 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(0)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    // disable map max zoom
+    FindPattern("PATCH_MAP_ZOOM", result, [&] {
+        auto match = pattern("F3 0F 5F ? ? ? ? ? F3 0F 5D ? ? ? ? ? F3 0F 11 ? ? ? ? ? 48 89", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8)
             .as<uintptr_t>();
         return rebase(game_file, match);
     });

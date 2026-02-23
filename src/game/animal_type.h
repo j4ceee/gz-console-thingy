@@ -1,0 +1,47 @@
+#pragma once
+
+#include "data_types.h"
+
+#pragma pack(push, 1)
+namespace gz
+{
+    class CAnimalType
+    {
+    public:
+        uint32_t    m_AnimalTypeNameHash;           // 0x00 → 0x04
+        uint32_t    m_AnimalNameLocalizationKey;    // 0x04 → 0x08
+        uint32_t    m_Category;                     // 0x08 → 0x0C
+        char        _pad0[0x04];                    // 0x0C → 0x10
+        GameString  m_Name;                         // 0x10 → 0x30 (32 bytes)
+        GameString  m_SpawnTag;                     // 0x30 → 0x50 (32 bytes)
+        GameString  m_MachineClass;                 // 0x50 → 0x70 (32 bytes)
+        float       m_RoamSpeed;                    // 0x70 → 0x74
+        float       m_TrotSpeed;                    // 0x74 → 0x78
+        char        _pad1[0x128];                   // 0x78 → 0x1A0
+        int32_t     m_Difficulty;                   // 0x1A0 → 0x1A4
+        char        _pad2[0x04];                    // 0x1A4 → 0x1A8
+        GameString  m_Designator;                   // 0x1A8 → 0x1C8 (32 bytes)
+
+        const char* GetName() const
+        {
+            return m_Name.c_str();
+        }
+
+        const char* GetMachineClass() const
+        {
+            return m_MachineClass.c_str();
+        }
+
+        const char* GetSpawnTag() const
+        {
+            return m_SpawnTag.c_str();
+        }
+
+        const char* GetDesignator() const
+        {
+            return m_Designator.c_str();
+        }
+
+    };
+} // namespace gz
+#pragma pack(pop)

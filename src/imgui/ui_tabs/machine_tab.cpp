@@ -7,15 +7,16 @@
 #include "game/animal_spotting_manager.h"
 #include "game/camera_collision_modifier.h"
 #include "game/damageable.h"
+#include "game/reserve_world.h"
 
 namespace gz::UITabs
 {
-    void RenderMachineTab(CNetworkPlayerManager* playerMgr)
+    void RenderMachineTab(CNetworkPlayerManager* manager)
     {
         UI* ui = UI::Get();
         ConsoleSettings& settings = ui->GetSettings();
 
-        auto* character = playerMgr->GetPlayer()->GetCharacter();
+        const CCharacter* character = manager->GetPlayer()->GetCharacter();
 
         // -- HACKING --
         if (ImGui::CollapsingHeader(ICON_MD_COMPUTER " Hacking", ImGuiTreeNodeFlags_DefaultOpen))
@@ -51,14 +52,16 @@ namespace gz::UITabs
         ImGui::Spacing();
 
         // -- SPOTTED MACHINE --
-        CAnimalSpottingManager* spottingManager = CAnimalSpottingManager::instance();
+        CReserveWorld* reserveWorld = CReserveWorld::instance();
+        CAnimalSpottingManager* spottingManager = reserveWorld ? reserveWorld->GetSpottingManager() : nullptr;
         CRemoteController* rc = character ? character->GetRemoteController() : nullptr;
         if (ImGui::CollapsingHeader(ICON_MD_SMART_TOY " Targeted Machine", ImGuiTreeNodeFlags_DefaultOpen) && spottingManager)
         {
             if (spottingManager->GetTargetAnimal())
             {
-                auto* machineChar = spottingManager->GetTargetAnimal()->GetSpawnedCharacter();
-                if (machineChar)
+                CAnimal* targetAnimal = spottingManager->GetTargetAnimal();
+                CCharacter* machineChar = targetAnimal->GetSpawnedCharacter();
+                if (machineChar && character)
                 {
                     ImGui::TextWrapped("Options for the currently targeted machine:");
 
@@ -110,7 +113,7 @@ namespace gz::UITabs
 
                         if (ImGui::Button("Control Targeted Machine"))
                         {
-                            int playerFaction = playerMgr->GetPlayer()->GetCharacter()->GetFaction();
+                            int playerFaction = manager->GetPlayer()->GetCharacter()->GetFaction();
                             machineChar->SetFaction(playerFaction);
                             rc->RequestControlOfCharacter(machineChar);
                         }
@@ -156,8 +159,15 @@ namespace gz::UITabs
                 ImGui::Text("Last Target Animal: 0x%p", spottingManager->GetLastTargetAnimal());
 
                 if (spottingManager->GetTargetAnimal())
-                    ImGui::Text("Target Animal CCharacter: 0x%p",
-                                spottingManager->GetTargetAnimal()->GetSpawnedCharacter());
+                {
+                    CAnimalType* type = spottingManager->GetTargetAnimal()->GetAnimalType();
+                    ImGui::Text("Target Animal CCharacter: 0x%p", spottingManager->GetTargetAnimal()->GetSpawnedCharacter());
+                    ImGui::Text("Target Animal CAnimalType: 0x%p", type);
+                    ImGui::Text("Target Animal Name: %s", type->GetName());
+                    ImGui::Text("Target Animal Spawn Tag: %s", type->GetSpawnTag());
+                    ImGui::Text("Target Animal Machine Class: %s", type->GetMachineClass());
+                    ImGui::Text("Target Animal Designator: %s", type->GetDesignator());
+                }
 
                 if (spottingManager->GetLastTargetAnimal())
                     ImGui::Text("Last Target Animal CCharacter: 0x%p",
