@@ -234,7 +234,10 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
     ImGui::Spacing();
 
-    auto* playerInfo = CPlayerInformation::instance();
+    CPlayerInformation* playerInfo = CPlayerInformation::instance();
+    CLoginSaveLoader* saveLoader = playerInfo ? playerInfo->GetSaveLoader() : nullptr;
+    SWorldSaveSlot* activeWorldSave = saveLoader ? saveLoader->GetActiveWorldSaveSlot() : nullptr;
+    SPlayerData* activePlayerData = saveLoader ? saveLoader->GetActivePlayerData() : nullptr;
 
     // -- BASE BUILDING --
     if (ImGui::CollapsingHeader(ICON_MD_HOUSE " Base Building", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -252,12 +255,12 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 "Warning: Do not build too close to the command center (crossed out tiles) or on tiles blocked due to terrain as these buildings will be deleted on game reload.");
         }
 
-        if (playerInfo)
+        if (activeWorldSave)
         {
-            int commandTokens = playerInfo->GetCommandTokens();
+            int commandTokens = activeWorldSave->GetCommandTokens();
             if (ImGui::InputInt("Command Tokens", &commandTokens, 5, 10)) {
                 if (commandTokens < 0) commandTokens = 0;
-                playerInfo->SetCommandTokens(commandTokens);
+                activeWorldSave->SetCommandTokens(commandTokens);
             }
             ImGui::SameLine();
             UI::HelpMarker("Sets your total command tokens. Used for claiming Control Points to build bases.");
@@ -314,33 +317,41 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // -- SKILLS & EXPERIENCE --
-    if (ImGui::CollapsingHeader(ICON_MD_ACCOUNT_CIRCLE " Skills & Experience", ImGuiTreeNodeFlags_DefaultOpen) && playerInfo) {
-        int level = playerInfo->GetLevelForActive();
+    if (ImGui::CollapsingHeader(ICON_MD_ACCOUNT_CIRCLE " Skills & Experience", ImGuiTreeNodeFlags_DefaultOpen) && playerInfo && saveLoader && activePlayerData) {
+        CPlayerProgressionManager* progressionManager = playerInfo->GetProgressionManager();
+
+        int level = activePlayerData->GetLevel();
+        const int32_t levelCap = progressionManager->GetLevelCap();
         if (ImGui::InputInt("Player Level", &level, 1, 5)) {
             if (level < 0) level = 0;
-            if (level > 65535) level = 65535;
-            playerInfo->SetLevelForActive((uint16_t)level);
+            if (level > levelCap) level = levelCap;
+            activePlayerData->SetLevel((uint16_t)level);
+            // set experience to middle of the current level's XP range
+            activePlayerData->SetExperience(
+                progressionManager->GetXPAtLevel(level) + (progressionManager->GetXPAtLevel(level + 1) - progressionManager->GetXPAtLevel(level)) * 0.1f // 10% into the current level
+                );
         }
         ImGui::SameLine();
-        UI::HelpMarker("Sets the level of your current character.",
-            "Note: Changing your level does not automatically adjust your experience points. "
-            "If your experience points are lower than the required amount for your new level, you will not be able to "
-            "level up naturally until your experience points are 'caught up'.");
+        UI::HelpMarker("Sets the level of your current character. The experience points will be automatically adjusted to fit the new level.");
 
-        int experience = playerInfo->GetExperienceForActive();
-        if (ImGui::InputInt("Experience Points", &experience, 1000, 2000)) {
-            if (experience < 0) experience = 0;
-            playerInfo->SetExperienceForActive(experience);
+        int32_t experience = activePlayerData->GetExperience();
+        const int32_t xpAtCurrentLevel = progressionManager->GetXPAtLevel(level);
+        const int32_t xpAtNextLevel = progressionManager->GetXPAtNextLevel(level);
+        if (ImGui::SliderInt("Experience", &experience, xpAtCurrentLevel, xpAtNextLevel - 1)) {
+            // clamp experience to the current level's XP range
+            if (experience < xpAtCurrentLevel) experience = xpAtCurrentLevel;
+            if (experience >= xpAtNextLevel) experience = xpAtNextLevel - 1;
+            // set experience
+            activePlayerData->SetExperience(experience);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Sets the experience points of your current character.",
-            "Note: Changing your experience points does not automatically adjust your level. "
-            "Gaining any amount of experience naturally in the game will set your level according to your experience points.");
+        UI::HelpMarker("Sets the experience points of your current character."
+            "The slider is limited to changing your XP within your current level. To change your level, use the 'Player Level' option above.");
 
-        int skillPoints = playerInfo->GetSkillPointsForActive();
+        int skillPoints = activePlayerData->GetSkillPoints();
         if (ImGui::InputInt("Skill Points", &skillPoints, 1, 5)) {
             if (skillPoints < 0) skillPoints = 0;
-            playerInfo->SetSkillPointsForActive(skillPoints);
+            activePlayerData->SetSkillPoints(skillPoints);
         }
         ImGui::SameLine();
         UI::HelpMarker("Sets the available skill points of your current character.");
@@ -348,8 +359,16 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##playerInfo"))
         {
             ImGui::Text("CPlayerInformation Address: 0x%p", playerInfo);
-            ImGui::Text("Active Player Index: %d", playerInfo->GetActivePlayer());
-            ImGui::Text("Active Player Data Address: 0x%p", playerInfo->GetActivePlayerData());
+            ImGui::Text("CLoginSaveLoader Address: 0x%p", saveLoader);
+            ImGui::Text("CPlayerProgressionManager Address: 0x%p", progressionManager);
+            ImGui::Spacing();
+            ImGui::Text("Active Player Index: %d", saveLoader->GetActivePlayerIndex());
+            ImGui::Text("Active Player Data Address: 0x%p", activePlayerData);
+            ImGui::Text("Active World Save Slot Index: %d", saveLoader->GetActiveWorldIndex());
+            ImGui::Text("Active World Save Slot Address: 0x%p", activeWorldSave);
+            ImGui::Text("Level Cap: %d", progressionManager->GetLevelCap());
+            ImGui::Text("XP for Next Level: %d", progressionManager->GetXPAtNextLevel(activePlayerData->GetLevel()));
+            ImGui::Text("Prestige Points: %d", progressionManager->GetPrestigePoints());
             ImGui::TreePop();
         }
     }

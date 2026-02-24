@@ -1,197 +1,92 @@
 #pragma once
 
 #include "addresses.h"
+#include "player_skills.h"
+#include "save_game.h"
 
 #pragma pack(push, 1)
 namespace gz
 {
-    // individual player data structure (0x5D0 bytes per player)
-    struct PlayerData
+    struct SXPRange
     {
-        char pad_0x0[0x308];            // 0x000 → 0x308
-        int32_t skill_points;           // 0x308 → 0x30C
-        char pad_0x30C[0x24];           // 0x30C → 0x330
-        int32_t experience;             // 0x330 → 0x334
-        uint16_t level;                 // 0x334 → 0x336
-        char pad_0x336[0x2];            // 0x336 → 0x338
-        void* item_list;                // 0x338 → 0x340 (pointer to item collection)
-        char pad_0x340[0x290];          // 0x340 → 0x5D0
+        char        pad_0x00[0x18];     // 0x000 → 0x018 (unknown, possibly name hash or flags)
+        int32_t     start_level;        // 0x018 → 0x01C
+        uint32_t    end_level;          // 0x01C → 0x020
+        int32_t     xp_per_level;       // 0x020 → 0x024
+        char        pad_0x24[0x4];      // 0x024 → 0x028
     };
+    static_assert(sizeof(SXPRange) == 0x28, "SXPRange size mismatch");
 
-    // login save data structure
-    class CLoginSaveLoader
+    class CPlayerProgressionManager
     {
     public:
-        char pad_0x0[0x1F0];            // 0x000 → 0x1F0
-        int32_t command_tokens;         // 0x1F0 → 0x1F4
-        char pad_0x1F4[0x6AC];          // 0x1F4 → 0x8A0
-        void* resource_list;            // 0x8A0 → 0x8A8 (pointer to resource collection)
-        char pad_0x8A8[0x10];           // 0x8A8 → 0x8B8
-        void* storage;                  // 0x8B8 → 0x8C0 (pointer to storage)
-        char pad_0x8C0[0x1C0];          // 0x8C0 → 0xA80
-        PlayerData players[4];          // 0xA80 → 0x21C0 (array of 4 players, 0x5D0 each = 0x1740)
-        int32_t active_player;          // 0x21C0 (0-3 for player index)
-    };
+        char        pad_0x000[0x90];        // 0x000 → 0x090 (unknown)
+        SXPRange*   xp_ranges_begin;        // 0x090 → 0x098
+        SXPRange*   xp_ranges_end;          // 0x098 → 0x0A0
+        char        pad_0x0A0[0x60];        // 0x0A0 → 0x100
+        int32_t     prestige_points;        // 0x100 → 0x104
+        char        pad_0x104[0x1C];        // 0x104 → 0x120
+        int32_t     character_level_cap;    // 0x120 → 0x124
+        char        pad_0x124[0xDC];        // 0x124 → 0x200
 
-    class CSkillManager
-    {
-    public:
+        int32_t GetLevelCap() const
+        {
+            return character_level_cap;
+        }
+
+        int32_t GetXPAtLevel(uint32_t level) const
+        {
+            SXPRange* it = xp_ranges_begin;
+            int32_t total = 0;
+            if (it == xp_ranges_end) return 0;
+            while (true) {
+                if (level <= it->end_level) {
+                    return total + ((int32_t)(level - it->start_level) + 1) * it->xp_per_level;
+                }
+                total += ((int32_t)(it->end_level - it->start_level) + 1) * it->xp_per_level;
+                ++it;
+                if (it == xp_ranges_end) return total;
+            }
+        }
+
+        int32_t GetXPAtNextLevel(uint32_t current_level) const
+        {
+            return GetXPAtLevel(current_level + 1);
+        }
+
+        [[nodiscard]] int32_t GetPrestigePoints() const
+        {
+            return prestige_points;
+        }
+
+        void SetPrestigePoints(int32_t value)
+        {
+            prestige_points = value;
+        }
     };
 
     class CPlayerInformation
     {
     public:
-        char pad_0x0[0x20];             // 0x000 → 0x020
-        CSkillManager* skill_manager;   // 0x020 → 0x028 (pointer to skill manager)
-        char pad_0x28[0x58];            // 0x028 → 0x080
-        CLoginSaveLoader* save_loader;  // 0x080 → 0x088 (pointer to save loader)
-        char pad_0x88[0x108];           // 0x088 → 0x190
-        int32_t prestige_points;        // 0x190 → 0x194 (DIRECT value)
+        char                        pad_0x0[0x20];          // 0x000 → 0x020
+        CSkillManager               m_SkillManager;         // 0x020 → 0x080
+        CLoginSaveLoader*           m_SaveLoader;           // 0x080 → 0x088
+        char                        pad_0x88[0x8];          // 0x088 → 0x090
+        CPlayerProgressionManager   m_ProgressionManager;   // 0x090 → 0x190
 
         static CPlayerInformation* instance()
         {
-            return *(CPlayerInformation**)(GetAddress(INST_PLAYER_INFORMATION));
+            return *reinterpret_cast<CPlayerInformation**>(GetAddress(INST_PLAYER_INFORMATION));
         }
 
-        // ========== GETTERS ==========
-
-        CLoginSaveLoader* GetSaveLoader()
+        [[nodiscard]] CLoginSaveLoader* GetSaveLoader() const
         {
-            return save_loader;
+            return m_SaveLoader;
         }
 
-        int32_t GetActivePlayer()
+        CPlayerProgressionManager* GetProgressionManager()
         {
-            if (!save_loader) return -1;
-            return save_loader->active_player;
-        }
-
-        PlayerData* GetPlayerData(int player_index)
-        {
-            if (player_index < 0 || player_index > 3) return nullptr;
-            if (!save_loader) return nullptr;
-            return &save_loader->players[player_index];
-        }
-
-        PlayerData* GetActivePlayerData()
-        {
-            int activeIndex = GetActivePlayer();
-            return GetPlayerData(activeIndex);
-        }
-
-        int32_t GetCommandTokens()
-        {
-            if (!save_loader) return -1;
-            return save_loader->command_tokens;
-        }
-
-        int32_t GetPrestigePoints()
-        {
-            return prestige_points;
-        }
-
-        int32_t GetSkillPoints(int player_index)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return -1;
-            return playerData->skill_points;
-        }
-
-        int32_t GetSkillPointsForActive()
-        {
-            int activeIndex = GetActivePlayer();
-            return GetSkillPoints(activeIndex);
-        }
-
-        int32_t GetExperience(int player_index)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return -1;
-            return playerData->experience;
-        }
-
-        int32_t GetExperienceForActive()
-        {
-            int activeIndex = GetActivePlayer();
-            return GetExperience(activeIndex);
-        }
-
-        uint16_t GetLevel(int player_index)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return 0;
-            return playerData->level;
-        }
-
-        uint16_t GetLevelForActive()
-        {
-            int activeIndex = GetActivePlayer();
-            return GetLevel(activeIndex);
-        }
-
-        // ========== SETTERS ==========
-
-        // set skill points for specific player (0-3)
-        bool SetSkillPoints(int player_index, int32_t value)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return false;
-            playerData->skill_points = value;
-            return true;
-        }
-
-        // set skill points for active player
-        bool SetSkillPointsForActive(int32_t value)
-        {
-            int activeIndex = GetActivePlayer();
-            return SetSkillPoints(activeIndex, value);
-        }
-
-        // set experience for specific player (0-3)
-        bool SetExperience(int player_index, int32_t value)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return false;
-            playerData->experience = value;
-            return true;
-        }
-
-        // set experience for active player
-        bool SetExperienceForActive(int32_t value)
-        {
-            int activeIndex = GetActivePlayer();
-            return SetExperience(activeIndex, value);
-        }
-
-        // set level for specific player (0-3)
-        bool SetLevel(int player_index, uint16_t value)
-        {
-            PlayerData* playerData = GetPlayerData(player_index);
-            if (!playerData) return false;
-            playerData->level = value;
-            return true;
-        }
-
-        // set level for active player
-        bool SetLevelForActive(uint16_t value)
-        {
-            int activeIndex = GetActivePlayer();
-            return SetLevel(activeIndex, value);
-        }
-
-        // set command tokens
-        bool SetCommandTokens(int32_t value)
-        {
-            if (!save_loader) return false;
-            save_loader->command_tokens = value;
-            return true;
-        }
-
-        // set prestige points
-        bool SetPrestigePoints(int32_t value)
-        {
-            prestige_points = value;
-            return true;
+            return &m_ProgressionManager;
         }
     };
 } // namespace gz
