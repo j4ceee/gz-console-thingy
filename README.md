@@ -76,6 +76,7 @@
   - ... or to the current aim position (Hotkey: F2 by default)
 - **Gravity Control** for physics objects
 - **Control over Time of Day**
+  - **Mirror Real Time** (sync in-game time with your system clock)
   - freeze time
   - adjust time speed
   - set specific time

@@ -1,10 +1,12 @@
 #pragma once
 
+#include <chrono>
 #include "game/damageable.h"
 #include "game/game_state.h"
 #include "game/player_network_manager.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
+#include "game/world_time.h"
 #include "imgui/ui.h"
 
 #pragma pack(push, 1)
@@ -37,14 +39,31 @@ namespace gz::Utils
             // update vehicle invulnerability status
             if (CVehicleManager* vehicleManager = CVehicleManager::instance())
             {
-                auto* vehicle = vehicleManager->GetPlayerVehicle();
-                if (vehicle)
+                if (CVehicle* vehicle = vehicleManager->GetPlayerVehicle())
                 {
                     CDamageable* vehicleDamageable = vehicle->GetDamageable();
                     if (settings.enableInfiniteBikeHealth && !vehicleDamageable->IsInvulnerable())
                     {
                         vehicleDamageable->SetInvulnerable(true);
                     }
+                }
+            }
+
+            // update time to mirror real time if setting enabled
+            if (settings.mirrorRealTime)
+            {
+                if (CWorldTime* worldTime = CWorldTime::instance())
+                {
+                    const auto now = std::chrono::system_clock::now();
+                    const auto time = std::chrono::system_clock::to_time_t(now);
+                    std::tm localTime;
+                    localtime_s(&localTime, &time);
+
+                    const float fractionalHour = static_cast<float>(localTime.tm_hour) +
+                      static_cast<float>(localTime.tm_min) / 60.0f +
+                      static_cast<float>(localTime.tm_sec) / 3600.0f;
+
+                    worldTime->SetTime(fractionalHour);
                 }
             }
         }

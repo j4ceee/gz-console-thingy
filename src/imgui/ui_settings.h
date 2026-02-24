@@ -40,6 +40,7 @@ namespace gz
         bool takeControlOnHack = false;
         bool unlimitedCarryWeight = false;
         bool unlimitedStorageSize = false;
+        bool mirrorRealTime = false;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

@@ -82,6 +82,233 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
     ImGui::Spacing();
 
+    // --- WORLD TIME ---
+    auto* worldTime = CWorldTime::instance();
+    if (ImGui::CollapsingHeader(ICON_MD_ACCESS_TIME " World Time", ImGuiTreeNodeFlags_DefaultOpen) && worldTime)
+    {
+        // --- MIRROR REAL TIME ---
+        bool mirrorRealTime = settings.mirrorRealTime;
+        if (ImGui::Checkbox("Mirror Real Time", &mirrorRealTime)) {
+            settings.mirrorRealTime = mirrorRealTime;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("When enabled, the in-game time will automatically sync to your system clock, mirroring the current real-world time."
+            "This allows you to experience the game's day / night cycle in real time.",
+            "Note: When enabled, all manual time controls will be disabled. Disable this option to regain control over the in-game time.");
+
+        if (mirrorRealTime)
+            ImGui::BeginDisabled(); // disable manual time controls when mirroring real time
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // --- TIME OF DAY SLIDER ---
+        float time = worldTime->GetTime();
+        if (ImGui::SliderFloat("Time of Day", &time, 0.0f, 24.0f, "")) {
+            worldTime->SetTime(time);
+        }
+
+        // --- DIGITAL CLOCK (HH:MM) ---
+        // Get current time decomposed
+        int hours, minutes;
+        worldTime->GetTimeAsHHMM(hours, minutes);
+        bool timeChanged = false;
+
+        ImGui::PushItemWidth(45.0f);
+        if (ImGui::DragInt("##hours", &hours, 0.2f, 0, 23, "%02d")) {
+            timeChanged = true;
+        }
+        ImGui::SameLine();
+        ImGui::Text(":");
+        ImGui::SameLine();
+        if (ImGui::DragInt("##minutes", &minutes, 0.2f, 0, 59, "%02d")) {
+            timeChanged = true;
+        }
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        UI::HelpMarker("Set the in-game time of day. Time is represented in 24-hour format.\n"
+                          "You can use the slider to set the time, or input hours and minutes directly.");
+
+        if (timeChanged) {
+            worldTime->SetTimeAsHHMM(hours, minutes);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // --- PAUSE CONTROL ---
+        bool isPaused = worldTime->IsPaused();
+        if (ImGui::Checkbox("Pause Time", &isPaused)) {
+            worldTime->SetPaused(isPaused);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Freezes the game world time completely when checked.\n"
+                          "Uncheck to resume normal time progression.");
+
+        // --- TIME SCALE ---
+        float timeScale = worldTime->GetTimeScale();
+        if (ImGui::SliderFloat("Time Scale", &timeScale, -1000.0f, 1000.0f, "%.2fx")) {
+            worldTime->SetTimeScale(timeScale);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Adjust the speed at which time progresses in the game world.\n"
+                          "A time scale of 1.0x represents normal speed, 0.0x freezes time, and negative values reverse time.\n"
+                          "CTRL + Click the slider to input a custom value.");
+
+        if (ImGui::Button(ICON_MD_REFRESH " Reset"))
+        {
+            worldTime->ResetTimeScale();
+        }
+
+        if (mirrorRealTime)
+            ImGui::EndDisabled(); // disable manual time controls when mirroring real time
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- SPAWNING ---
+    auto* spawnSys = CSpawnSystem::instance();
+    if (ImGui::CollapsingHeader(ICON_MD_ADD_CIRCLE " Spawning", ImGuiTreeNodeFlags_DefaultOpen) && spawnSys)
+    {
+        ImGui::Indent();
+        for (const auto & category : Data::spawnCategories)
+        {
+            if (ImGui::CollapsingHeader(category.displayName))
+            {
+                for (size_t idx = 0; idx < category.count; idx++)
+                {
+                    ImGui::Indent();
+
+                    const auto & spawnableCategory = category.category[idx];
+
+                    if (ImGui::CollapsingHeader(spawnableCategory.displayName))
+                    {
+                        if (spawnableCategory.description)
+                        {
+                            ImGui::TextWrapped("%s", spawnableCategory.description);
+                        }
+                        if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
+                        {
+                            for (size_t i = 0; i < spawnableCategory.count; i++) {
+                                const auto& spawnable = spawnableCategory.data[i];
+
+                                ImGui::TableNextColumn();
+
+                                // button for spawn
+                                char buttonLabel[256];
+                                snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
+                                if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
+                                    spawnSys->SpawnCategoryAtAimPosition(spawnable.tag, category.spawnSystemType);
+                                }
+
+                                // tooltip with details
+                                if (ImGui::IsItemHovered()) {
+                                    ImGui::BeginTooltip();
+                                    ImGui::Text("%s", spawnable.name);
+                                    ImGui::Text("Tag: %s", spawnable.tag);
+                                    ImGui::Text("Hash: 0x%08X", spawnable.hash);
+                                    ImGui::Spacing();
+
+                                    ImGui::Text("Objects will be spawned at your aim position. Some objects will not despawn until you exit to menu.");
+
+                                    ImGui::Spacing();
+
+                                    UI::WarningText("Spawning functionality is experimental and may not work correctly for all objects.\n"
+                                        "Use at your own risk!");
+
+                                    if (category.spawnSystemType == 'v')
+                                    {
+                                        ImGui::Spacing();
+                                        ImGui::Separator();
+                                        ImGui::Text("For more vehicles please spawn a 'Vehicle Station' object from the 'Buildings & Props' category.");
+                                    }
+                                    else if (category.spawnSystemType == 'm')
+                                    {
+                                        ImGui::Spacing();
+                                        ImGui::Separator();
+                                        UI::WarningText("Spawning machines currently does not work properly.\n"
+                                            "There are 2 workarounds available:\n"
+                                            "- Ticks can be spawned via their 'eggs'\n"
+                                            "- Lynx can be spawned via Firebird Vulture Beacon Drop");
+                                    }
+                                    ImGui::EndTooltip();
+                                }
+                            }
+                            ImGui::EndTable();
+                        }
+                    }
+                    ImGui::Unindent();
+                }
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Custom"))
+        {
+            static char tagBuffer[128] = "skir_classa_load01";
+            ImGui::InputText("Resource Tag", tagBuffer, sizeof(tagBuffer));
+
+            static uint32_t typeId = 0x37C;
+            static char typeIdHex[16] = "37C";
+
+            ImGui::SetNextItemWidth(100.0f);
+            if (ImGui::InputText("Type ID", typeIdHex, sizeof(typeIdHex), ImGuiInputTextFlags_CharsHexadecimal)) {
+                typeId = (uint32_t)strtoul(typeIdHex, nullptr, 16);
+            }
+            ImGui::SameLine();
+            ImGui::Text("(0x%X = %u)", typeId, typeId);
+
+            if (ImGui::Button("Spawn at Aim Position")) {
+                spawnSys->SpawnTagAtAimPosition(tagBuffer, typeId);
+            }
+        }
+
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Spawning")) {
+            ImGui::Text("CSpawnSystem: %p", spawnSys);
+            ImGui::TreePop();
+        }
+
+        ImGui::Unindent();
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- PHYSICS ---
+    auto* physicsSystem = CPhysicsSystem::instance();
+    auto* world = physicsSystem ? physicsSystem->GetWorld() : nullptr;
+    if (ImGui::CollapsingHeader(ICON_MD_CATEGORY " Physics", ImGuiTreeNodeFlags_DefaultOpen) && world) {
+        float gravity = world->GetGravityInGs();
+        if (ImGui::SliderFloat("Gravity (Gs)", &gravity, -10.0f, 10.0f, "%.2f Gs")) {
+            world->SetGravityInGs(gravity);
+        }
+        ImGui::SameLine();
+        UI::HelpMarker("Adjust the gravity of the game world in Gs (1 G = Earth's gravity).\n"
+                          "Negative values will invert gravity (things fall upwards).",
+                          "Note: This only affects physics-based objects, e.g. vehicles, ragdolled players, defeated enemies, etc.");
+
+        if (ImGui::Button("Zero Gravity")) {
+            world->SetGravityInGs(0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Gravity")) {
+            world->SetGravityInGs(1.0f);
+        }
+
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Physics")) {
+            ImGui::Text("CPhysicsSystem: %p", physicsSystem);
+            ImGui::Text("hknpWorld: %p", world);
+            ImGui::Text("Gravity: %.2f", world->GetGravity());
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
     // --- TELEPORTATION ---
     auto* player = playerMgr->GetPlayer();
     auto* gameWorld = CGameWorld::instance();
@@ -194,105 +421,6 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // --- PHYSICS ---
-    auto* physicsSystem = CPhysicsSystem::instance();
-    auto* world = physicsSystem ? physicsSystem->GetWorld() : nullptr;
-    if (ImGui::CollapsingHeader(ICON_MD_CATEGORY " Physics", ImGuiTreeNodeFlags_DefaultOpen) && world) {
-        float gravity = world->GetGravityInGs();
-        if (ImGui::SliderFloat("Gravity (Gs)", &gravity, -10.0f, 10.0f, "%.2f Gs")) {
-            world->SetGravityInGs(gravity);
-        }
-        ImGui::SameLine();
-        UI::HelpMarker("Adjust the gravity of the game world in Gs (1 G = Earth's gravity).\n"
-                          "Negative values will invert gravity (things fall upwards).",
-                          "Note: This only affects physics-based objects, e.g. vehicles, ragdolled players, defeated enemies, etc.");
-
-        if (ImGui::Button("Zero Gravity")) {
-            world->SetGravityInGs(0.0f);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Gravity")) {
-            world->SetGravityInGs(1.0f);
-        }
-
-        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Physics")) {
-            ImGui::Text("CPhysicsSystem: %p", physicsSystem);
-            ImGui::Text("hknpWorld: %p", world);
-            ImGui::Text("Gravity: %.2f", world->GetGravity());
-            ImGui::TreePop();
-        }
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // --- WORLD TIME ---
-    auto* worldTime = CWorldTime::instance();
-    if (ImGui::CollapsingHeader(ICON_MD_ACCESS_TIME " World Time", ImGuiTreeNodeFlags_DefaultOpen) && worldTime)
-    {
-        // --- TIME OF DAY SLIDER ---
-        float time = worldTime->GetTime();
-        if (ImGui::SliderFloat("Time of Day", &time, 0.0f, 24.0f, "")) {
-            worldTime->SetTime(time);
-        }
-
-        // --- DIGITAL CLOCK (HH:MM) ---
-        // Get current time decomposed
-        int hours, minutes;
-        worldTime->GetTimeAsHHMM(hours, minutes);
-        bool timeChanged = false;
-
-        ImGui::PushItemWidth(45.0f);
-        if (ImGui::DragInt("##hours", &hours, 0.2f, 0, 23, "%02d")) {
-            timeChanged = true;
-        }
-        ImGui::SameLine();
-        ImGui::Text(":");
-        ImGui::SameLine();
-        if (ImGui::DragInt("##minutes", &minutes, 0.2f, 0, 59, "%02d")) {
-            timeChanged = true;
-        }
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-        UI::HelpMarker("Set the in-game time of day. Time is represented in 24-hour format.\n"
-                          "You can use the slider to set the time, or input hours and minutes directly.");
-
-        if (timeChanged) {
-            worldTime->SetTimeAsHHMM(hours, minutes);
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        // --- PAUSE CONTROL ---
-        bool isPaused = worldTime->IsPaused();
-        if (ImGui::Checkbox("Pause Time", &isPaused)) {
-            worldTime->SetPaused(isPaused);
-        }
-        ImGui::SameLine();
-        UI::HelpMarker("Freezes the game world time completely when checked.\n"
-                          "Uncheck to resume normal time progression.");
-
-        // --- TIME SCALE ---
-        float timeScale = worldTime->GetTimeScale();
-        if (ImGui::SliderFloat("Time Scale", &timeScale, -1000.0f, 1000.0f, "%.2fx")) {
-            worldTime->SetTimeScale(timeScale);
-        }
-        ImGui::SameLine();
-        UI::HelpMarker("Adjust the speed at which time progresses in the game world.\n"
-                          "A time scale of 1.0x represents normal speed, 0.0x freezes time, and negative values reverse time.\n"
-                          "CTRL + Click the slider to input a custom value.");
-
-        if (ImGui::Button(ICON_MD_REFRESH " Reset"))
-        {
-            worldTime->ResetTimeScale();
-        }
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
     // --- WEATHER ---
     if (ImGui::CollapsingHeader(ICON_MD_WB_SUNNY " Weather & GFX", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -379,114 +507,6 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
                 ImGui::TreePop();
             }
         }
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // --- SPAWNING ---
-    auto* spawnSys = CSpawnSystem::instance();
-    if (ImGui::CollapsingHeader(ICON_MD_ADD_CIRCLE " Spawning", ImGuiTreeNodeFlags_DefaultOpen) && spawnSys)
-    {
-        ImGui::Indent();
-        for (const auto & category : Data::spawnCategories)
-        {
-            if (ImGui::CollapsingHeader(category.displayName))
-            {
-                for (size_t idx = 0; idx < category.count; idx++)
-                {
-                    ImGui::Indent();
-
-                    const auto & spawnableCategory = category.category[idx];
-
-                    if (ImGui::CollapsingHeader(spawnableCategory.displayName))
-                    {
-                        if (spawnableCategory.description)
-                        {
-                            ImGui::TextWrapped("%s", spawnableCategory.description);
-                        }
-                        if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
-                        {
-                            for (size_t i = 0; i < spawnableCategory.count; i++) {
-                                const auto& spawnable = spawnableCategory.data[i];
-
-                                ImGui::TableNextColumn();
-
-                                // button for spawn
-                                char buttonLabel[256];
-                                snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
-                                if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
-                                    spawnSys->SpawnCategoryAtAimPosition(spawnable.tag, category.spawnSystemType);
-                                }
-
-                                // tooltip with details
-                                if (ImGui::IsItemHovered()) {
-                                    ImGui::BeginTooltip();
-                                    ImGui::Text("%s", spawnable.name);
-                                    ImGui::Text("Tag: %s", spawnable.tag);
-                                    ImGui::Text("Hash: 0x%08X", spawnable.hash);
-                                    ImGui::Spacing();
-
-                                    ImGui::Text("Objects will be spawned at your aim position. Some objects will not despawn until you exit to menu.");
-
-                                    ImGui::Spacing();
-
-                                    UI::WarningText("Spawning functionality is experimental and may not work correctly for all objects.\n"
-                                        "Use at your own risk!");
-
-                                    if (category.spawnSystemType == 'v')
-                                    {
-                                        ImGui::Spacing();
-                                        ImGui::Separator();
-                                        ImGui::Text("For more vehicles please spawn a 'Vehicle Station' object from the 'Buildings & Props' category.");
-                                    }
-                                    else if (category.spawnSystemType == 'm')
-                                    {
-                                        ImGui::Spacing();
-                                        ImGui::Separator();
-                                        UI::WarningText("Spawning machines currently does not work properly.\n"
-                                            "There are 2 workarounds available:\n"
-                                            "- Ticks can be spawned via their 'eggs'\n"
-                                            "- Lynx can be spawned via Firebird Vulture Beacon Drop");
-                                    }
-                                    ImGui::EndTooltip();
-                                }
-                            }
-                            ImGui::EndTable();
-                        }
-                    }
-                    ImGui::Unindent();
-                }
-            }
-        }
-
-
-        if (ImGui::CollapsingHeader("Custom"))
-        {
-            static char tagBuffer[128] = "skir_classa_load01";
-            ImGui::InputText("Resource Tag", tagBuffer, sizeof(tagBuffer));
-
-            static uint32_t typeId = 0x37C;
-            static char typeIdHex[16] = "37C";
-
-            ImGui::SetNextItemWidth(100.0f);
-            if (ImGui::InputText("Type ID", typeIdHex, sizeof(typeIdHex), ImGuiInputTextFlags_CharsHexadecimal)) {
-                typeId = (uint32_t)strtoul(typeIdHex, nullptr, 16);
-            }
-            ImGui::SameLine();
-            ImGui::Text("(0x%X = %u)", typeId, typeId);
-
-            if (ImGui::Button("Spawn at Aim Position")) {
-                spawnSys->SpawnTagAtAimPosition(tagBuffer, typeId);
-            }
-        }
-
-        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Spawning")) {
-            ImGui::Text("CSpawnSystem: %p", spawnSys);
-            ImGui::TreePop();
-        }
-
-        ImGui::Unindent();
     }
 }
 } // namespace gz::UITabs

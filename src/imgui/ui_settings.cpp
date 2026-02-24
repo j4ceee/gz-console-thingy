@@ -16,7 +16,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(21); // pre-allocate space
+            m_settingsCache.reserve(22); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -115,6 +115,8 @@ namespace gz
                 [this]() { PlayerEqUtils::g_ignoreEncumbrance = unlimitedCarryWeight; }});
             m_settingsCache.push_back({"UnlimitedStorageSize",'b',const_cast<bool*>(&unlimitedStorageSize),
                 [this]() { PlayerEqUtils::g_unlimitedStorageSize = unlimitedStorageSize; }});
+            m_settingsCache.push_back({"MirroRealTime",'b',const_cast<bool*>(&mirrorRealTime),
+                []() {}}); // handled in game update hook
 
             m_cacheInitialized = true;
         }
