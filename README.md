@@ -74,7 +74,7 @@
   - ... to specific coordinates
   - ... predefined locations (collectibles)
   - ... or to the current aim position (Hotkey: F2 by default)
-- **Gravity Control** for physics objects
+- **Gravity Control** for physics objects & player character
 - **Control over Time of Day**
   - **Mirror Real Time** (sync in-game time with your system clock)
   - freeze time
