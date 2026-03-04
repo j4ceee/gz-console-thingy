@@ -281,8 +281,10 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     auto* physicsSystem = CPhysicsSystem::instance();
     auto* world = physicsSystem ? physicsSystem->GetWorld() : nullptr;
     if (ImGui::CollapsingHeader(ICON_MD_CATEGORY " Physics", ImGuiTreeNodeFlags_DefaultOpen) && world) {
+        // -- world gravity
         float gravity = world->GetGravityInGs();
-        if (ImGui::SliderFloat("Gravity (Gs)", &gravity, -10.0f, 10.0f, "%.2f Gs")) {
+        ImGui::TextWrapped("World Gravity (Physics Objects)");
+        if (ImGui::SliderFloat("Gravity (Gs)##world", &gravity, -10.0f, 10.0f, "%.2f Gs")) {
             world->SetGravityInGs(gravity);
         }
         ImGui::SameLine();
@@ -290,18 +292,53 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
                           "Negative values will invert gravity (things fall upwards).",
                           "Note: This only affects physics-based objects, e.g. vehicles, ragdolled players, defeated enemies, etc.");
 
-        if (ImGui::Button("Zero Gravity")) {
+        if (ImGui::Button("Zero Gravity##world")) {
             world->SetGravityInGs(0.0f);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Reset Gravity")) {
+        if (ImGui::Button("Reset Gravity##world")) {
             world->SetGravityInGs(1.0f);
+        }
+
+        if (CPfxCharacterInstance* pfxInstance = playerMgr->GetPlayer()->GetCharacter()->GetPfxInstance())
+        {
+            ImGui::Separator();
+
+            float playerGravity = pfxInstance->GetGravityInGs();
+            ImGui::TextWrapped("Player Gravity");
+            if (ImGui::SliderFloat("Gravity (Gs)##player", &playerGravity, -25.0f, 25.0f, "%.2f Gs")) {
+                pfxInstance->SetGravityInGs(playerGravity);
+            }
+            ImGui::SameLine();
+            UI::HelpMarker("Adjust the gravity affecting the player character in Gs (1 G = Earth's gravity).\n"
+                              "Negative values will invert gravity (you fall upwards).",
+                              "Note: This only affects the player character. It does not affect any vehicles you are driving or other physics-based objects.");
+
+            if (ImGui::Button("Zero Gravity##player")) {
+                pfxInstance->SetGravityInGs(0.0f);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Reset Gravity##player"))
+            {
+                pfxInstance->ResetGravityForPlayer();
+            }
         }
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Physics")) {
             ImGui::Text("CPhysicsSystem: %p", physicsSystem);
             ImGui::Text("hknpWorld: %p", world);
-            ImGui::Text("Gravity: %.2f", world->GetGravity());
+            ImGui::Text("World Gravity: %.2f", world->GetGravity());
+
+            if (CPfxCharacterInstance* pfxInstance = playerMgr->GetPlayer()->GetCharacter()->GetPfxInstance())
+            {
+                ImGui::Text("CPfxCharacterInstance Address: 0x%p", pfxInstance);
+                ImGui::Text("Player Gravity: %.2f", pfxInstance->GetGravity());
+                if (float groundDist = pfxInstance->GetGroundDistance(); groundDist >= FLT_MAX * 0.9f)
+                    ImGui::Text("Distance to Ground: Too Far");
+                else
+                    ImGui::Text("Distance to Ground: %.2f", groundDist);
+            }
+
             ImGui::TreePop();
         }
     }

@@ -402,6 +402,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("ANIMAL_HEALTH_DAMAGE", result, [&] {
+       auto match = pattern("0F ? ? E8 ? ? ? ? 49 ? ? ? E8 ? ? ? ? 49", game_file)
+           .count(1)
+           .get(0)
+           .adjust(3)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("CHARACTER_REVIVE", result, [&] {
        auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
            .count(1)
@@ -416,6 +425,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
            .count(1)
            .get(0)
            .adjust(12)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DAMAGEABLE_PART_SET_UNIT_HEALTH", result, [&] {
+       auto match = pattern("48 ? ? ? E8 ? ? ? ? 48 ? ? ? 48 ? ? 75 ? 48 ? ? ? ? 49", game_file)
+           .count(1)
+           .get(0)
+           .adjust(4)
            .extract_call();
        return rebase(game_file, match);
     });

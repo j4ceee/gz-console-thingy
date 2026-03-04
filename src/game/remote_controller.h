@@ -1,6 +1,7 @@
 #pragma once
 
 #include "addresses.h"
+#include "hook_helpers.h"
 #include "meow_hook/util.h"
 
 #pragma pack(push, 1)

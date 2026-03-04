@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include "game/animal_character.h"
 #include "game/animal_network.h"
 #include "game/animal_spotting_manager.h"
 #include "game/camera_collision_modifier.h"
@@ -80,8 +81,15 @@ namespace gz::UITabs
                     // -- kill machine
                     if (ImGui::Button("Kill##target"))
                     {
-                        machineDmg->SetHealth(0);
+                        targetAnimal->GetHealth()->ApplyDamage(999999);
                     }
+
+                    // -- set machine health
+                    // int healthPercent = targetAnimal->GetHealthPercentByLethalDamage();
+                    // if (ImGui::SliderInt("Health (%)##machine", &healthPercent, 0, 100))
+                    // {
+                    //     targetAnimal->SetHealthInPercentageByLethalDamage(healthPercent);
+                    // }
 
                     ImGui::Spacing();
 
@@ -160,19 +168,34 @@ namespace gz::UITabs
 
                 if (spottingManager->GetTargetAnimal())
                 {
+                    CCharacter* machineChar = spottingManager->GetTargetAnimal()->GetSpawnedCharacter();
+                    ImGui::Text("Target Animal CCharacter: 0x%p", machineChar);
+                    ImGui::Spacing();
                     CAnimalType* type = spottingManager->GetTargetAnimal()->GetAnimalType();
-                    ImGui::Text("Target Animal CCharacter: 0x%p", spottingManager->GetTargetAnimal()->GetSpawnedCharacter());
                     ImGui::Text("Target Animal CAnimalType: 0x%p", type);
                     ImGui::Text("Target Animal Name: %s", type->GetName());
                     ImGui::Text("Target Animal Spawn Tag: %s", type->GetSpawnTag());
                     ImGui::Text("Target Animal Machine Class: %s", type->GetMachineClass());
                     ImGui::Text("Target Animal Designator: %s", type->GetDesignator());
+                    ImGui::Spacing();
+                    ImGui::Text("CAnimalHealth Address: 0x%p", spottingManager->GetTargetAnimal()->GetHealth());
+                    ImGui::Text("Target Animal Min Kill Damage: %.2f", spottingManager->GetTargetAnimal()->GetHealth()->m_MinKillDamage);
+                    ImGui::Text("Target Animal Health (Lethal Dmg): %.2f", spottingManager->GetTargetAnimal()->GetHealthPercentByLethalDamage());
+                    ImGui::Text("Target Animal Health (Max Health): %d", spottingManager->GetTargetAnimal()->GetHealthPercentByMaxHealth());
+                    ImGui::Spacing();
+                    CAnimalCharacterComponent* animalComp = machineChar->GetAnimalComponent();
+                    ImGui::Text("CAnimalCharacterComponent Address: 0x%p", animalComp);
+                    if (ImGui::TreeNode("CDamageableCharacterParts"))
+                    {
+                        const auto parts = animalComp->GetAllParts();
+                        for (size_t i = 0; i < parts.size(); i++)
+                        {
+                            const auto part = parts[i];
+                            ImGui::Text("Part %zu (Health: %.2f / %.2f)", i, part->GetHealth(), part->GetMaxHealth());
+                        }
+                        ImGui::TreePop();
+                    }
                 }
-
-                if (spottingManager->GetLastTargetAnimal())
-                    ImGui::Text("Last Target Animal CCharacter: 0x%p",
-                                spottingManager->GetLastTargetAnimal()->GetSpawnedCharacter());
-
                 ImGui::TreePop();
             }
         }

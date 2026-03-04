@@ -50,8 +50,10 @@ void InitAddresses(bool is_steam)
     g_Address[DAMAGEABLE_RESTORE_HEALTH] = (is_steam ? 0x1406e2670 : 0x1406e2280) + offset;
     g_Address[DAMAGEABLE_SET_INVULNERABLE] = (is_steam ? 0x1406e3b00 : 0x1406e3710) + offset;
     g_Address[DAMAGEABLE_IS_INVULNERABLE] = (is_steam ? 0x1406db850 : 0x1406db460) + offset;
+    g_Address[ANIMAL_HEALTH_DAMAGE] = (is_steam ? 0x1408cd2e0 : 0x1408ccfc0) + offset;
     g_Address[CHARACTER_REVIVE] = (is_steam ? 0x140624590 : 0x1406241a0) + offset;
     g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
+    g_Address[DAMAGEABLE_PART_SET_UNIT_HEALTH] = (is_steam ? 0x14062d730 : 0x14062d340) + offset;
     g_Address[REQUEST_ANIMAL_HACK] = (is_steam ? 0x1409912e0 : 0x140999430) + offset;
     g_Address[REQUEST_ANIMAL_CONTROL] = (is_steam ? 0x1406492d0 : 0x140648ee0) + offset;
     g_Address[RELEASE_ANIMAL_CONTROL] = (is_steam ? 0x14065f780 : 0x14065f390) + offset;

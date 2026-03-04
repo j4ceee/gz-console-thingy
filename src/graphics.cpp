@@ -6,7 +6,6 @@
 #include "input.h"
 #include "log.h"
 #include "util.h"
-
 #include "game/device.h"
 
 // graphics.cpp
@@ -21,8 +20,8 @@ void Graphics::GraphicsFlipCallback(void* param_1)
         ID3D11DeviceContext* context = gz::HDevice_t::GetDeviceContext(param_1);
         IDXGISwapChain* swapChain = gz::HDevice_t::GetSwapChain(param_1);
 
-        gz::Log("GetDeviceContext returned: %p", (void*)context);
-        gz::Log("GetSwapChain returned: %p", (void*)swapChain);
+        gz::Log("GetDeviceContext returned: %p", static_cast<void*>(context));
+        gz::Log("GetSwapChain returned: %p", static_cast<void*>(swapChain));
 
         if (!context || !swapChain) {
             gz::Log("Context or swapchain is null - aborting init");
@@ -31,7 +30,7 @@ void Graphics::GraphicsFlipCallback(void* param_1)
 
         ID3D11Device* device = nullptr;
         context->GetDevice(&device);
-        gz::Log("GetDevice returned: %p", (void*)device);
+        gz::Log("GetDevice returned: %p", static_cast<void*>(device));
 
         if (!device) {
             gz::Log("Device is null - aborting init");
@@ -47,7 +46,7 @@ void Graphics::GraphicsFlipCallback(void* param_1)
         if (gfx->m_cachedBackBufferRTV) {
             // check if swap chain backbuffer has changed (fullscreen toggle, alt-tab, resize)
             ID3D11Texture2D* currentBackBuffer = nullptr;
-            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&currentBackBuffer))) {
+            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&currentBackBuffer)))) {
                 ID3D11Resource* rtvResource = nullptr;
                 gfx->m_cachedBackBufferRTV->GetResource(&rtvResource);
 
@@ -74,7 +73,7 @@ void Graphics::GraphicsFlipCallback(void* param_1)
         // create RTV if we don't have one (or if we just released it)
         if (!gfx->m_cachedBackBufferRTV) {
             ID3D11Texture2D* backBuffer = nullptr;
-            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer))) {
+            if (SUCCEEDED(gfx->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer)))) {
                 HRESULT hr = gfx->m_device->CreateRenderTargetView(backBuffer, nullptr, &gfx->m_cachedBackBufferRTV);
                 if (FAILED(hr)) {
                     gz::Log("Failed to create RTV: 0x%X", hr);
@@ -100,8 +99,8 @@ void Graphics::GraphicsFlipCallback(void* param_1)
             D3D11_VIEWPORT viewport;
             viewport.TopLeftX = 0;
             viewport.TopLeftY = 0;
-            viewport.Width = (FLOAT)gfx->m_screenWidth;
-            viewport.Height = (FLOAT)gfx->m_screenHeight;
+            viewport.Width = static_cast<FLOAT>(gfx->m_screenWidth);
+            viewport.Height = static_cast<FLOAT>(gfx->m_screenHeight);
             viewport.MinDepth = 0.0f;
             viewport.MaxDepth = 1.0f;
             gfx->m_deviceContext->RSSetViewports(1, &viewport);
@@ -125,7 +124,7 @@ void Graphics::GraphicsFlipCallback(void* param_1)
             }
 
             // draw our overlay
-            Input::Get()->Draw(gfx->m_deviceContext);
+            Input::Draw(gfx->m_deviceContext);
 
             // restore the game's render target and viewport
             gfx->m_deviceContext->OMSetRenderTargets(1, &oldRTV, oldDSV);

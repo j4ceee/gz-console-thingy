@@ -171,6 +171,7 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
 void UI::Render()
 {
     if (!m_visible || !m_initialized) {
+        SetVisible(false);
         return;
     }
 

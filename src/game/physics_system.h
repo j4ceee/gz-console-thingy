@@ -12,7 +12,7 @@ namespace gz
         char pad_0x0[0x974];            // 0x000 → 0x974
         float gravity;                  // 0x974 → 0x978
 
-        float GetGravity()
+        [[nodiscard]] float GetGravity() const
         {
             return gravity;
         }
@@ -22,7 +22,7 @@ namespace gz
             gravity = value;
         }
 
-        float GetGravityInGs()
+        [[nodiscard]] float GetGravityInGs() const
         {
             return gravity / -9.810f;
         }
