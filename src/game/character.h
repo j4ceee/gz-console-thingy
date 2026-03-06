@@ -11,6 +11,21 @@ namespace gz
     class CDamageable;
     class CAvatar {};
 
+    struct CObjectBlackboard
+    {
+        void*       m_KeyInfos;         // +0x00
+        uint16_t    m_KeyInfoCapacity;  // +0x08
+        uint8_t     _pad1[6];           // +0x0A
+        void*       m_Data;             // +0x10
+        uint16_t    m_DataCapacity;     // +0x18
+        uint16_t    m_CurrentOffset;    // +0x1A
+        uint8_t     _pad2[4];           // +0x1C
+        void*       m_NetCallback;      // +0x20
+        void*       m_NetUserData;      // +0x28
+        void*       m_BbLock;           // +0x30
+    };
+    static_assert(sizeof(CObjectBlackboard) == 0x38);
+
     class CPfxCharacterInstance
     {
     public:
@@ -41,14 +56,16 @@ namespace gz
     class CCharacter
     {
     public:
-        char                        _pad_damageable[0x2C4]; // 0x000 → 0x2C4 (CDamageable)
-        char                        _pad1[0x5E4];           // 0x2C4 → 0x8A8
-        int                         m_originalFaction;      // 0x8A8 → 0x8AC
-        char                        _pad2[0x2C];            // 0x8AC → 0x8D8
-        void**                      m_interactionData;      // 0x8D8 → 0x8E0 - pointer to interaction data
-        char                        _pad[0x2AC0];           // 0x8E0 → 0x33A0
+        char                        _pad_damageable[0x2C4]; // 0x0000 → 0x02C4 (CDamageable)
+        char                        _pad1[0x5E4];           // 0x02C4 → 0x08A8
+        int                         m_originalFaction;      // 0x08A8 → 0x08AC
+        char                        _pad2[0x2C];            // 0x08AC → 0x08D8
+        void**                      m_interactionData;      // 0x08D8 → 0x08E0 - pointer to interaction data
+        char                        _pad3[0x2AC0];          // 0x08E0 → 0x33A0
         CPfxCharacterInstance*      m_pfxInstance;          // 0x33A0 → 0x33A8
-        char                        _pad5[0x48];            // 0x33A8 → 0x33F0
+        char                        _pad4[0x8];             // 0x33A8 → 0x33B0
+        CObjectBlackboard           m_Blackboard;           // 0x33B0 → 0x33E8
+        char                        _pad5[0x8];             // 0x33E8 → 0x33F0
         CRemoteController*          m_remoteController;     // 0x33F0 → 0x33F8
         char                        _pad6[0x10];            // 0x33F8 → 0x3408
         bool                        m_unlimitedAmmo;        // 0x3408 → 0x3409 (for player it still consumes inventory ammo)
@@ -177,6 +194,24 @@ namespace gz
         {
             return (m_controlFlag & 0x40) != 0;
         }
+
+        /// <summary>
+        /// Sets the visibility of the third person character body
+        /// </summary>
+        void SetThirdPersonBodyVisible(bool visible)
+        {
+            meow_hook::func_call<void>(
+                GetAddress(FUNC_SET_BLACKBOARD_INT_GET_WRAPPER),
+                &m_Blackboard,
+                0x41df1e71,
+                visible ? 1 : 0,
+                0,
+                0
+            );
+        }
     };
+    static_assert(offsetof(CCharacter, m_Blackboard) == 0x33B0);
+    static_assert(offsetof(CCharacter, m_pfxInstance) == 0x33A0);
+    static_assert(offsetof(CCharacter, m_animalComponent) == 0x4388);
 } // namespace gz
 #pragma pack(pop)

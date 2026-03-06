@@ -48,7 +48,16 @@ struct CMatrix4f {
         m[1] = {0, 1, 0, 0}; // up / y-axis direction / y-scale
         m[2] = {0, 0, 1, 0}; // forward / z-axis direction / z-scale
         m[3] = {0, 0, 0, 1}; // translation / position
-
         // Diagonal values = 1 = no scaling
     }
+
+    /// <summary>
+    /// Gets the translation component of the matrix (position) as a reference to a CVector3f.
+    /// This allows for direct reading and writing of the translation values.
+    /// </summary>
+    CVector3f& GetTranslation()
+    {
+        return *reinterpret_cast<CVector3f*>(&m[3]);
+    }
 };
+static_assert(sizeof(CMatrix4f) == 0x40);

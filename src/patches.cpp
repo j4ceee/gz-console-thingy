@@ -19,6 +19,7 @@
 #include "game/game_state.h"
 #include "game/player_eq_utils.h"
 #include "game/weapon_consumption.h"
+#include "game/camera/camera_director.h"
 #include "patches/building_patches.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -156,6 +157,9 @@ bool InitPatchesAndHooks()
 
         if (!PlayerEqUtils::SetupGetEquipmentWeightHook())
             Log("Failed to setup GetEquipmentWeight hook");
+
+        if (!CCameraDirector::SetupPushCameraHook())
+            Log("Failed to setup CameraDirector PushCamera hook");
 
         if (!Utils::SetupHashFunction()) {
             // required for several patches -> fail initialization

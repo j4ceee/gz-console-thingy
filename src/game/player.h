@@ -10,16 +10,20 @@ namespace gz
     class CPlayerAimControl
     {
     public:
-        char _pad[0xB0];              // 0x000 → 0xB0
-        CVector3f m_aimPos[4];        // 0xB0 → 0xD8 (4 x CVector3f, could be m_aimPos, m_lastAimPos, ..., ...)
-        char _pad2[0xD8];             // 0xD8 → 0x1B0
-        float m_rayCastDistance;      // 0x1B0 → 0x1B4 (500.0f)
-        char _pad3[0x10];             // 0x1B4 → 0x1C4
-        float m_stickyValue;          // 0x1C4 → 0x1C8 (1.0f)
-        uint32_t m_aimType;           // 0x1C8 → 0x1CC (EAuto = 2)
-        char _pad4[0x14];             // 0x1CC → 0x1E0
-        CCharacter* m_owner;          // 0x1E0 → 0x1E8
+        char        _pad[0xB0];             // 0x000 → 0x0B0
+        CVector3f   m_aimPos[4];            // 0x0B0 → 0x0E0 (array of 4 vectors, only the first is used for aim assist target position)
+        char        _pad2[0x24];            // 0x0E0 → 0x104
+        CVector3f   m_aimAssistTargetPos;   // 0x104 → 0x110
+        float       m_aimAssistTargetWeight;// 0x110 → 0x114 (or similar scalar)
+        char        _pad3[0x9C];            // 0x114 → 0x1B0
+        float       m_rayCastDistance;      // 0x1B0 → 0x1B4 (500.0f)
+        char        _pad4[0x10];            // 0x1B4 → 0x1C4
+        float       m_stickyValue;          // 0x1C4 → 0x1C8 (1.0f)
+        uint32_t    m_aimType;              // 0x1C8 → 0x1CC (EAuto = 2)
+        char        _pad5[0x14];            // 0x1CC → 0x1E0
+        CCharacter* m_owner;                // 0x1E0 → 0x1E8
     };
+    static_assert(offsetof(CPlayerAimControl, m_owner) == 0x1E0);
 
     class CPlayer
     {
