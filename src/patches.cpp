@@ -15,6 +15,7 @@
 #include "game/clock.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
+#include "game/deep_water.h"
 #include "game/environment_gfx.h"
 #include "game/game_state.h"
 #include "game/player_eq_utils.h"
@@ -160,6 +161,9 @@ bool InitPatchesAndHooks()
 
         if (!CCameraDirector::SetupPushCameraHook())
             Log("Failed to setup CameraDirector PushCamera hook");
+
+        if (!CDeepWaterHandling::SetupGetWaterHeightHook())
+            Log("Failed to setup Deep Water Cached Height hook");
 
         if (!Utils::SetupHashFunction()) {
             // required for several patches -> fail initialization

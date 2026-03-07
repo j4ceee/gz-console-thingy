@@ -32,6 +32,13 @@ struct CVector2f {
 
 struct CVector3f {
     float x, y, z;
+
+
+    CVector3f operator+(const CVector3f& o) const { return { x+o.x, y+o.y, z+o.z }; }
+    CVector3f operator-(const CVector3f& o) const { return { x-o.x, y-o.y, z-o.z }; }
+    CVector3f operator*(float s)            const { return { x*s,   y*s,   z*s   }; }
+    CVector3f& operator+=(const CVector3f& o) { x+=o.x; y+=o.y; z+=o.z; return *this; }
+    CVector3f& operator-=(const CVector3f& o) { x-=o.x; y-=o.y; z-=o.z; return *this; }
 };
 
 struct CVector4f {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "animation_control.h"
 #include "remote_controller.h"
 #include "data_types.h"
 #include "meow_hook/util.h"
@@ -7,6 +8,7 @@
 #pragma pack(push, 1)
 namespace gz
 {
+    class CDeepWaterHandling;
     class CAnimalCharacterComponent;
     class CDamageable;
     class CAvatar {};
@@ -61,36 +63,40 @@ namespace gz
         int                         m_originalFaction;      // 0x08A8 → 0x08AC
         char                        _pad2[0x2C];            // 0x08AC → 0x08D8
         void**                      m_interactionData;      // 0x08D8 → 0x08E0 - pointer to interaction data
-        char                        _pad3[0x2AC0];          // 0x08E0 → 0x33A0
+        char                        _pad3[0x988];           // 0x08E0 → 0x1268
+        CAnimatedModel              m_animatedModel;        // 0x1268 → 0x1390
+        char                        _pad4[0x2010];          // 0x1270 → 0x33A0
         CPfxCharacterInstance*      m_pfxInstance;          // 0x33A0 → 0x33A8
-        char                        _pad4[0x8];             // 0x33A8 → 0x33B0
+        char                        _pad5[0x8];             // 0x33A8 → 0x33B0
         CObjectBlackboard           m_Blackboard;           // 0x33B0 → 0x33E8
-        char                        _pad5[0x8];             // 0x33E8 → 0x33F0
+        char                        _pad6[0x8];             // 0x33E8 → 0x33F0
         CRemoteController*          m_remoteController;     // 0x33F0 → 0x33F8
-        char                        _pad6[0x10];            // 0x33F8 → 0x3408
+        char                        _pad7[0x10];            // 0x33F8 → 0x3408
         bool                        m_unlimitedAmmo;        // 0x3408 → 0x3409 (for player it still consumes inventory ammo)
         uint8_t                     m_controlFlag;          // 0x3409 → 0x340A
-        char                        _pad7[0x4EA];           // 0x340A → 0x38F4
+        char                        _pad8[0x4EA];           // 0x340A → 0x38F4
         bool                        m_detectable;           // 0x38F4 → 0x38F5
-        char                        _pad8[0xEF];            // 0x38F5 → 0x39E4
+        char                        _pad9[0xEF];            // 0x38F5 → 0x39E4
         CVector2f                   m_currentGravity;       // 0x39E4 → 0x39EC (array of 2 floats)
-        char                        _pad9[0xC];             // 0x39EC → 0x39F8
+        char                        _pad10[0xC];            // 0x39EC → 0x39F8
         int                         m_faction;              // 0x39F8 → 0x39FC
-        char                        _pad10[0xDC];           // 0x39FC → 0x3AD8
+        char                        _pad11[0xDC];           // 0x39FC → 0x3AD8
         float                       worldPosX;              // 0x3AD8 → 0x3ADC - base world X coordinate
         float                       worldPosY;              // 0x3ADC → 0x3AE0 - base world Y coordinate
         float                       worldPosZ;              // 0x3AE0 → 0x3AE4 - base world Z coordinate
-        char                        _pad11[0x144];          // 0x3AE4 → 0x3C28
+        char                        _pad12[0x144];          // 0x3AE4 → 0x3C28
         CAvatar*                    m_avatar;               // 0x3C28 → 0x3C30
-        char                        _pad12[0x758];          // 0x3C30 → 0x4388
+        char                        _pad13[0x758];          // 0x3C30 → 0x4388
         CAnimalCharacterComponent*  m_animalComponent;      // 0x4388 → 0x4390
+        char                        _pad14[0x10];           // 0x4390 → 0x43A0
+        CDeepWaterHandling*         m_deepWaterHandling;    // 0x43A0 → 0x43A8
 
-        CDamageable* GetDamageable()
+        [[nodiscard]] CDamageable* GetDamageable()
         {
             return reinterpret_cast<CDamageable*>(this);
         }
 
-        CPfxCharacterInstance* GetPfxInstance()
+        [[nodiscard]] CPfxCharacterInstance* GetPfxInstance()
         {
             return m_pfxInstance;
         }
@@ -99,9 +105,14 @@ namespace gz
         /// Gets the animal component of the character, if it has one.
         /// </summary>
         /// <returns>A pointer to the animal component, or nullptr if the character does not have one.</returns>
-        CAnimalCharacterComponent* GetAnimalComponent()
+        [[nodiscard]] CAnimalCharacterComponent* GetAnimalComponent()
         {
             return m_animalComponent;
+        }
+
+        [[nodiscard]] CAnimatedModel& GetAnimatedModel()
+        {
+            return m_animatedModel;
         }
 
         [[nodiscard]] CRemoteController* GetRemoteController() const

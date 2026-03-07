@@ -28,6 +28,8 @@ void InitAddresses(bool is_steam)
     g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
     g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
     g_Address[INST_CAMERA_DIRECTOR] = (is_steam ? 0x142abdde8 : 0x142bcb398) + offset;
+    g_Address[INST_CAMERA_MANAGER] = (is_steam ? 0x142a2b4d0 : 0x142b38a80) + offset;
+    g_Address[INST_GAME_CAMERA_MANAGER] = (is_steam ? 0x142abdba0 : 0x142bcb150) + offset;
     g_Address[WND_PROC] = (is_steam ? 0x1400a4b40 : 0x1400a3430) + offset;
     g_Address[GRAPHICS_FLIP] = (is_steam ? 0x141784320 : 0x14181a860) + offset;
     g_Address[VAR_GAME_STATE_FRONTEND] = (is_steam ? 0x1428444e0 : 0x1429483f8) + offset;
@@ -61,7 +63,9 @@ void InitAddresses(bool is_steam)
     g_Address[RELEASE_ANIMAL_CONTROL] = (is_steam ? 0x14065f780 : 0x14065f390) + offset;
     g_Address[GET_SIGNAL_STRENGTH] = (is_steam ? 0x14064d850 : 0x14064d460) + offset;
     g_Address[CAMERA_CHECK_COLLISION] = (is_steam ? 0x140597840 : 0x140597450) + offset;
+    g_Address[CAMERA_MGR_INIT_TRANSFORM] = (is_steam ? 0x140127d90 : 0x0) + offset;
     g_Address[DIRECTOR_PUSH_CAMERA] = (is_steam ? 0x1403a2110 : 0x1403a1c80) + offset;
+    g_Address[DEEP_WATER_CACHED_HEIGHT] = (is_steam ? 0x14064be40 : 0x14064ba50) + offset;
     g_Address[GET_BACKPACK_WEIGHT] = (is_steam ? 0x14071f630 : 0x14071f2f0) + offset;
     g_Address[GET_EQUIPMENT_WEIGHT] = (is_steam ? 0x140721f40 : 0x140721c00) + offset;
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;

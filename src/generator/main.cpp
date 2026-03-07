@@ -207,6 +207,22 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_CAMERA_MANAGER", result, [&] {
+       auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
+           .count(1)
+           .get(0)
+           .adjust(7);
+       return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("INST_GAME_CAMERA_MANAGER", result, [&] {
+       auto match = pattern("AF F0 5B 4C 48 8B 0D", game_file)
+           .count(1)
+           .get(0)
+           .adjust(7);
+       return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("WND_PROC", result, [&] {
         auto match = pattern("E9 ? ? ? ? 48 ? ? ? ? ? ? ? 48 8D 05 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
             .count(1)
@@ -497,6 +513,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("CAMERA_MGR_INIT_TRANSFORM", result, [&] {
+       auto match = pattern("E8 19 C9 ? ? 48 ? ? ? ? ? ? 0F ? ? E8", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("DIRECTOR_PUSH_CAMERA", result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? 48 ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F E9 B5 ? ? ? 48", game_file)
             .count(1)
@@ -504,6 +528,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .adjust(25)
             .extract_call();
         return rebase(game_file, match);
+    });
+
+    FindPattern("DEEP_WATER_CACHED_HEIGHT", result, [&] {
+       auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
+           .count(1)
+           .get(0)
+           .as<uintptr_t>();
+       return rebase(game_file, match);
     });
 
     FindPattern("GET_BACKPACK_WEIGHT", result, [&] {

@@ -45,11 +45,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##player"))
         {
-            ImGui::Text("CPlayer Address: 0x%p", playerMgr->GetPlayer());
-            ImGui::Text("CAvatar Address from CCharacter: 0x%p", playerMgr->GetPlayer()->GetCharacter()->m_avatar);
-            ImGui::Text("CCharacter Address from CPlayer: 0x%p", playerMgr->GetPlayer()->GetCharacter());
-            ImGui::Text("CCharacter Address from CNetworkPlayer: 0x%p", playerMgr->GetCharacter());
-            ImGui::Text("CNetworkPlayerComponent Address: 0x%p", playerMgr->GetPlayerNetworkComponent());
+            ImGui::Text("CNetworkPlayerManager Address: 0x%p", playerMgr);
             ImGui::Text("Player Count: %d", playerMgr->GetPlayerCount());
 
             ImGui::Spacing();
@@ -59,6 +55,31 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             ImGui::Text("World Position: (%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z);
             float raycastDistance = playerMgr->GetPlayer()->GetAimRaycastDistance();
             ImGui::Text("Aim Raycast Distance: %.2f", raycastDistance);
+
+            ImGui::Spacing();
+            ImGui::Text("All players");
+            auto* localNetworkPlayer = playerMgr->GetNetworkPlayer();
+            for (int i = 0; i < 4; i++)
+            {
+                if (CNetworkPlayer* remotePlayer = playerMgr->GetRemotePlayer(i))
+                {
+                    std::string profileName = remotePlayer->GetProfileName();
+                    bool isLocal = (remotePlayer == localNetworkPlayer);
+                    CPlayer* player = remotePlayer->GetPlayer();
+                    CCharacter* plCharacter = remotePlayer->GetCharacter();
+                    CNetworkPlayerComponent* netComp = remotePlayer->GetNetworkComponent();
+
+                    ImGui::Text("Player %d: %s%s", i, profileName.c_str(), isLocal ? " (Local Player)" : "");
+                    ImGui::Text("    CNetworkPlayer Address: 0x%p", remotePlayer);
+                    ImGui::Text("    CPlayer Address: 0x%p", player);
+                    ImGui::Text("    CCharacter Address: 0x%p", plCharacter);
+                    ImGui::Text("    CNetworkPlayerComponent Address: 0x%p", netComp);
+                }
+                else
+                {
+                    ImGui::Text("Player %d: <empty slot>", i);
+                }
+            }
 
             ImGui::TreePop();
         }
@@ -395,9 +416,15 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 "Note: When toggling in-game you'll need to edit your character's appearance (e.g., change clothes) for the change to take effect.");
         }
 
-        // -- ghost mode
+
         if (character)
         {
+            // -- deep water
+            ImGui::Checkbox("Ignore Deep Water", &g_noDeepWaterEffects);
+            ImGui::SameLine();
+            UI::HelpMarker("Prevents deep water from slowing down the player.");
+
+            // -- ghost mode
             if (ImGui::Button("Enable Ghost Mode")) {
                 character->SetGhostMode(true);
             }
