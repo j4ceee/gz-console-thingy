@@ -31,10 +31,12 @@ namespace gz
     class CPfxCharacterInstance
     {
     public:
-        char    _pad[0xC0];         // 0x00 → 0xC0
-        float   m_GroundDistance;   // 0xC0 → 0xC4
-        char    _pad2[0x38];        // 0xC4 → 0xFC
-        float   m_Gravity;          // 0xFC → 0x100
+        char        _pad[0x4C];         // 0x00 → 0x4C
+        CVector3f   m_WantedVelocityWS; // 0x4C → 0x58
+        char        _pad1[0x68];        // 0x58 → 0xC0
+        float       m_GroundDistance;   // 0xC0 → 0xC4
+        char        _pad2[0x38];        // 0xC4 → 0xFC
+        float       m_Gravity;          // 0xFC → 0x100
 
         [[nodiscard]] float GetGravity() const { return m_Gravity; }
         [[nodiscard]] float GetGroundDistance() const { return m_GroundDistance; }
@@ -54,6 +56,7 @@ namespace gz
             m_Gravity = -21; // default gravity value for the player character
         }
     };
+    static_assert(sizeof(CPfxCharacterInstance) == 0x100);
 
     class CCharacter
     {
@@ -74,17 +77,18 @@ namespace gz
         char                        _pad7[0x10];            // 0x33F8 → 0x3408
         bool                        m_unlimitedAmmo;        // 0x3408 → 0x3409 (for player it still consumes inventory ammo)
         uint8_t                     m_controlFlag;          // 0x3409 → 0x340A
-        char                        _pad8[0x4EA];           // 0x340A → 0x38F4
+        char                        _pad8a[0x3C2];          // 0x340A → 0x37CC
+        uint8_t                     m_motionState;          // 0x37CC → 0x37CD  (5 = POSITIONING, no physics)
+        uint8_t                     m_defaultMotionState;   // 0x37CD → 0x37CE
+        char                        _pad8b[0x126];          // 0x37CE → 0x38F4
         bool                        m_detectable;           // 0x38F4 → 0x38F5
         char                        _pad9[0xEF];            // 0x38F5 → 0x39E4
         CVector2f                   m_currentGravity;       // 0x39E4 → 0x39EC (array of 2 floats)
         char                        _pad10[0xC];            // 0x39EC → 0x39F8
         int                         m_faction;              // 0x39F8 → 0x39FC
-        char                        _pad11[0xDC];           // 0x39FC → 0x3AD8
-        float                       worldPosX;              // 0x3AD8 → 0x3ADC - base world X coordinate
-        float                       worldPosY;              // 0x3ADC → 0x3AE0 - base world Y coordinate
-        float                       worldPosZ;              // 0x3AE0 → 0x3AE4 - base world Z coordinate
-        char                        _pad12[0x144];          // 0x3AE4 → 0x3C28
+        char                        _pad11[0xAC];           // 0x39FC → 0x3AA8
+        CMatrix4f                   m_worldMatrix;          // 0x3AA8 → 0x3AE8  (0x40 bytes)
+        char                        _pad12[0x140];          // 0x3AE8 → 0x3C28
         CAvatar*                    m_avatar;               // 0x3C28 → 0x3C30
         char                        _pad13[0x758];          // 0x3C30 → 0x4388
         CAnimalCharacterComponent*  m_animalComponent;      // 0x4388 → 0x4390
@@ -131,8 +135,35 @@ namespace gz
 
         [[nodiscard]] CVector3f GetPosition() const
         {
-            return CVector3f{worldPosX, worldPosY, worldPosZ};
+            return { m_worldMatrix.m[3].x, m_worldMatrix.m[3].y, m_worldMatrix.m[3].z };
         }
+
+        [[nodiscard]] CVector3f GetForward() const
+        {
+            return { m_worldMatrix.m[2].x, m_worldMatrix.m[2].y, m_worldMatrix.m[2].z };
+        }
+
+        [[nodiscard]] CVector3f GetRight() const
+        {
+            return { m_worldMatrix.m[0].x, m_worldMatrix.m[0].y, m_worldMatrix.m[0].z };
+        }
+
+        [[nodiscard]] CVector3f GetUp() const
+        {
+            return { m_worldMatrix.m[1].x, m_worldMatrix.m[1].y, m_worldMatrix.m[1].z };
+        }
+
+        void SetPosition(float x, float y, float z)
+        {
+            m_worldMatrix.m[3] = { x, y, z, 1.0f };
+        }
+
+        void SetPosition(const CVector3f& pos)
+        {
+            m_worldMatrix.m[3] = { pos.x, pos.y, pos.z, 1.0f };
+        }
+
+        void SetMotionState(uint8_t state) { m_motionState = state; }
 
         [[nodiscard]] bool IsSoviet() const { return m_originalFaction == 5; }
         [[nodiscard]] bool IsFNIX() const { return m_originalFaction == 2; }
@@ -223,6 +254,7 @@ namespace gz
     };
     static_assert(offsetof(CCharacter, m_Blackboard) == 0x33B0);
     static_assert(offsetof(CCharacter, m_pfxInstance) == 0x33A0);
+    static_assert(offsetof(CCharacter, m_worldMatrix) == 0x3AA8);
     static_assert(offsetof(CCharacter, m_animalComponent) == 0x4388);
 } // namespace gz
 #pragma pack(pop)
