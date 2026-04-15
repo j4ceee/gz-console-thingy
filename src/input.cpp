@@ -7,8 +7,8 @@
 #include "game/camera_collision_modifier.h"
 #include "game/game_state.h"
 #include "game/game_world.h"
+#include "game/ui_manager.h"
 #include "imgui/ui.h"
-#include "patches/ui_patches.h"
 
 static constexpr float   FONT_SIZE_INPUT    = 0.0155f;
 
@@ -72,8 +72,7 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
 
         // shortcut to teleport to aim position
         if (wParam == settings.teleportToAimKey) {
-            auto* gameWorld = gz::CGameWorld::instance();
-            if (gameWorld)
+            if (auto* gameWorld = gz::CGameWorld::instance())
             {
                 gameWorld->TeleportToAimPosition();
                 return true;
@@ -81,10 +80,12 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
         }
 
         // shortcut to hide/show HUD
-        if (wParam == settings.hideHUDKey && gz::UIPatches::IsInitialized())
+        if (wParam == settings.hideHUDKey)
         {
-            gz::UIPatches::ToggleHideHUD();
-            return true;
+            if (auto* uiMgr = gz::CUIManager::instance())            {
+                uiMgr->SetUIVisible(!uiMgr->IsUIVisible());
+                return true;
+            }
         }
     }
 

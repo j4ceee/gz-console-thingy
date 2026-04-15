@@ -18,6 +18,7 @@
 #include "game/deep_water.h"
 #include "game/environment_gfx.h"
 #include "game/game_state.h"
+#include "game/intro.h"
 #include "game/player_eq_utils.h"
 #include "game/weapon_consumption.h"
 #include "game/camera/camera_director.h"
@@ -28,7 +29,6 @@
 #include "patches/dlc_patches.h"
 #include "patches/fasttravel_patches.h"
 #include "patches/map_zoom_patches.h"
-#include "patches/ui_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -189,7 +189,6 @@ bool InitPatchesAndHooks()
             Log("Failed to setup Deployable Consumption hook");
 
         EventTimePatch::Initialize();
-        UIPatches::Initialize();
         BuildingPatches::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
@@ -199,6 +198,9 @@ bool InitPatchesAndHooks()
             DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)
         if (MapZoomPatch::Initialize())
             MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)
+
+        if (!Intro::SetupIntroComplete())
+            Log("Failed to setup 'Intro Complete'");
 
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());

@@ -3,14 +3,12 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "addresses.h"
-#include "data_types.h"
+#include "../../addresses.h"
+#include "../../data_types.h"
 
 #pragma pack(push, 1)
 namespace gz
 {
-    inline bool g_enableFreeCamera = false;
-
     struct CFrustumPlane {
         float x, y, z, D;
     };
@@ -102,10 +100,6 @@ namespace gz
     static_assert(offsetof(CCamera, m_FOV) == 0x590);
     static_assert(offsetof(CCamera, m_Far) == 0x5A0);
 
-
-    using InitTansformFunc = void(*)(CCamera*, CMatrix4f*);
-    inline InitTansformFunc g_initTransform = nullptr;
-
     class CCameraManager
     {
     public:
@@ -118,26 +112,6 @@ namespace gz
         static CCameraManager* instance()
         {
             return *(CCameraManager**)(GetAddress(INST_CAMERA_MANAGER));
-        }
-
-        static void HookedInitTansform(CCamera* camera, CMatrix4f* transform)
-        {
-            if (g_enableFreeCamera)
-                return;
-
-            if (g_initTransform)
-            {
-                g_initTransform(camera, transform);
-            }
-        }
-
-        static bool SetupInitTansformHook()
-        {
-            if (g_initTransform != nullptr)
-            {
-                return true;
-            }
-            return MH_CreateHookGZ(CAMERA_MGR_INIT_TRANSFORM, &HookedInitTansform, &g_initTransform);
         }
     };
     static_assert(offsetof(CCameraManager, m_DefaultCamera) == 0x010);

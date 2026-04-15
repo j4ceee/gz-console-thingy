@@ -6,18 +6,20 @@
 
 #include <imgui.h>
 
-#include "game/damageable.h"
 #include "game/map.h"
 #include "game/player_info.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/weapon_consumption.h"
 #include "patches/fasttravel_patches.h"
-#include "patches/ui_patches.h"
 #include "patches/vehicle_patches.h"
 
 #include "game/animal_spotting_manager.h"
+#include "game/deep_water.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
+#include "game/camera/camera_director.h"
+#include "game/camera/camera_manager.h"
 
 namespace gz::UITabs
 {
@@ -177,15 +179,15 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // -- HUD --
-    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen) && UIPatches::IsInitialized()) {
-        bool hideHUD = UIPatches::IsHideHUDEnabled();
+    auto* uiMgr = CUIManager::instance();
+    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen) && uiMgr) {
+        bool hideHUD = uiMgr->IsUIVisible() == false;
         if (ImGui::Checkbox("Hide HUD", &hideHUD)) {
-            UIPatches::ToggleHideHUD();
+            uiMgr->SetUIVisible(!hideHUD); // TODO: add functionality to automatically unhide UI when opening a different UI element
         }
         ImGui::SameLine();
-        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden from view. Hotkey can be configured in the Settings tab."
-            "\nCredit: pigeon",
-            "Warning: This breaks all other UIs such as the inventory, map, weapon wheel, etc. You'll need to disable this option again to use any UI.");
+        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden from view. Hotkey can be configured in the Settings tab.",
+            "Warning: You'll need to disable this option again to use any UI.");
     }
 
     ImGui::Spacing();
@@ -416,13 +418,16 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 "Note: When toggling in-game you'll need to edit your character's appearance (e.g., change clothes) for the change to take effect.");
         }
 
+        ImGui::Spacing();
 
         if (character)
         {
             // -- deep water
             ImGui::Checkbox("Ignore Deep Water", &g_noDeepWaterEffects);
             ImGui::SameLine();
-            UI::HelpMarker("Prevents deep water from slowing down the player.");
+            UI::HelpMarker("Allows the player to travel underwater.");
+
+            ImGui::Spacing();
 
             // -- ghost mode
             if (ImGui::Button("Enable Ghost Mode")) {
@@ -437,7 +442,86 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             UI::HelpMarker("Enables ghost mode for the player, allowing to float through the environment and objects without collision.",
                 "Note: To disable ghost mode, press the refresh button or teleport (via hotkey or world tab).");
         }
+    }
 
+    if (settings.showDebugInfo)
+    {
+        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (auto* cameraDirector = CCameraDirector::instance())
+            {
+                if (ImGui::Button("Reset Camera"))
+                {
+                    g_forceEmoteCamera = false;
+                    g_forceVehicleCamera = false;
+                    g_forceRemoteCamera = false;
+                    cameraDirector->ResetToDefaultCamera();
+                }
+
+                if (g_cameraIds.vehicleCached)
+                {
+                    if (ImGui::Button("Force Vehicle Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.vehicle);
+                        g_forceEmoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Vehicle camera not yet cached");
+                }
+                if (g_cameraIds.emoteCached)
+                {
+                    if (ImGui::Button("Force Emote Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.emote);
+                        g_forceEmoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Emote camera not yet cached");
+                }
+                if (g_cameraIds.remoteCached)
+                {
+                    if (ImGui::Button("Force Remote Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.remote);
+                        g_forceRemoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Remote camera not yet cached");
+                }
+
+                if (character && ImGui::Button("Third Person Body (Blackboard)"))
+                {
+                    character->SetThirdPersonBodyVisible(true);
+                }
+
+                if (ImGui::TreeNode("Debug Info##cameradirector"))
+                {
+                    auto& sel = cameraDirector->m_SelectedCamera;
+                    ImGui::Text("Selected Camera ID:");
+                    ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                        sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                    // default camera for reference
+                    auto& def = cameraDirector->m_DefaultCamera;
+                    ImGui::Text("Default Camera ID:");
+                    ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                        def.m_Hash[0], def.m_Hash[1], def.m_Hash[2], def.m_UserData);
+
+
+                    ImGui::Separator();
+                    ImGui::Text("Selected (raw): %04X%04X%04X%04X",
+                        sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                    ImGui::TreePop();
+                }
+            }
+        }
     }
 }
 } // namespace gz::UITabs

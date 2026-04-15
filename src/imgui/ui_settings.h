@@ -23,6 +23,7 @@ namespace gz
 
         bool showDebugInfo = false;
         bool showHint = true;
+        bool quickerStartup = false;
 
         bool disableAutoEvents = true;
         bool enableInfiniteAmmo = false;

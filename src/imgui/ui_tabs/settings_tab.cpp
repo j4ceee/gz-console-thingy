@@ -87,6 +87,16 @@ void RenderSettingsTab()
     ImGui::Spacing();
     ImGui::Spacing();
 
+    // -- GAME SETTINGS --
+    if (ImGui::CollapsingHeader(ICON_MD_SETTINGS " Game Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Checkbox("Quicker Startup", &settings.quickerStartup)) {
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        } ImGui::SameLine(); UI::HelpMarker("The game will start loading into the main menu while the splash screens are still active, saving you a few seconds.");
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
     ImGui::Separator();
 
     ImGui::Spacing();

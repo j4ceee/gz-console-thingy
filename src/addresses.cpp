@@ -25,6 +25,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_MAP] = (is_steam ? 0x142adfec8 : 0x142bed558) + offset;
     g_Address[INST_SOCIAL_MANAGER] = (is_steam ? 0x142abebe8 : 0x142bcc198) + offset;
     g_Address[INST_VEHICLE_MANAGER] = (is_steam ? 0x142abefe8 : 0x142bcc598) + offset;
+    g_Address[INST_UI_MANAGER] = (is_steam ? 0x142abf4e8 : 0x142bcca98) + offset;
     g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
     g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
     g_Address[INST_CAMERA_DIRECTOR] = (is_steam ? 0x142abdde8 : 0x142bcb398) + offset;
@@ -39,6 +40,7 @@ void InitAddresses(bool is_steam)
     g_Address[ALLOC] = (is_steam ? 0x14009ddc0 : 0x14009e230) + offset;
     g_Address[FREE] = (is_steam ? 0x14185ca84 : 0x1418f3154) + offset;
     g_Address[FUNC_SET_BLACKBOARD_INT_GET_WRAPPER] = (is_steam ? 0x14047d5c0 : 0x14047d1d0) + offset;
+    g_Address[FUNC_INTRO_COMPLETE] = (is_steam ? 0x140cb57d0 : 0x140cc0ba0) + offset;
     g_Address[CLOCK_UPDATE_GAME] = (is_steam ? 0x1400ca3e0 : 0x1400c8ce0) + offset;
     g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
     g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
@@ -63,7 +65,6 @@ void InitAddresses(bool is_steam)
     g_Address[RELEASE_ANIMAL_CONTROL] = (is_steam ? 0x14065f780 : 0x14065f390) + offset;
     g_Address[GET_SIGNAL_STRENGTH] = (is_steam ? 0x14064d850 : 0x14064d460) + offset;
     g_Address[CAMERA_CHECK_COLLISION] = (is_steam ? 0x140597840 : 0x140597450) + offset;
-    g_Address[CAMERA_MGR_INIT_TRANSFORM] = (is_steam ? 0x140127d90 : 0x0) + offset;
     g_Address[DIRECTOR_PUSH_CAMERA] = (is_steam ? 0x1403a2110 : 0x1403a1c80) + offset;
     g_Address[DEEP_WATER_CACHED_HEIGHT] = (is_steam ? 0x14064be40 : 0x14064ba50) + offset;
     g_Address[GET_BACKPACK_WEIGHT] = (is_steam ? 0x14071f630 : 0x14071f2f0) + offset;

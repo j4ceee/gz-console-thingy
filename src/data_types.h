@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 struct GameString {
     union {
         char*  ptr;        // heap pointer when capacity >= 16
@@ -8,11 +10,16 @@ struct GameString {
     uint64_t size;
     uint64_t capacity;
 
-    const char* c_str() const {
+    [[nodiscard]] const char* c_str() const {
         return capacity >= 0x10 ? ptr : buf;
     }
 };
 static_assert(sizeof(GameString) == 0x20, "GameString size mismatch");
+
+struct CHashString
+{
+    uint32_t m_Hash;
+};
 
 struct BasicVector {
     void* first;   // pointer to start of data

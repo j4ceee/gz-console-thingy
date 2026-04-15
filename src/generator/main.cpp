@@ -14,16 +14,16 @@
 
 using FindPatternResult = std::vector<std::pair<std::string, intptr_t>>;
 
-static uintptr_t RebaseFileOffset(std::string_view game_file, uintptr_t file_offset)
+static uintptr_t RebaseFileOffset(std::string_view game_file, const uintptr_t file_offset)
 {
     auto executable_address = reinterpret_cast<intptr_t>(game_file.data());
 
-    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)(executable_address);
+    auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(executable_address);
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
         throw std::runtime_error("Invalid DOS Signature");
     }
 
-    PIMAGE_NT_HEADERS header = (PIMAGE_NT_HEADERS)(((char*)executable_address + (dosHeader->e_lfanew * sizeof(char))));
+    auto header = reinterpret_cast<PIMAGE_NT_HEADERS>((reinterpret_cast<char*>(executable_address) + (dosHeader->e_lfanew * sizeof(char))));
     if (header->Signature != IMAGE_NT_SIGNATURE) {
         throw std::runtime_error("Invalid NT Signature");
     }
@@ -36,7 +36,7 @@ static uintptr_t RebaseFileOffset(std::string_view game_file, uintptr_t file_off
 
         if (file_offset >= section->PointerToRawData
             && file_offset <= (section->PointerToRawData + section->SizeOfRawData)) {
-            return uint64_t(0x140000000) + file_offset + ((section->VirtualAddress - section->PointerToRawData));
+            return static_cast<uint64_t>(0x140000000) + file_offset + ((section->VirtualAddress - section->PointerToRawData));
         }
     }
 
@@ -44,8 +44,12 @@ static uintptr_t RebaseFileOffset(std::string_view game_file, uintptr_t file_off
     return 0;
 }
 
-void FindPattern(const char* name, FindPatternResult& result, std::function<uintptr_t()> func)
+std::string sanity_check = "4C 89 ? ? ? ? ? 48 8D ? ? ? ? ? 48 89 ? ? ? ? ? 4C 89 ? ? ? ? ? C7";
+
+void FindPattern(const char* name, std::string_view game_file, FindPatternResult& result, const std::function<uintptr_t()>& func)
 {
+    try { meow_hook::pattern(sanity_check, game_file).count(1).get(0); } catch (...) {}
+
     uintptr_t addr = 0;
 
     try {
@@ -54,7 +58,7 @@ void FindPattern(const char* name, FindPatternResult& result, std::function<uint
         std::cout << "ERROR! ";
     }
 
-    result.push_back({name, addr});
+    result.emplace_back(name, addr);
     std::cout << std::setw(40) << std::left << name << std::right << "0x" << std::hex << addr << "\n";
 }
 
@@ -90,47 +94,40 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     // clang-format off
 
-    // dummy search (there are issues with first pattern search sometimes, with too many patterns the first may fail, this prevents that)
-    try {
-        pattern("4C 89 ? ? ? ? ? 48 8D ? ? ? ? ? 48", game_file).count(1).get(0);
-    } catch (...) {
-        // ignore errors from dummy search
-    }
-
-    FindPattern("SANITY_CHECK", result, [&] {
-        auto match = pattern("4C 89 ? ? ? ? ? 48 8D ? ? ? ? ? 48 89 ? ? ? ? ? 4C 89 ? ? ? ? ? C7", game_file)
+    FindPattern("SANITY_CHECK", game_file, result, [&] {
+        auto match = pattern(sanity_check, game_file)
             .count(1)
             .get(0)
             .adjust(10);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_CHARACTER_MANAGER", result, [&] {
+    FindPattern("INST_CHARACTER_MANAGER", game_file, result, [&] {
         auto match = pattern("48 8B 05 ? ? ? ? 48 85 C0 74 08 48 8B 80 ? ? ? ?", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_GAME_WORLD", result, [&] {
+    FindPattern("INST_GAME_WORLD", game_file, result, [&] {
         auto match = pattern("48 8B 05 ? ? ? ? 8B 50 28 33 C0 48 89", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_INPUT_MANAGER", result, [&] {
+    FindPattern("INST_INPUT_MANAGER", game_file, result, [&] {
         auto match = pattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 48 8D 45 B0", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_NETWORK_PLAYER_MANAGER", result, [&] {
+    FindPattern("INST_NETWORK_PLAYER_MANAGER", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? 0f ? ? ? ? ? ? 48 ? ? 38", game_file).count(1).get(0).adjust(3);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_PLAYER_INFORMATION", result, [&] {
+    FindPattern("INST_PLAYER_INFORMATION", game_file, result, [&] {
         auto match = pattern("48 8B F2 48 8B 0D ? ? ? ? 48 81 C1 ? ? ? ? E8", game_file).count(1).get(0).adjust(6);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_PHYSICS_SYSTEM", result, [&] {
+    FindPattern("INST_PHYSICS_SYSTEM", game_file, result, [&] {
         auto match = pattern("57 48 83 EC ? 48 8B 05 ? ? ? ? 48 8B F9 4C 8B ? ? 8B 81 ? ? ? ? 3D", game_file)
             .count(1)
             .get(0)
@@ -138,7 +135,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_ENVIRONMENT_GFX_MANAGER", result, [&] {
+    FindPattern("INST_ENVIRONMENT_GFX_MANAGER", game_file, result, [&] {
         auto match = pattern("48 8B 0D ? ? ? ? 8B D0 E8 ? ? ? ? 41 B8 ? ? ? ? 49", game_file)
             .count(1)
             .get(0)
@@ -146,7 +143,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_SPAWN_SYSTEM", result, [&] {
+    FindPattern("INST_SPAWN_SYSTEM", game_file, result, [&] {
         auto match = pattern("48 89 73 ? 48 89 73 ? 48 8B 05 ? ? ? ? FF 88 ? ? ? ?", game_file)
             .count(1)
             .get(0)
@@ -154,12 +151,12 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_WORLDTIME", result, [&] {
+    FindPattern("INST_WORLDTIME", game_file, result, [&] {
         auto match = pattern("73 16 48 8B 05 ? ? ? ?", game_file).count(1).get(0).adjust(5);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_MAP", result, [&] {
+    FindPattern("INST_MAP", game_file, result, [&] {
         auto match = pattern("41 B8 ? ? ? ? 48 8D ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74", game_file)
             .count(1)
             .get(0)
@@ -167,7 +164,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_SOCIAL_MANAGER", result, [&] {
+    FindPattern("INST_SOCIAL_MANAGER", game_file, result, [&] {
         auto match = pattern("0F ? ? F3 0F ? ? ? 48 ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? 45 ? ? ? 45", game_file)
             .count(1)
             .get(0)
@@ -175,7 +172,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_VEHICLE_MANAGER", result, [&] {
+    FindPattern("INST_VEHICLE_MANAGER", game_file, result, [&] {
         auto match = pattern("4C ? ? ? 48 ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48 8B F8 41 8B", game_file)
             .count(1)
             .get(0)
@@ -183,7 +180,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_CLOCK", result, [&] {
+    FindPattern("INST_UI_MANAGER", game_file, result, [&] {
+        auto match = pattern("CC 48 ? ? ? 48 8B 0D ? ? ? ? 48 ? ? ? ? C7 ? ? ? ? ? ? ? E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("INST_CLOCK", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
             .count(1)
             .get(0)
@@ -191,7 +196,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_RESERVE_WORLD", result, [&] {
+    FindPattern("INST_RESERVE_WORLD", game_file, result, [&] {
         auto match = pattern("48 8B ? ? ? ? ? 48 ? ? ? 4C ? ? ? 4C ? ? ? ? 45", game_file)
             .count(1)
             .get(0)
@@ -199,7 +204,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_CAMERA_DIRECTOR", result, [&] {
+    FindPattern("INST_CAMERA_DIRECTOR", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? 48 ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F E9 B5 ? ? ? 48", game_file)
             .count(1)
             .get(0)
@@ -207,7 +212,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_CAMERA_MANAGER", result, [&] {
+    FindPattern("INST_CAMERA_MANAGER", game_file, result, [&] {
        auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
            .count(1)
            .get(0)
@@ -215,7 +220,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("INST_GAME_CAMERA_MANAGER", result, [&] {
+    FindPattern("INST_GAME_CAMERA_MANAGER", game_file, result, [&] {
        auto match = pattern("AF F0 5B 4C 48 8B 0D", game_file)
            .count(1)
            .get(0)
@@ -223,7 +228,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("WND_PROC", result, [&] {
+    FindPattern("WND_PROC", game_file, result, [&] {
         auto match = pattern("E9 ? ? ? ? 48 ? ? ? ? ? ? ? 48 8D 05 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
             .count(1)
             .get(0)
@@ -231,7 +236,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("GRAPHICS_FLIP", result, [&] {
+    FindPattern("GRAPHICS_FLIP", game_file, result, [&] {
         auto match = pattern("48 8B C8 E8 ? ? ? ? 90 48 8B 8F ? ? ? ? E8 ? ? ? ? 90 48 8B CB E8", game_file)
             .count(1)
             .get(0)
@@ -240,7 +245,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("VAR_GAME_STATE_FRONTEND", result, [&] {
+    FindPattern("VAR_GAME_STATE_FRONTEND", game_file, result, [&] {
         auto match = pattern("8B ? ? ? ? ? 83 ? ?  74 ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 74", game_file)
             .count(1)
             .get(0)
@@ -248,7 +253,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("VAR_GAME_STATE", result, [&] {
+    FindPattern("VAR_GAME_STATE", game_file, result, [&] {
         auto match = pattern("8B ? ? ? ? ? 83 ? ? 74 ? 83 ? ? 0f ? ? ? ? ? 83 ? ? 74", game_file)
             .count(1)
             .get(0)
@@ -256,7 +261,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("VAR_CLOUD_VISIBILITY", result, [&] {
+    FindPattern("VAR_CLOUD_VISIBILITY", game_file, result, [&] {
         auto match = pattern("F3 0F 59 ? ? ? ? ? F3 0F 5C C8 F3 0F 5F CC F3", game_file)
             .count(1)
             .get(0)
@@ -264,7 +269,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("VAR_FP_PLAYER_SHADOW", result, [&] { // boolean value for first-person player shadow toggle
+    FindPattern("VAR_FP_PLAYER_SHADOW", game_file, result, [&] { // boolean value for first-person player shadow toggle
         auto match = pattern("0F ? ? ? ? ? 80 ? ? ? ? ? ? 0F ? ? ? ? ? ? ? ? E8 ? ? ? ? 8B D0", game_file)
             .count(1)
             .get(0)
@@ -274,7 +279,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return (intermediate.as<uintptr_t>() + 1);  // add the missing byte
     });
 
-    FindPattern("ALLOC", result, [&] {
+    FindPattern("ALLOC", game_file, result, [&] {
         // MOV RCX,RDI; CALL; MOV [RSI],RAX; MOV [RSI+8],RAX
         auto match = pattern("48 8B CF E8 ? ? ? ? 48 89 06 48 89 46 08", game_file)
             .get(0)
@@ -283,7 +288,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("FREE", result, [&] {
+    FindPattern("FREE", game_file, result, [&] {
         // CALL; MOV EDX; MOV RCX; CALL FREE; NOP; LEA RCX; CALL; MOV
         auto match = pattern("E8 ? ? ? ? BA ? ? 00 00 48 8B 4C 24 ? E8 ? ? ? ? 90 48 8D 4D ? E8 ? ? ? ? 48 8B", game_file)
             .count(1)
@@ -293,7 +298,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("FUNC_SET_BLACKBOARD_INT_GET_WRAPPER", result, [&] {
+    FindPattern("FUNC_SET_BLACKBOARD_INT_GET_WRAPPER", game_file, result, [&] {
         auto match = pattern("45 ? ? 41 ? 01 ? 71 1E DF 41 E8 ? ? ? ? 48 ? FF FF FF FF FF 00 00 00 48 89", game_file)
             .count(1)
             .get(0)
@@ -302,7 +307,16 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("CLOCK_UPDATE_GAME", result, [&] {
+    FindPattern("FUNC_INTRO_COMPLETE", game_file, result, [&] {
+        auto match = pattern("75 ? 48 ? ? ? ? ? ? E8 ? ? ? ? 84 C0 75 ? 8B", game_file)
+            .count(1)
+            .get(0)
+            .adjust(9)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CLOCK_UPDATE_GAME", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
             .count(1)
             .get(0)
@@ -311,7 +325,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SPAWN_SYSTEM_SPAWN", result, [&] {
+    FindPattern("SPAWN_SYSTEM_SPAWN", game_file, result, [&] {
         auto match = pattern("8B 97 ? ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? EB ? 80 B9 ? ? ? ? ? 74", game_file)
             .count(1)
             .get(0)
@@ -320,7 +334,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SPAWN_SYSTEM_PARSE_TAGS", result, [&] {
+    FindPattern("SPAWN_SYSTEM_PARSE_TAGS", game_file, result, [&] {
         auto match = pattern("4C 8D 4C ? ? C7 44 ? ? ? ? ? ? 4C 8D ? ? ? E8 ? ? ? ? 85 C0 74", game_file)
             .count(1)
             .get(0)
@@ -329,7 +343,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SPAWN_SYSTEM_GET_MATCHING_RES", result, [&] {
+    FindPattern("SPAWN_SYSTEM_GET_MATCHING_RES", game_file, result, [&] {
         auto match = pattern("E8 ? ? ? ? 85 C0 74 ? 4D 8B CF", game_file)
             .count(1)
             .get(0)
@@ -337,7 +351,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SPAWN_VEHICLE_OWNERSHIP_CALLBACK", result, [&] {
+    FindPattern("SPAWN_VEHICLE_OWNERSHIP_CALLBACK", game_file, result, [&] {
         auto match = pattern("45 33 E4 4C ? ? ? ? ? ? 44 38 A1 ? ? ? ? 74 ? 45 33 C9", game_file)
             .count(1)
             .get(0)
@@ -345,7 +359,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("EVENT_SCHEDULER", result, [&] {
+    FindPattern("EVENT_SCHEDULER", game_file, result, [&] {
         auto match = pattern("48 8B ? ? 48 85 FF 74 ? 48 8B CF E8 ? ? ? ? 48 8B ? ? 0F B6 ? ? ?", game_file)
             .count(1)
             .get(0)
@@ -355,7 +369,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     // vftable function of CGameWorld at index 21 (Ghidra)
     // teleport function used when falling into water
-    FindPattern("TELEPORT", result, [&] {
+    FindPattern("TELEPORT", game_file, result, [&] {
         auto match = pattern("48 89 5c ? ? 48 89 6c ? ? 48 89 74 ? ? 48 89 7c ? ? ? ? 48 83 ? ? 48 8b 05 ? ? ? ? 33 db 49 8b e8", game_file)
             .count(1)
             .get(0)
@@ -365,7 +379,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     // vftable function of CGameWorld at index 19 (Ghidra)
     // fast travel function used by map & on dlc islands
-    FindPattern("FAST_TRAVEL", result, [&] {
+    FindPattern("FAST_TRAVEL", game_file, result, [&] {
         auto match = pattern("F3 0F ? ? ? ? ? ? ? F3 0F ? ? ? ? 88 ? ? ? E8 ? ? ? ? 48", game_file)
             .count(1)
             .get(0)
@@ -374,7 +388,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SET_WEATHER_PRESET_FROM_HASH", result, [&] {
+    FindPattern("SET_WEATHER_PRESET_FROM_HASH", game_file, result, [&] {
         auto match = pattern("48 8B CF E8 ? ? ? ? 48 8B 0D ? ? ? ? 8B D0 E8 ? ? ? ? 84 C0 75", game_file)
             .count(1)
             .get(0)
@@ -383,7 +397,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("RESTORE_DYNAMIC_WEATHER", result, [&] {
+    FindPattern("RESTORE_DYNAMIC_WEATHER", game_file, result, [&] {
         auto match = pattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 ? 33 C0 EB ? 3B 1D", game_file)
             .count(1)
             .get(0)
@@ -392,7 +406,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("WEATHER_UPDATE", result, [&] {
+    FindPattern("WEATHER_UPDATE", game_file, result, [&] {
        auto match = pattern("85 D2 ? ? E8 ? ? ? ? 44 8B 83 ? ? ? ? 45", game_file)
            .count(1)
            .get(0)
@@ -401,7 +415,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("DAMAGEABLE_SET_HEALTH", result, [&] {
+    FindPattern("DAMAGEABLE_SET_HEALTH", game_file, result, [&] {
        auto match = pattern("48 ? ? ? ? 48 ? ? ? ? 57 48 ? ? ? 48 ? ? 41 ? ? ? 8B ? ? ? ? ? 49", game_file)
            .count(1)
            .get(0)
@@ -409,7 +423,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("DAMAGEABLE_RESTORE_HEALTH", result, [&] {
+    FindPattern("DAMAGEABLE_RESTORE_HEALTH", game_file, result, [&] {
        auto match = pattern("40 ? 48 ? ? ? 66 ? ? ? ? ? ? ? ? ? ? 4C ? ? 45 ? ?", game_file)
            .count(1)
            .get(0)
@@ -417,7 +431,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("DAMAGEABLE_SET_INVULNERABLE", result, [&] {
+    FindPattern("DAMAGEABLE_SET_INVULNERABLE", game_file, result, [&] {
        auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
            .count(1)
            .get(0)
@@ -426,7 +440,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("DAMAGEABLE_IS_INVULNERABLE", result, [&] {
+    FindPattern("DAMAGEABLE_IS_INVULNERABLE", game_file, result, [&] {
        auto match = pattern("CC 48 ? ? ? BA ? ? ? ? E8 ? ? ? ? ? ? 0F ? ? 48 ? ?  ? C3", game_file)
            .count(1)
            .get(0)
@@ -435,7 +449,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("ANIMAL_HEALTH_DAMAGE", result, [&] {
+    FindPattern("ANIMAL_HEALTH_DAMAGE", game_file, result, [&] {
        auto match = pattern("0F ? ? E8 ? ? ? ? 49 ? ? ? E8 ? ? ? ? 49", game_file)
            .count(1)
            .get(0)
@@ -444,7 +458,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("CHARACTER_REVIVE", result, [&] {
+    FindPattern("CHARACTER_REVIVE", game_file, result, [&] {
        auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
            .count(1)
            .get(0)
@@ -453,7 +467,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("CHARACTER_GHOST_MODE", result, [&] {
+    FindPattern("CHARACTER_GHOST_MODE", game_file, result, [&] {
        auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
            .count(1)
            .get(0)
@@ -462,7 +476,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("DAMAGEABLE_PART_SET_UNIT_HEALTH", result, [&] {
+    FindPattern("DAMAGEABLE_PART_SET_UNIT_HEALTH", game_file, result, [&] {
        auto match = pattern("48 ? ? ? E8 ? ? ? ? 48 ? ? ? 48 ? ? 75 ? 48 ? ? ? ? 49", game_file)
            .count(1)
            .get(0)
@@ -471,7 +485,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("REQUEST_ANIMAL_HACK", result, [&] {
+    FindPattern("REQUEST_ANIMAL_HACK", game_file, result, [&] {
        auto match = pattern("E8 ? ? ? ? 89 ? ? ? ? ? 48 ? ? E8 ? ? ? ? 84 ?", game_file)
            .count(1)
            .get(0)
@@ -479,7 +493,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("REQUEST_ANIMAL_CONTROL", result, [&] {
+    FindPattern("REQUEST_ANIMAL_CONTROL", game_file, result, [&] {
        auto match = pattern("44 0F ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 8B CF E8 ? ? ? ? 44", game_file)
            .count(1)
            .get(0)
@@ -488,7 +502,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("RELEASE_ANIMAL_CONTROL", result, [&] {
+    FindPattern("RELEASE_ANIMAL_CONTROL", game_file, result, [&] {
        auto match = pattern("E8 ? ? ? ? ? ? F3 0F ? ? ? ? ? ? F3 41 ? ? ? ? F3 0F ? ? ? ? ? ? 48", game_file)
            .count(1)
            .get(0)
@@ -496,7 +510,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("GET_SIGNAL_STRENGTH", result, [&] {
+    FindPattern("GET_SIGNAL_STRENGTH", game_file, result, [&] {
        auto match = pattern("E8 ? ? ? ? 48 ? ? E8 ? ? ? ? 0F ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? E8", game_file)
            .count(1)
            .get(0)
@@ -505,7 +519,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("CAMERA_CHECK_COLLISION", result, [&] {
+    FindPattern("CAMERA_CHECK_COLLISION", game_file, result, [&] {
        auto match = pattern("E8 ? ? ? ? F3 0F ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? ? ? ? 48", game_file)
            .count(1)
            .get(0)
@@ -513,15 +527,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("CAMERA_MGR_INIT_TRANSFORM", result, [&] {
-       auto match = pattern("E8 19 C9 ? ? 48 ? ? ? ? ? ? 0F ? ? E8", game_file)
-           .count(1)
-           .get(0)
-           .extract_call();
-       return rebase(game_file, match);
-    });
-
-    FindPattern("DIRECTOR_PUSH_CAMERA", result, [&] {
+    FindPattern("DIRECTOR_PUSH_CAMERA", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? 48 ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F E9 B5 ? ? ? 48", game_file)
             .count(1)
             .get(0)
@@ -530,7 +536,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("DEEP_WATER_CACHED_HEIGHT", result, [&] {
+    FindPattern("DEEP_WATER_CACHED_HEIGHT", game_file, result, [&] {
        auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
            .count(1)
            .get(0)
@@ -538,7 +544,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("GET_BACKPACK_WEIGHT", result, [&] {
+    FindPattern("GET_BACKPACK_WEIGHT", game_file, result, [&] {
        auto match = pattern("48 ? ? F3 ? ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? 0F ? ? ? ? 0F", game_file)
            .count(1)
            .get(0)
@@ -547,7 +553,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("GET_EQUIPMENT_WEIGHT", result, [&] {
+    FindPattern("GET_EQUIPMENT_WEIGHT", game_file, result, [&] {
        auto match = pattern("48 ? ? 74 ? 48 ? ? E8 ? ? ? ? F3 ? ? ? 40", game_file)
            .count(1)
            .get(0)
@@ -556,7 +562,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("HASHING_FUNC", result, [&] {
+    FindPattern("HASHING_FUNC", game_file, result, [&] {
         auto match = pattern("49 8B ? FF ? ? ? ? ? ? ? ? ? ? ? 48 8D 0D ? ? ? ? E8 ? ? ? ? 89 44 24 ? 48 8B ? ?", game_file)
             .count(1)
             .get(0)
@@ -564,7 +570,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
-    FindPattern("FUNC_VSNPRINTF", result, [&] {
+    FindPattern("FUNC_VSNPRINTF", game_file, result, [&] {
         auto match = pattern("74 ? 48 8D ? ? 48 89 0E 4D 8B CE 4C 8B C5 48 8B D7 48 8B CB E8 ? ? ? ?", game_file)
             .count(1)
             .get(0)
@@ -573,7 +579,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("FUNC_SCRIPT_ERROR_REPORT", result, [&] {
+    FindPattern("FUNC_SCRIPT_ERROR_REPORT", game_file, result, [&] {
         auto match = pattern("4C 8B C3 48 8D 15 ? ? ? ? 48 8B CE E8 ? ? ? ? E9 ? ? ? ? F2 0F", game_file)
             .count(1)
             .get(0)
@@ -582,7 +588,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("CONSUME_DEPLOYABLES", result, [&] {
+    FindPattern("CONSUME_DEPLOYABLES", game_file, result, [&] {
         auto match = pattern("E8 ? ? ? ? 45 33 C0 0F B6 ? ? ? ? ? 8B ? ? ? ? ? E8 ? ? ? ? 48", game_file)
             .count(1)
             .get(0)
@@ -591,7 +597,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("CONSUME_AMMO", result, [&] {
+    FindPattern("CONSUME_AMMO", game_file, result, [&] {
         auto match = pattern("85 D2 0F ? ? ? ? ? 4C ? ? 41 ? 48 83 ? ? 49 C7 43 ? ? ? ? ? 49 89 ? ? 49 89 ? ? 49 89 ? ? 49 89 ? ? 44", game_file)
             .count(1)
             .get(0)
@@ -604,19 +610,19 @@ FindPatternResult Generate(const char* name, const char* exepath)
     // (these are addresses of single bytes to patch, not functions or variables)
 
     // building placement patches
-    FindPattern("PATCH_BUILDING_UI_CHECK_1", result, [&] { // ui collision check before building placement
+    FindPattern("PATCH_BUILDING_UI_CHECK_1", game_file, result, [&] { // ui collision check before building placement
         auto match = pattern("E8 ? ? ? ? 84 C0 74 04 B0 01 EB 02 32 C0 88 86", game_file).count(1).get(0).adjust(13).as<uintptr_t>();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_BUILDING_UI_CHECK_2", result, [&] { // ui collision check before building placement
+    FindPattern("PATCH_BUILDING_UI_CHECK_2", game_file, result, [&] { // ui collision check before building placement
         auto match = pattern("48 8D 4D ? E8 ? ? ? ? 20 9E 80 ? ? ?", game_file).count(1).get(0).adjust(9).as<uintptr_t>();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_BUILDING_CHECK_COLLISION", result, [&] { // collision check before building placement
+    FindPattern("PATCH_BUILDING_CHECK_COLLISION", game_file, result, [&] { // collision check before building placement
         auto match = pattern("47 ? ? ? 0f 85 ? ? ? ? 45 ? ? 75 ? 45", game_file).count(1).get(0).adjust(4).as<uintptr_t>();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_BUILDING_CHECK_MASTER", result, [&] { // master building check before building placement (checks collision & limit)
+    FindPattern("PATCH_BUILDING_CHECK_MASTER", game_file, result, [&] { // master building check before building placement (checks collision & limit)
         auto match = pattern("48 89 5C ? ? 48 89 6C ? ? 48 89 74 ? ? 57 48 83 ? ? 80 B9 ? ? ? ? ? 48 8B D9", game_file)
             .count(1)
             .get(0)
@@ -626,7 +632,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     // fast travel patches
-    FindPattern("PATCH_MAP_FAST_TRAVEL_VALIDATION", result, [&] { // fast travel validation check when clicking fast travel button on map
+    FindPattern("PATCH_MAP_FAST_TRAVEL_VALIDATION", game_file, result, [&] { // fast travel validation check when clicking fast travel button on map
     auto match = pattern("48 ? ? 0f ? ? ? ? ? 80 ? ? ? 0f ? ? ? ? ? F2", game_file)
             .count(1)
             .get(0)
@@ -634,7 +640,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .as<uintptr_t>();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_MAP_FAST_TRAVEL_BUTTON", result, [&] { // patch to always display fast travel button on map
+    FindPattern("PATCH_MAP_FAST_TRAVEL_BUTTON", game_file, result, [&] { // patch to always display fast travel button on map
     auto match = pattern("4D ? ? 41 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? E8 ? ? ? ? 45 ? ? ? ?", game_file)
             .count(1)
             .get(0)
@@ -643,7 +649,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("PATCH_DLC_BOUNDARY", result, [&] { // patch to allow player entering dlc island
+    FindPattern("PATCH_DLC_BOUNDARY", game_file, result, [&] { // patch to allow player entering dlc island
     auto match = pattern("49 ? ? 48 ? ? ? 48 ? ? 75 ? B0 ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 48 ? ? ? ? 32 C0 48 ? ? ? ? 48 ? ? ? 5F C3", game_file)
             .count(1)
             .get(0)
@@ -653,13 +659,13 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     // resource cheat
-    FindPattern("PATCH_RESOURCE_CONSUMPTION", result, [&] { // reduces resources after building placement / crafting
+    FindPattern("PATCH_RESOURCE_CONSUMPTION", game_file, result, [&] { // reduces resources after building placement / crafting
         auto match = pattern("2B D7 41 ? ? ? 49 8B ?", game_file).count(1).get(0).adjust(0).as<uintptr_t>();
         return rebase(game_file, match);
     });
 
     // fuel at 100% cheat (take maximum of current fuel and max fuel)
-    FindPattern("PATCH_INFINITE_FUEL", result, [&] { // 5D to 5F -> MAXSS XMM7, MaxFuel
+    FindPattern("PATCH_INFINITE_FUEL", game_file, result, [&] { // 5D to 5F -> MAXSS XMM7, MaxFuel
         auto match = pattern("F3 0F 5F FE F3 0F 5D 3D ? ? ? ? F3 0F 11 BF", game_file)
             .count(1)
             .get(0)
@@ -669,7 +675,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     // hides ALL UI (breaks menus)
-    FindPattern("PATCH_HIDE_UI", result, [&] {
+    FindPattern("PATCH_HIDE_UI", game_file, result, [&] {
         auto match = pattern("F3 0F 10 ? ? 0F 29 ? ? ? F3 41 ? ? ? 44 0F", game_file)
             .count(1)
             .get(0)
@@ -679,7 +685,7 @@ FindPatternResult Generate(const char* name, const char* exepath)
     });
 
     // disable map max zoom
-    FindPattern("PATCH_MAP_ZOOM", result, [&] {
+    FindPattern("PATCH_MAP_ZOOM", game_file, result, [&] {
         auto match = pattern("F3 0F 5F ? ? ? ? ? F3 0F 5D ? ? ? ? ? F3 0F 11 ? ? ? ? ? 48 89", game_file)
             .count(1)
             .get(0)

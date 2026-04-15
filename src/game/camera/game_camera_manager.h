@@ -2,8 +2,9 @@
 
 #include <cstdint>
 
+#include "../../addresses.h"
+#include "../../data_types.h"
 #include "camera_manager.h"
-#include "data_types.h"
 
 #pragma pack(push, 1)
 namespace gz
