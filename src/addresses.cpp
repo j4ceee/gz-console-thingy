@@ -26,6 +26,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_SOCIAL_MANAGER] = (is_steam ? 0x142abebe8 : 0x142bcc198) + offset;
     g_Address[INST_VEHICLE_MANAGER] = (is_steam ? 0x142abefe8 : 0x142bcc598) + offset;
     g_Address[INST_UI_MANAGER] = (is_steam ? 0x142abf4e8 : 0x142bcca98) + offset;
+    g_Address[INST_OVERLAY_UI] = (is_steam ? 0x142adfe48 : 0x142bed630) + offset;
     g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
     g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
     g_Address[INST_CAMERA_DIRECTOR] = (is_steam ? 0x142abdde8 : 0x142bcb398) + offset;
@@ -41,6 +42,8 @@ void InitAddresses(bool is_steam)
     g_Address[FREE] = (is_steam ? 0x14185ca84 : 0x1418f3154) + offset;
     g_Address[FUNC_SET_BLACKBOARD_INT_GET_WRAPPER] = (is_steam ? 0x14047d5c0 : 0x14047d1d0) + offset;
     g_Address[FUNC_INTRO_COMPLETE] = (is_steam ? 0x140cb57d0 : 0x140cc0ba0) + offset;
+    g_Address[FUNC_UPD_VIS_SHOW] = (is_steam ? 0x140ce7200 : 0x140cf2b30) + offset;
+    g_Address[FUNC_IS_UI_SHOWN] = (is_steam ? 0x140cb5a60 : 0x140cc0e30) + offset;
     g_Address[CLOCK_UPDATE_GAME] = (is_steam ? 0x1400ca3e0 : 0x1400c8ce0) + offset;
     g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
     g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
@@ -83,7 +86,6 @@ void InitAddresses(bool is_steam)
     g_Address[PATCH_DLC_BOUNDARY] = (is_steam ? 0x140c38f57 : 0x140c45937) + offset;
     g_Address[PATCH_RESOURCE_CONSUMPTION] = (is_steam ? 0x1407460ce : 0x140745d8e) + offset;
     g_Address[PATCH_INFINITE_FUEL] = (is_steam ? 0x140d488f4 : 0x140d54184) + offset;
-    g_Address[PATCH_HIDE_UI] = (is_steam ? 0x1414cc501 : 0x141562a01) + offset;
     g_Address[PATCH_MAP_ZOOM] = (is_steam ? 0x140c3f1ee : 0x140c4b91e) + offset;
 }
 

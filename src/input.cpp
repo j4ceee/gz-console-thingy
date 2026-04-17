@@ -39,8 +39,8 @@ void Input::Draw(ID3D11DeviceContext* context)
 
 bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
 {
-    const auto &ui = gz::UI::Get();
-    const auto& settings = ui->GetSettings();
+    gz::UI* ui = gz::UI::Get();
+    gz::ConsoleSettings& settings = ui->GetSettings();
 
     // if UI is visible, block ALL game input except UI toggle
     if (ui->IsVisible()) {
@@ -82,10 +82,11 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
         // shortcut to hide/show HUD
         if (wParam == settings.hideHUDKey)
         {
-            if (auto* uiMgr = gz::CUIManager::instance())            {
-                uiMgr->SetUIVisible(!uiMgr->IsUIVisible());
-                return true;
-            }
+            gz::CUIManager::SetHideHud(!gz::CUIManager::IsHudHidden());
+            // save setting
+            settings.hideHud = gz::CUIManager::IsHudHidden();
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+            return true;
         }
     }
 

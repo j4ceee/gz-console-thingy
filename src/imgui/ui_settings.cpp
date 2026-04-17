@@ -4,6 +4,7 @@
 #include "game/event_scheduler.h"
 #include "game/player.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
 #include "patches/fasttravel_patches.h"
@@ -16,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(23); // pre-allocate space
+            m_settingsCache.reserve(24); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -35,6 +36,12 @@ namespace gz
             });
             m_settingsCache.push_back({"QuickerStartup",'b',const_cast<bool*>(&quickerStartup),
                 nullptr
+            });
+            m_settingsCache.push_back({"HideHud",'b',const_cast<bool*>(&hideHud),
+                [this]()
+                {
+                    CUIManager::SetHideHud(hideHud);
+                }
             });
 
             m_settingsCache.push_back({"DisableAutoEvents",'b',const_cast<bool*>(&disableAutoEvents),

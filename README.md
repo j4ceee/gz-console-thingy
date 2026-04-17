@@ -40,6 +40,7 @@
 - Setting **Player Level & XP**
 - Adding **Skill Points**
 - **First Person Shadow** can be toggled on/off
+- **Ignore Deep Water** allows the player to walk underwater
 - **Ghost Mode**: float through walls and objects (no clipping)
 
 ### Machines

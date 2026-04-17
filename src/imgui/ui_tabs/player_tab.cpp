@@ -179,15 +179,16 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // -- HUD --
-    auto* uiMgr = CUIManager::instance();
-    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen) && uiMgr) {
-        bool hideHUD = uiMgr->IsUIVisible() == false;
+    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool hideHUD = CUIManager::IsHudHidden();
         if (ImGui::Checkbox("Hide HUD", &hideHUD)) {
-            uiMgr->SetUIVisible(!hideHUD); // TODO: add functionality to automatically unhide UI when opening a different UI element
+            CUIManager::SetHideHud(hideHUD);
+            // save setting
+            settings.hideHud = hideHUD;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden from view. Hotkey can be configured in the Settings tab.",
-            "Warning: You'll need to disable this option again to use any UI.");
+        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden. Hotkey can be configured in the Settings tab.");
     }
 
     ImGui::Spacing();

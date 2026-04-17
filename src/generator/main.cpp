@@ -188,6 +188,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_OVERLAY_UI", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? F3 ? ? ? ? ? F3 ? ? ? ? ? 0F ? ? 0F ? ? E8 ? ? ? ? 0F ? ? ? ? 48 ? ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_CLOCK", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
             .count(1)
@@ -312,6 +320,24 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(9)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_UPD_VIS_SHOW", game_file, result, [&] {
+        auto match = pattern("0F ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 48 FF C7 48 ? ? ? 48 3B FE 75", game_file)
+            .count(1)
+            .get(0)
+            .adjust(10)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_IS_UI_SHOWN", game_file, result, [&] {
+        auto match = pattern("F1 11 B5 97 E8 ? ? ? ? 84", game_file)
+            .count(1)
+            .get(0)
+            .adjust(4)
             .extract_call();
         return rebase(game_file, match);
     });
@@ -670,16 +696,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(4)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-
-    // hides ALL UI (breaks menus)
-    FindPattern("PATCH_HIDE_UI", game_file, result, [&] {
-        auto match = pattern("F3 0F 10 ? ? 0F 29 ? ? ? F3 41 ? ? ? 44 0F", game_file)
-            .count(1)
-            .get(0)
-            .adjust(0)
             .as<uintptr_t>();
         return rebase(game_file, match);
     });

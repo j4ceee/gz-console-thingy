@@ -25,6 +25,7 @@ namespace gz
         bool showHint = true;
         bool quickerStartup = false;
 
+        bool hideHud = false;
         bool disableAutoEvents = true;
         bool enableInfiniteAmmo = false;
         bool enableInfiniteDeployables = false;

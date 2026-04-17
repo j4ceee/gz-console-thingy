@@ -20,6 +20,8 @@
 #include "game/game_state.h"
 #include "game/intro.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
+#include "game/ui_static_handler.h"
 #include "game/weapon_consumption.h"
 #include "game/camera/camera_director.h"
 #include "patches/building_patches.h"
@@ -201,6 +203,12 @@ bool InitPatchesAndHooks()
 
         if (!Intro::SetupIntroComplete())
             Log("Failed to setup 'Intro Complete'");
+
+        if (!SUIScene::SetupUpdateVisibilityShowHook())
+            Log("Failed to setup UpdateVisibilityShow hook");
+
+        if (!CUIManager::SetupIsUIShownHook())
+            Log("Failed to setup IsUIShown hook");
 
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());
