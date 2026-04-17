@@ -16,47 +16,73 @@ void RenderSettingsTab()
         ImGui::TextWrapped("Click a button and press a key to rebind");
         ImGui::Spacing();
 
-        // -- UI TOGGLE HOTKEY --
-        ImGui::Text("Toggle UI:");
-        ImGui::SameLine();
+        if (ImGui::BeginTable("HotkeysTable", 2, ImGuiTableFlags_SizingStretchSame)) {
+            ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Button", ImGuiTableColumnFlags_WidthStretch);
 
-        std::string toggleUILabel = ui->m_isCapturingToggleUI ?
-            "Press a key...##toggleui" : (ConsoleSettings::GetKeyName(settings.toggleUIKey) + "##toggleui");
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
 
-        if (ImGui::Button(toggleUILabel.c_str(), ImVec2(120, 0))) {
-            ui->m_isCapturingToggleUI = true;
-            ui->m_isCapturingTeleportKey = false;
-            ui->m_isCapturingHideHUDKey = false;
+            // -- UI TOGGLE HOTKEY --
+            ImGui::Text("Toggle UI:");
+
+            ImGui::TableNextColumn();
+
+            std::string toggleUILabel = ui->m_isCapturingToggleUI
+                                            ? "Press a key...##toggleui"
+                                            : (ConsoleSettings::GetKeyName(settings.toggleUIKey) + "##toggleui");
+
+            if (ImGui::Button(toggleUILabel.c_str(), ImVec2(120, 0)))
+            {
+                ui->m_isCapturingToggleUI = true;
+                ui->m_isCapturingTeleportKey = false;
+                ui->m_isCapturingHideHUDKey = false;
+            }
+            UI::HoverTooltip("Click to change the hotkey for toggling the UI");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // -- TELEPORT TO AIM HOTKEY --
+            ImGui::Text("Teleport to Aim:");
+
+            ImGui::TableNextColumn();
+
+            std::string teleportKeyLabel = ui->m_isCapturingTeleportKey
+                                               ? "Press a key...##teleport"
+                                               : (ConsoleSettings::GetKeyName(
+                                                   settings.teleportToAimKey) + "##teleport");
+
+            if (ImGui::Button(teleportKeyLabel.c_str(), ImVec2(120, 0)))
+            {
+                ui->m_isCapturingTeleportKey = true;
+                ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingHideHUDKey = false;
+            }
+            UI::HoverTooltip("Click to change the hotkey for teleporting to aim position");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // -- HIDE HUD HOTKEY --
+            ImGui::Text("Hide HUD:");
+
+            ImGui::TableNextColumn();
+
+            std::string hideHudKeyLabel = ui->m_isCapturingHideHUDKey
+                                              ? "Press a key...##hud"
+                                              : (ConsoleSettings::GetKeyName(settings.hideHUDKey) + "##hud");
+
+            if (ImGui::Button(hideHudKeyLabel.c_str(), ImVec2(120, 0)))
+            {
+                ui->m_isCapturingTeleportKey = false;
+                ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingHideHUDKey = true;
+            }
+            UI::HoverTooltip("Click to change the hotkey for hiding the HUD");
+
+            ImGui::EndTable();
         }
-        UI::HoverTooltip("Click to change the hotkey for toggling the UI");
-
-        // -- TELEPORT TO AIM HOTKEY --
-        ImGui::Text("Teleport to Aim:");
-        ImGui::SameLine();
-
-        std::string teleportKeyLabel = ui->m_isCapturingTeleportKey ?
-            "Press a key...##teleport" : (ConsoleSettings::GetKeyName(settings.teleportToAimKey) + "##teleport");
-
-        if (ImGui::Button(teleportKeyLabel.c_str(), ImVec2(120, 0))) {
-            ui->m_isCapturingTeleportKey = true;
-            ui->m_isCapturingToggleUI = false;
-            ui->m_isCapturingHideHUDKey = false;
-        }
-        UI::HoverTooltip("Click to change the hotkey for teleporting to aim position");
-
-        // -- HIDE HUD HOTKEY --
-        ImGui::Text("Hide HUD:");
-        ImGui::SameLine();
-
-        std::string hideHudKeyLabel = ui->m_isCapturingHideHUDKey ?
-            "Press a key...##hud" : (ConsoleSettings::GetKeyName(settings.hideHUDKey) + "##hud");
-
-        if (ImGui::Button(hideHudKeyLabel.c_str(), ImVec2(120, 0))) {
-            ui->m_isCapturingTeleportKey = false;
-            ui->m_isCapturingToggleUI = false;
-            ui->m_isCapturingHideHUDKey = true;
-        }
-        UI::HoverTooltip("Click to change the hotkey for hiding the HUD");
 
         ImGui::Spacing();
 
@@ -74,24 +100,25 @@ void RenderSettingsTab()
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // -- UI SETTINGS --
-    if (ImGui::CollapsingHeader(ICON_MD_SETTINGS " UI Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::Checkbox("Show Debug Info", &settings.showDebugInfo)) {
-            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-        }
-        if (ImGui::Checkbox("Show Console Thingy Hint", &settings.showHint)) {
-            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-        } ImGui::SameLine(); UI::HelpMarker("Show or hide the hotkey hint in the bottom-left corner of the screen");
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
     // -- GAME SETTINGS --
     if (ImGui::CollapsingHeader(ICON_MD_SETTINGS " Game Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Checkbox("Quicker Startup", &settings.quickerStartup)) {
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         } ImGui::SameLine(); UI::HelpMarker("The game will start loading into the main menu while the splash screens are still active, saving you a few seconds.");
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // -- MOD SETTINGS --
+    if (ImGui::CollapsingHeader(ICON_MD_SETTINGS " Mod Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Checkbox("Developer Mode", &settings.showDebugInfo)) {
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        } ImGui::SameLine(); UI::HelpMarker("Show extra debug information in the UI and enable unfinished features");
+
+        if (ImGui::Checkbox("Show Console Thingy Hint", &settings.showHint)) {
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        } ImGui::SameLine(); UI::HelpMarker("Show or hide the hotkey hint in the bottom-left corner of the screen");
     }
 
     ImGui::Spacing();

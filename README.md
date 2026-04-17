@@ -91,6 +91,9 @@
   - Human NPCs
   - Machines (very limited, most machines are currently spawned without AI)
 
+### Game Settings
+- **Quicker Startup**: the game will start loading while the splash screens are still playing
+
 ### Mod Configuration
 - Fully configurable hotkeys for opening the console, teleporting, and toggling the HUD
 

@@ -447,8 +447,15 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 
     if (settings.showDebugInfo)
     {
-        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera [WIP]", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            UI::StartWarningText();
+            ImGui::TextWrapped("Camera options are still in development, these options are incomplete.");
+            UI::EndWarningText();
+
             if (auto* cameraDirector = CCameraDirector::instance())
             {
                 if (ImGui::Button("Reset Camera"))
@@ -469,7 +476,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 }
                 else
                 {
-                    ImGui::TextDisabled("Vehicle camera not yet cached");
+                    ImGui::TextDisabled("Vehicle camera not yet cached. Enter a vehicle once.");
                 }
                 if (g_cameraIds.emoteCached)
                 {
@@ -481,7 +488,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 }
                 else
                 {
-                    ImGui::TextDisabled("Emote camera not yet cached");
+                    ImGui::TextDisabled("Emote camera not yet cached. Trigger a third person emote once.");
                 }
                 if (g_cameraIds.remoteCached)
                 {
@@ -493,7 +500,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 }
                 else
                 {
-                    ImGui::TextDisabled("Remote camera not yet cached");
+                    ImGui::TextDisabled("Remote camera not yet cached. Take control of a machine once.");
                 }
 
                 if (character && ImGui::Button("Third Person Body (Blackboard)"))
