@@ -41,6 +41,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             gz::InitAddresses(is_steam);
             if (!gz::InitPatchesAndHooks()) {
                 gz::Log("Failed to initialize patches and hooks - exiting");
+                MessageBox(nullptr, "There was an error setting up the mod. This can happen after game updates or when using old game versions."
+                    "\nMake sure you have the latest version of the mod and the game (on Steam or Microsoft Store). After game updates the mod will"
+                    " have to be updated.", "Generation Zero Console Thingy", MB_OK | MB_ICONEXCLAMATION);
                 return FALSE;
             }
 

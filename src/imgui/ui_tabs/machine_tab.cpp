@@ -17,7 +17,7 @@ namespace gz::UITabs
         UI* ui = UI::Get();
         ConsoleSettings& settings = ui->GetSettings();
 
-        const CCharacter* character = manager->GetPlayer()->GetCharacter();
+        CCharacter* character = manager->GetPlayer()->GetCharacter();
 
         // -- HACKING --
         if (ImGui::CollapsingHeader(ICON_MD_COMPUTER " Hacking", ImGuiTreeNodeFlags_DefaultOpen))
@@ -309,6 +309,8 @@ namespace gz::UITabs
                 ImGui::Text("CRemoteController Address: 0x%p", rc);
                 ImGui::Text("Player CCharacter is controlling entity: %s", character->IsControllingEntity() ? "Yes" : "No");
                 ImGui::Text("Controlled Entity CCharacter: 0x%p", rc->GetControlledCharacter());
+                ImGui::Text("Controlled Entity Ref: 0x%p", rc->m_controlledEntityRef);
+                ImGui::Text("CCameraObject: 0x%p", rc->GetControlledCameraObj());
                 ImGui::TreePop();
             }
         }

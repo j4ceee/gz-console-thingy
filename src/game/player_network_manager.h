@@ -11,8 +11,7 @@ namespace gz
     {
     public:
         char                _pad0[0x40];        // 0x00 → 0x40
-        CNetworkPlayer**    m_remotePlayers;    // 0x40 (array of pointers, not yet tested)
-        char                _pad1[0x18];        // 0x48 → 0x60
+        CNetworkPlayer*     m_remotePlayers[4]; // 0x40 → 0x60
         int                 m_playerCount;      // 0x60
         char                _pad2[0x4];         // 0x64 → 0x68
         CNetworkPlayer*     m_LocalPlayer;      // 0x68
@@ -57,6 +56,15 @@ namespace gz
         int GetPlayerCount() const
         {
             return m_playerCount;
+        }
+
+        // get other players by index (not yet tested, may not be correct)
+        CNetworkPlayer* GetRemotePlayer(int index)
+        {
+            if (index < 0 || index >= 4) {
+                return nullptr; // index must be between 0 and 3
+            }
+            return m_remotePlayers[index];
         }
     };
 } // namespace gz

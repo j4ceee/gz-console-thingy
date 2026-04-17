@@ -441,7 +441,7 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
                                 if (collectible.description && collectible.description[0] != '\0') {
                                     ImGui::Separator();
                                     ImGui::PushTextWrapPos(400.0f);
-                                    ImGui::TextWrapped("%s", Data::TruncateText(collectible.description, 500));
+                                    ImGui::Text("%s", Data::TruncateText(collectible.description, 500));
                                     ImGui::PopTextWrapPos();
                                 }
                                 ImGui::EndTooltip();

@@ -38,12 +38,12 @@ namespace gz
         char _pad6[0x8];                            // 0x178 → 0x180
         void* m_mutex;                              // 0x180 → 0x188 (8 bytes)
 
-        CNetworkPlayerComponent* GetNetworkComponent() const
+        [[nodiscard]] CNetworkPlayerComponent* GetNetworkComponent() const
         {
             return m_networkCompPtr;
         }
 
-        CPlayer* GetPlayer() const
+        [[nodiscard]] CPlayer* GetPlayer() const
         {
             // m_playerPtr points to CAvatar portion (+0x10 from base)
             // so we need to subtract 0x10 to get the actual base CPlayer pointer
@@ -52,12 +52,12 @@ namespace gz
             );
         }
 
-        CCharacter* GetCharacter() const
+        [[nodiscard]] CCharacter* GetCharacter() const
         {
             return m_characterPtr;
         }
 
-        std::string GetProfileName() const
+        [[nodiscard]] std::string GetProfileName() const
         {
             return std::string(m_profileName, strnlen_s(m_profileName, sizeof(m_profileName)));
         }

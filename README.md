@@ -40,6 +40,7 @@
 - Setting **Player Level & XP**
 - Adding **Skill Points**
 - **First Person Shadow** can be toggled on/off
+- **Ignore Deep Water** allows the player to walk underwater
 - **Ghost Mode**: float through walls and objects (no clipping)
 
 ### Machines
@@ -89,6 +90,9 @@
   - Buildings (like base defenses that will help you in battle or the different stations, like the workbenches or the crate) 
   - Human NPCs
   - Machines (very limited, most machines are currently spawned without AI)
+
+### Game Settings
+- **Quicker Startup**: the game will start loading while the splash screens are still playing
 
 ### Mod Configuration
 - Fully configurable hotkeys for opening the console, teleporting, and toggling the HUD

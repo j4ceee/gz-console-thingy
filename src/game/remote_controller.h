@@ -9,6 +9,7 @@ namespace gz
 {
     class CRemoteController;
     class CCharacter;
+    class CCameraObject;
 
     using GetSignalStrengthFunc = float(*)(CRemoteController*, void*, void*, void*);
     inline GetSignalStrengthFunc g_getSignalStrength = nullptr;
@@ -18,16 +19,19 @@ namespace gz
     class CRemoteController
     {
     public:
-        char        _pad[0xD8];             // 0x00 → 0xD8
-        CCharacter* m_controlledCharacter;  // +0xD8 - the tick/machine being controlled
-        void*       m_controlledEntityRef;  // +0xE0 - reference wrapper
-        void*       m_inputContext;         // +0x118 - NInput::CContext for "ACT_USE_TICK"
-        bool        m_someFlag;             // +0x128 - related to cleanup
-        bool        m_anotherFlag;          // +0x129 - related to timing
+        char            _pad[0xD8];             // 0x00 → 0xD8
+        CCharacter*     m_controlledCharacter;  // 0xD8 → 0xE0
+        void*           m_controlledEntityRef;  // 0xE0 → 0xE8
+        CCameraObject*  m_controlledCameraObj;  // 0xE8 → 0xF0
 
-        CCharacter* GetControlledCharacter() const
+        [[nodiscard]] CCharacter* GetControlledCharacter() const
         {
             return m_controlledCharacter;
+        }
+
+        [[nodiscard]] CCameraObject* GetControlledCameraObj() const
+        {
+            return m_controlledCameraObj;
         }
 
         void RequestControlOfCharacter(CCharacter* character)
@@ -36,7 +40,7 @@ namespace gz
                 GetAddress(REQUEST_ANIMAL_CONTROL),
                 this,       // self
                 character,  // character to control
-                (uint64_t)1 // unknown
+                static_cast<uint64_t>(1) // unknown
             );
         }
 

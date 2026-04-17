@@ -21,9 +21,6 @@ namespace gz
         BasicSharedPtr  m_Character;            // 0x18 → 0x28 (16 bytes)
     };
 
-    using RequestFindTargetFunc = void(*)(void* casm, void* p2);
-    inline RequestFindTargetFunc g_findTarget = nullptr;
-
     class CAnimalSpottingManager
     {
     public:

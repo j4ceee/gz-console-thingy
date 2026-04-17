@@ -4,6 +4,7 @@
 #include "game/event_scheduler.h"
 #include "game/player.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
 #include "game/weapon_consumption.h"
 #include "patches/building_patches.h"
 #include "patches/fasttravel_patches.h"
@@ -16,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(22); // pre-allocate space
+            m_settingsCache.reserve(24); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -33,6 +34,16 @@ namespace gz
             m_settingsCache.push_back({"ShowCTHint",'b',const_cast<bool*>(&showHint),
                 nullptr
             });
+            m_settingsCache.push_back({"QuickerStartup",'b',const_cast<bool*>(&quickerStartup),
+                nullptr
+            });
+            m_settingsCache.push_back({"HideHud",'b',const_cast<bool*>(&hideHud),
+                [this]()
+                {
+                    CUIManager::SetHideHud(hideHud);
+                }
+            });
+
             m_settingsCache.push_back({"DisableAutoEvents",'b',const_cast<bool*>(&disableAutoEvents),
                 [this]() {
                 if (EventManager::Initialize()) {
@@ -102,21 +113,29 @@ namespace gz
                 }
             }});
             m_settingsCache.push_back({"HackingAlwaysSucceeds",'b',const_cast<bool*>(&hackingAlwaysSucceeds),
-                []() {}}); // handled in hacking hook
+                nullptr // handled in hacking hook
+            });
             m_settingsCache.push_back({"UnlimitedHackingTime",'b',const_cast<bool*>(&unlimitedHackingTime),
-                []() {}}); // handled in hacking hook
+                nullptr // handled in hacking hook
+            });
             m_settingsCache.push_back({"AdvancedHacking",'b',const_cast<bool*>(&alwaysAdvancedHacking),
-                []() {}}); // handled in hacking hook
+                nullptr // handled in hacking hook
+            });
             m_settingsCache.push_back({"UnlimitedRCSignalStrength",'b',const_cast<bool*>(&unlimitedRcSignalStrength),
-                [this]() { g_unlimitedSignalStrength = unlimitedRcSignalStrength; }});
+                [this]() { g_unlimitedSignalStrength = unlimitedRcSignalStrength; }
+            });
             m_settingsCache.push_back({"TakeControlOnHack",'b',const_cast<bool*>(&takeControlOnHack),
-                [this]() { g_takeControlOnHack = takeControlOnHack; }});
+                [this]() { g_takeControlOnHack = takeControlOnHack; }
+            });
             m_settingsCache.push_back({"UnlimitedCarryWeight",'b',const_cast<bool*>(&unlimitedCarryWeight),
-                [this]() { PlayerEqUtils::g_ignoreEncumbrance = unlimitedCarryWeight; }});
+                [this]() { PlayerEqUtils::g_ignoreEncumbrance = unlimitedCarryWeight; }
+            });
             m_settingsCache.push_back({"UnlimitedStorageSize",'b',const_cast<bool*>(&unlimitedStorageSize),
-                [this]() { PlayerEqUtils::g_unlimitedStorageSize = unlimitedStorageSize; }});
+                [this]() { PlayerEqUtils::g_unlimitedStorageSize = unlimitedStorageSize; }
+            });
             m_settingsCache.push_back({"MirroRealTime",'b',const_cast<bool*>(&mirrorRealTime),
-                []() {}}); // handled in game update hook
+                nullptr // handled in game update hook
+            });
 
             m_cacheInitialized = true;
         }

@@ -15,10 +15,15 @@
 #include "game/clock.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
+#include "game/deep_water.h"
 #include "game/environment_gfx.h"
 #include "game/game_state.h"
+#include "game/intro.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
+#include "game/ui_static_handler.h"
 #include "game/weapon_consumption.h"
+#include "game/camera/camera_director.h"
 #include "patches/building_patches.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -26,7 +31,6 @@
 #include "patches/dlc_patches.h"
 #include "patches/fasttravel_patches.h"
 #include "patches/map_zoom_patches.h"
-#include "patches/ui_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -157,6 +161,12 @@ bool InitPatchesAndHooks()
         if (!PlayerEqUtils::SetupGetEquipmentWeightHook())
             Log("Failed to setup GetEquipmentWeight hook");
 
+        if (!CCameraDirector::SetupPushCameraHook())
+            Log("Failed to setup CameraDirector PushCamera hook");
+
+        if (!CDeepWaterHandling::SetupGetWaterHeightHook())
+            Log("Failed to setup Deep Water Cached Height hook");
+
         if (!Utils::SetupHashFunction()) {
             // required for several patches -> fail initialization
             throw std::runtime_error("Failed to setup hash function");
@@ -181,7 +191,6 @@ bool InitPatchesAndHooks()
             Log("Failed to setup Deployable Consumption hook");
 
         EventTimePatch::Initialize();
-        UIPatches::Initialize();
         BuildingPatches::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
@@ -191,6 +200,15 @@ bool InitPatchesAndHooks()
             DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)
         if (MapZoomPatch::Initialize())
             MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)
+
+        if (!Intro::SetupIntroComplete())
+            Log("Failed to setup 'Intro Complete'");
+
+        if (!SUIScene::SetupUpdateVisibilityShowHook())
+            Log("Failed to setup UpdateVisibilityShow hook");
+
+        if (!CUIManager::SetupIsUIShownHook())
+            Log("Failed to setup IsUIShown hook");
 
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());

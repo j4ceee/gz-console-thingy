@@ -6,18 +6,20 @@
 
 #include <imgui.h>
 
-#include "game/damageable.h"
 #include "game/map.h"
 #include "game/player_info.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/weapon_consumption.h"
 #include "patches/fasttravel_patches.h"
-#include "patches/ui_patches.h"
 #include "patches/vehicle_patches.h"
 
 #include "game/animal_spotting_manager.h"
+#include "game/deep_water.h"
 #include "game/player_eq_utils.h"
+#include "game/ui_manager.h"
+#include "game/camera/camera_director.h"
+#include "game/camera/camera_manager.h"
 
 namespace gz::UITabs
 {
@@ -45,11 +47,7 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##player"))
         {
-            ImGui::Text("CPlayer Address: 0x%p", playerMgr->GetPlayer());
-            ImGui::Text("CAvatar Address from CCharacter: 0x%p", playerMgr->GetPlayer()->GetCharacter()->m_avatar);
-            ImGui::Text("CCharacter Address from CPlayer: 0x%p", playerMgr->GetPlayer()->GetCharacter());
-            ImGui::Text("CCharacter Address from CNetworkPlayer: 0x%p", playerMgr->GetCharacter());
-            ImGui::Text("CNetworkPlayerComponent Address: 0x%p", playerMgr->GetPlayerNetworkComponent());
+            ImGui::Text("CNetworkPlayerManager Address: 0x%p", playerMgr);
             ImGui::Text("Player Count: %d", playerMgr->GetPlayerCount());
 
             ImGui::Spacing();
@@ -59,6 +57,31 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             ImGui::Text("World Position: (%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z);
             float raycastDistance = playerMgr->GetPlayer()->GetAimRaycastDistance();
             ImGui::Text("Aim Raycast Distance: %.2f", raycastDistance);
+
+            ImGui::Spacing();
+            ImGui::Text("All players");
+            auto* localNetworkPlayer = playerMgr->GetNetworkPlayer();
+            for (int i = 0; i < 4; i++)
+            {
+                if (CNetworkPlayer* remotePlayer = playerMgr->GetRemotePlayer(i))
+                {
+                    std::string profileName = remotePlayer->GetProfileName();
+                    bool isLocal = (remotePlayer == localNetworkPlayer);
+                    CPlayer* player = remotePlayer->GetPlayer();
+                    CCharacter* plCharacter = remotePlayer->GetCharacter();
+                    CNetworkPlayerComponent* netComp = remotePlayer->GetNetworkComponent();
+
+                    ImGui::Text("Player %d: %s%s", i, profileName.c_str(), isLocal ? " (Local Player)" : "");
+                    ImGui::Text("    CNetworkPlayer Address: 0x%p", remotePlayer);
+                    ImGui::Text("    CPlayer Address: 0x%p", player);
+                    ImGui::Text("    CCharacter Address: 0x%p", plCharacter);
+                    ImGui::Text("    CNetworkPlayerComponent Address: 0x%p", netComp);
+                }
+                else
+                {
+                    ImGui::Text("Player %d: <empty slot>", i);
+                }
+            }
 
             ImGui::TreePop();
         }
@@ -156,15 +179,16 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // -- HUD --
-    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen) && UIPatches::IsInitialized()) {
-        bool hideHUD = UIPatches::IsHideHUDEnabled();
+    if (ImGui::CollapsingHeader(ICON_MD_DASHBOARD " HUD", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool hideHUD = CUIManager::IsHudHidden();
         if (ImGui::Checkbox("Hide HUD", &hideHUD)) {
-            UIPatches::ToggleHideHUD();
+            CUIManager::SetHideHud(hideHUD);
+            // save setting
+            settings.hideHud = hideHUD;
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden from view. Hotkey can be configured in the Settings tab."
-            "\nCredit: pigeon",
-            "Warning: This breaks all other UIs such as the inventory, map, weapon wheel, etc. You'll need to disable this option again to use any UI.");
+        UI::HelpMarker("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden. Hotkey can be configured in the Settings tab.");
     }
 
     ImGui::Spacing();
@@ -395,9 +419,18 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
                 "Note: When toggling in-game you'll need to edit your character's appearance (e.g., change clothes) for the change to take effect.");
         }
 
-        // -- ghost mode
+        ImGui::Spacing();
+
         if (character)
         {
+            // -- deep water
+            ImGui::Checkbox("Ignore Deep Water", &g_noDeepWaterEffects);
+            ImGui::SameLine();
+            UI::HelpMarker("Allows the player to travel underwater.");
+
+            ImGui::Spacing();
+
+            // -- ghost mode
             if (ImGui::Button("Enable Ghost Mode")) {
                 character->SetGhostMode(true);
             }
@@ -410,7 +443,93 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
             UI::HelpMarker("Enables ghost mode for the player, allowing to float through the environment and objects without collision.",
                 "Note: To disable ghost mode, press the refresh button or teleport (via hotkey or world tab).");
         }
+    }
 
+    if (settings.showDebugInfo)
+    {
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera [WIP]", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            UI::StartWarningText();
+            ImGui::TextWrapped("Camera options are still in development, these options are incomplete.");
+            UI::EndWarningText();
+
+            if (auto* cameraDirector = CCameraDirector::instance())
+            {
+                if (ImGui::Button("Reset Camera"))
+                {
+                    g_forceEmoteCamera = false;
+                    g_forceVehicleCamera = false;
+                    g_forceRemoteCamera = false;
+                    cameraDirector->ResetToDefaultCamera();
+                }
+
+                if (g_cameraIds.vehicleCached)
+                {
+                    if (ImGui::Button("Force Vehicle Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.vehicle);
+                        g_forceEmoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Vehicle camera not yet cached. Enter a vehicle once.");
+                }
+                if (g_cameraIds.emoteCached)
+                {
+                    if (ImGui::Button("Force Emote Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.emote);
+                        g_forceEmoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Emote camera not yet cached. Trigger a third person emote once.");
+                }
+                if (g_cameraIds.remoteCached)
+                {
+                    if (ImGui::Button("Force Remote Camera"))
+                    {
+                        cameraDirector->PushCamera(&g_cameraIds.remote);
+                        g_forceRemoteCamera = true;
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("Remote camera not yet cached. Take control of a machine once.");
+                }
+
+                if (character && ImGui::Button("Third Person Body (Blackboard)"))
+                {
+                    character->SetThirdPersonBodyVisible(true);
+                }
+
+                if (ImGui::TreeNode("Debug Info##cameradirector"))
+                {
+                    auto& sel = cameraDirector->m_SelectedCamera;
+                    ImGui::Text("Selected Camera ID:");
+                    ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                        sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                    // default camera for reference
+                    auto& def = cameraDirector->m_DefaultCamera;
+                    ImGui::Text("Default Camera ID:");
+                    ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                        def.m_Hash[0], def.m_Hash[1], def.m_Hash[2], def.m_UserData);
+
+
+                    ImGui::Separator();
+                    ImGui::Text("Selected (raw): %04X%04X%04X%04X",
+                        sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                    ImGui::TreePop();
+                }
+            }
+        }
     }
 }
 } // namespace gz::UITabs

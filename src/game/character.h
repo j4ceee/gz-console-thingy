@@ -1,5 +1,6 @@
 #pragma once
 
+#include "animation_control.h"
 #include "remote_controller.h"
 #include "data_types.h"
 #include "meow_hook/util.h"
@@ -7,17 +8,35 @@
 #pragma pack(push, 1)
 namespace gz
 {
+    class CDeepWaterHandling;
     class CAnimalCharacterComponent;
     class CDamageable;
     class CAvatar {};
 
+    struct CObjectBlackboard
+    {
+        void*       m_KeyInfos;         // +0x00
+        uint16_t    m_KeyInfoCapacity;  // +0x08
+        uint8_t     _pad1[6];           // +0x0A
+        void*       m_Data;             // +0x10
+        uint16_t    m_DataCapacity;     // +0x18
+        uint16_t    m_CurrentOffset;    // +0x1A
+        uint8_t     _pad2[4];           // +0x1C
+        void*       m_NetCallback;      // +0x20
+        void*       m_NetUserData;      // +0x28
+        void*       m_BbLock;           // +0x30
+    };
+    static_assert(sizeof(CObjectBlackboard) == 0x38);
+
     class CPfxCharacterInstance
     {
     public:
-        char    _pad[0xC0];         // 0x00 → 0xC0
-        float   m_GroundDistance;   // 0xC0 → 0xC4
-        char    _pad2[0x38];        // 0xC4 → 0xFC
-        float   m_Gravity;          // 0xFC → 0x100
+        char        _pad[0x4C];         // 0x00 → 0x4C
+        CVector3f   m_WantedVelocityWS; // 0x4C → 0x58
+        char        _pad1[0x68];        // 0x58 → 0xC0
+        float       m_GroundDistance;   // 0xC0 → 0xC4
+        char        _pad2[0x38];        // 0xC4 → 0xFC
+        float       m_Gravity;          // 0xFC → 0x100
 
         [[nodiscard]] float GetGravity() const { return m_Gravity; }
         [[nodiscard]] float GetGroundDistance() const { return m_GroundDistance; }
@@ -37,43 +56,51 @@ namespace gz
             m_Gravity = -21; // default gravity value for the player character
         }
     };
+    static_assert(sizeof(CPfxCharacterInstance) == 0x100);
 
     class CCharacter
     {
     public:
-        char                        _pad_damageable[0x2C4]; // 0x000 → 0x2C4 (CDamageable)
-        char                        _pad1[0x5E4];           // 0x2C4 → 0x8A8
-        int                         m_originalFaction;      // 0x8A8 → 0x8AC
-        char                        _pad2[0x2C];            // 0x8AC → 0x8D8
-        void**                      m_interactionData;      // 0x8D8 → 0x8E0 - pointer to interaction data
-        char                        _pad[0x2AC0];           // 0x8E0 → 0x33A0
+        char                        _pad_damageable[0x2C4]; // 0x0000 → 0x02C4 (CDamageable)
+        char                        _pad1[0x5E4];           // 0x02C4 → 0x08A8
+        int                         m_originalFaction;      // 0x08A8 → 0x08AC
+        char                        _pad2[0x2C];            // 0x08AC → 0x08D8
+        void**                      m_interactionData;      // 0x08D8 → 0x08E0 - pointer to interaction data
+        char                        _pad3[0x988];           // 0x08E0 → 0x1268
+        CAnimatedModel              m_animatedModel;        // 0x1268 → 0x1390
+        char                        _pad4[0x2010];          // 0x1270 → 0x33A0
         CPfxCharacterInstance*      m_pfxInstance;          // 0x33A0 → 0x33A8
-        char                        _pad5[0x48];            // 0x33A8 → 0x33F0
+        char                        _pad5[0x8];             // 0x33A8 → 0x33B0
+        CObjectBlackboard           m_Blackboard;           // 0x33B0 → 0x33E8
+        char                        _pad6[0x8];             // 0x33E8 → 0x33F0
         CRemoteController*          m_remoteController;     // 0x33F0 → 0x33F8
-        char                        _pad6[0x10];            // 0x33F8 → 0x3408
+        char                        _pad7[0x10];            // 0x33F8 → 0x3408
         bool                        m_unlimitedAmmo;        // 0x3408 → 0x3409 (for player it still consumes inventory ammo)
         uint8_t                     m_controlFlag;          // 0x3409 → 0x340A
-        char                        _pad7[0x4EA];           // 0x340A → 0x38F4
+        char                        _pad8a[0x3C2];          // 0x340A → 0x37CC
+        uint8_t                     m_motionState;          // 0x37CC → 0x37CD  (5 = POSITIONING, no physics)
+        uint8_t                     m_defaultMotionState;   // 0x37CD → 0x37CE
+        char                        _pad8b[0x126];          // 0x37CE → 0x38F4
         bool                        m_detectable;           // 0x38F4 → 0x38F5
-        char                        _pad8[0xEF];            // 0x38F5 → 0x39E4
+        char                        _pad9[0xEF];            // 0x38F5 → 0x39E4
         CVector2f                   m_currentGravity;       // 0x39E4 → 0x39EC (array of 2 floats)
-        char                        _pad9[0xC];             // 0x39EC → 0x39F8
+        char                        _pad10[0xC];            // 0x39EC → 0x39F8
         int                         m_faction;              // 0x39F8 → 0x39FC
-        char                        _pad10[0xDC];           // 0x39FC → 0x3AD8
-        float                       worldPosX;              // 0x3AD8 → 0x3ADC - base world X coordinate
-        float                       worldPosY;              // 0x3ADC → 0x3AE0 - base world Y coordinate
-        float                       worldPosZ;              // 0x3AE0 → 0x3AE4 - base world Z coordinate
-        char                        _pad11[0x144];          // 0x3AE4 → 0x3C28
+        char                        _pad11[0xAC];           // 0x39FC → 0x3AA8
+        CMatrix4f                   m_worldMatrix;          // 0x3AA8 → 0x3AE8  (0x40 bytes)
+        char                        _pad12[0x140];          // 0x3AE8 → 0x3C28
         CAvatar*                    m_avatar;               // 0x3C28 → 0x3C30
-        char                        _pad12[0x758];          // 0x3C30 → 0x4388
+        char                        _pad13[0x758];          // 0x3C30 → 0x4388
         CAnimalCharacterComponent*  m_animalComponent;      // 0x4388 → 0x4390
+        char                        _pad14[0x10];           // 0x4390 → 0x43A0
+        CDeepWaterHandling*         m_deepWaterHandling;    // 0x43A0 → 0x43A8
 
-        CDamageable* GetDamageable()
+        [[nodiscard]] CDamageable* GetDamageable()
         {
             return reinterpret_cast<CDamageable*>(this);
         }
 
-        CPfxCharacterInstance* GetPfxInstance()
+        [[nodiscard]] CPfxCharacterInstance* GetPfxInstance()
         {
             return m_pfxInstance;
         }
@@ -82,9 +109,14 @@ namespace gz
         /// Gets the animal component of the character, if it has one.
         /// </summary>
         /// <returns>A pointer to the animal component, or nullptr if the character does not have one.</returns>
-        CAnimalCharacterComponent* GetAnimalComponent()
+        [[nodiscard]] CAnimalCharacterComponent* GetAnimalComponent()
         {
             return m_animalComponent;
+        }
+
+        [[nodiscard]] CAnimatedModel& GetAnimatedModel()
+        {
+            return m_animatedModel;
         }
 
         [[nodiscard]] CRemoteController* GetRemoteController() const
@@ -103,8 +135,35 @@ namespace gz
 
         [[nodiscard]] CVector3f GetPosition() const
         {
-            return CVector3f{worldPosX, worldPosY, worldPosZ};
+            return { m_worldMatrix.m[3].x, m_worldMatrix.m[3].y, m_worldMatrix.m[3].z };
         }
+
+        [[nodiscard]] CVector3f GetForward() const
+        {
+            return { m_worldMatrix.m[2].x, m_worldMatrix.m[2].y, m_worldMatrix.m[2].z };
+        }
+
+        [[nodiscard]] CVector3f GetRight() const
+        {
+            return { m_worldMatrix.m[0].x, m_worldMatrix.m[0].y, m_worldMatrix.m[0].z };
+        }
+
+        [[nodiscard]] CVector3f GetUp() const
+        {
+            return { m_worldMatrix.m[1].x, m_worldMatrix.m[1].y, m_worldMatrix.m[1].z };
+        }
+
+        void SetPosition(float x, float y, float z)
+        {
+            m_worldMatrix.m[3] = { x, y, z, 1.0f };
+        }
+
+        void SetPosition(const CVector3f& pos)
+        {
+            m_worldMatrix.m[3] = { pos.x, pos.y, pos.z, 1.0f };
+        }
+
+        void SetMotionState(uint8_t state) { m_motionState = state; }
 
         [[nodiscard]] bool IsSoviet() const { return m_originalFaction == 5; }
         [[nodiscard]] bool IsFNIX() const { return m_originalFaction == 2; }
@@ -177,6 +236,25 @@ namespace gz
         {
             return (m_controlFlag & 0x40) != 0;
         }
+
+        /// <summary>
+        /// Sets the visibility of the third person character body
+        /// </summary>
+        void SetThirdPersonBodyVisible(bool visible)
+        {
+            meow_hook::func_call<void>(
+                GetAddress(FUNC_SET_BLACKBOARD_INT_GET_WRAPPER),
+                &m_Blackboard,
+                0x41df1e71,
+                visible ? 1 : 0,
+                0,
+                0
+            );
+        }
     };
+    static_assert(offsetof(CCharacter, m_Blackboard) == 0x33B0);
+    static_assert(offsetof(CCharacter, m_pfxInstance) == 0x33A0);
+    static_assert(offsetof(CCharacter, m_worldMatrix) == 0x3AA8);
+    static_assert(offsetof(CCharacter, m_animalComponent) == 0x4388);
 } // namespace gz
 #pragma pack(pop)
