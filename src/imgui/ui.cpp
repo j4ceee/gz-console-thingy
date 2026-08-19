@@ -9,6 +9,7 @@
 #include "imgui_internal.h"
 #include "game/damageable.h"
 #include "game/game_state.h"
+#include "game/input_manager.h"
 
 namespace gz
 {
@@ -29,6 +30,7 @@ void UI::Initialize()
 
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.MouseDrawCursor = false;
 
     SetupUiLook();
@@ -66,8 +68,34 @@ void UI::SetupUiLook()
     ImGui::StyleColorsDark();
 
     ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiIO& io = ImGui::GetIO();
+
+    // query DPI from the game window (or fallback to desktop DPI)
+    float dpiScale = 1.0f;
+    dpiScale = GetDeviceCaps(GetDC(nullptr), LOGPIXELSX) / 96.0f;
+    float fontSize = std::round(16.0f * dpiScale); // e.g. 32px on 4K
+
+    // fonts
+    mainfont = io.Fonts->AddFontFromMemoryCompressedTTF(
+        Roboto_Regular_compressed_data,
+        Roboto_Regular_compressed_size,
+        fontSize
+    );
+
+    ImFontConfig config;
+    config.MergeMode = true;
+    config.PixelSnapH = true;
+
+    io.Fonts->AddFontFromMemoryCompressedTTF(
+        MaterialIcons_compressed_data,
+        MaterialIcons_compressed_size,
+        0.75f * fontSize,
+        &config
+    );
+
     // colours
     ImVec4* colors = style.Colors;
+
     colors[ImGuiCol_WindowBg]               = ImVec4(0.00f, 0.00f, 0.00f, 0.89f);
     colors[ImGuiCol_FrameBg]                = ImVec4(0.12f, 0.12f, 0.12f, 0.45f);
     colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.98f, 0.26f, 0.26f, 0.40f);
@@ -99,38 +127,33 @@ void UI::SetupUiLook()
     style.FrameRounding = 4.0f;
     style.WindowRounding = 6.0f;
 
-    // fonts
-    ImGuiIO& io = ImGui::GetIO();
-    mainfont = io.Fonts->AddFontFromMemoryCompressedTTF(
-        Roboto_Regular_compressed_data,
-        Roboto_Regular_compressed_size,
-        16.0f
-    );
+    style.WindowPadding     = ImVec2(14.0f, 12.0f);
+    style.FramePadding      = ImVec2( 8.0f,  5.0f);
+    style.ItemSpacing       = ImVec2(10.0f,  7.0f);
+    style.ItemInnerSpacing  = ImVec2( 7.0f,  5.0f);
+    style.CellPadding       = ImVec2( 6.0f,  4.0f);
+    style.IndentSpacing     = 20.0f;
+    style.ScrollbarSize     = 12.0f;
+    style.GrabMinSize       = 12.0f;
 
-    ImFontConfig config;
-    config.MergeMode = true;
-    io.Fonts->AddFontFromMemoryCompressedTTF(
-        MaterialIcons_compressed_data,
-        MaterialIcons_compressed_size,
-        12.0f,
-        &config
-    );
-
-    // set main font scale
-    style.ScaleAllSizes(1.2f);
-    style.FontScaleMain = 1.2f;
+    style.ScaleAllSizes(0.75f * dpiScale); // scales padding, grab sizes, etc. proportionally
+    style.MouseCursorScale = dpiScale;
 }
 
 void UI::SetVisible(bool visible)
 {
     m_visible = visible;
 
-    if (visible) {
-        ImGuiIO& io = ImGui::GetIO();
-        io.MouseDrawCursor = true;
-    } else {
-        ImGuiIO& io = ImGui::GetIO();
-        io.MouseDrawCursor = false;
+    auto& io = ImGui::GetIO();
+    if (visible)
+        io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange; // let ImGui change cursor shapes
+    else
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;  // hands cursor back to game
+
+    if (auto* inputMgr = NInput::CManager::instance())
+    {
+        if (visible) inputMgr->LoseFocus();
+        else inputMgr->GainFocus();
     }
 }
 
@@ -170,8 +193,23 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
 
 void UI::Render()
 {
-    if (!m_visible || !m_initialized) {
-        SetVisible(false);
+    if (!m_initialized) {
+        return;
+    }
+
+    // --- CONTROLLER TOGGLE LOGIC ---
+    // check for L3 + R3 (Left Stick Click + Right Stick Click)
+    static bool s_wasComboPressed = false;
+    const bool isComboPressed = ImGui::IsKeyDown(ImGuiKey_GamepadL3) && ImGui::IsKeyDown(ImGuiKey_GamepadR3);
+
+    // only trigger once per press to prevent flickering open / closed
+    if (isComboPressed && !s_wasComboPressed) {
+        SetVisible(!m_visible);
+    }
+    s_wasComboPressed = isComboPressed;
+    // -------------------------------
+
+    if (!m_visible) {
         return;
     }
 
@@ -180,7 +218,7 @@ void UI::Render()
         return;
     }
 
-    ImGui::Begin("Generation Zero Console Thingy", &m_visible);
+    ImGui::Begin("Generation Zero Console Thingy");
     ImGui::PushFont(mainfont);
 
     auto* playerMgr = CNetworkPlayerManager::instance();
@@ -239,7 +277,8 @@ void UI::Render()
 // Helper functions
 void UI::HelpMarker(const char* desc, const char* warning)
 {
-    ImGui::TextDisabled("(?)");
+    RenderHelpMarkerButton();
+
     if (ImGui::BeginItemTooltip())
     {
         InfoText(desc, warning);
@@ -249,12 +288,35 @@ void UI::HelpMarker(const char* desc, const char* warning)
 // help marker with array of bullet points for warning
 void UI::HelpMarker(const char* desc, const std::vector<const char*>& warnings)
 {
-    ImGui::TextDisabled("(?)");
+    RenderHelpMarkerButton();
+
     if (ImGui::BeginItemTooltip())
     {
         InfoText(desc, warnings);
         ImGui::EndTooltip();
     }
+}
+
+void UI::RenderHelpMarkerButton()
+{
+    static int s_counter = 0;
+    static int s_lastFrame = -1;
+
+    if (const int frame = ImGui::GetFrameCount(); frame != s_lastFrame) {
+        s_counter = 0;
+        s_lastFrame = frame;
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::PushID(s_counter++);
+    ImGui::SmallButton("(?)");
+    ImGui::PopID();
+    ImGui::PopStyleColor(4);
+    ImGui::PopStyleVar();
 }
 
 void UI::HoverTooltip(const char* text, const char* warning)

@@ -112,6 +112,12 @@ void RenderSettingsTab()
 
     // -- MOD SETTINGS --
     if (ImGui::CollapsingHeader(ICON_MD_SETTINGS " Mod Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("UI Font Scale", &settings.fontSize, 0.5f, 3.0f, "%.1f");
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            ConsoleSettings::ApplyFontSize();
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        } ImGui::SameLine(); UI::HelpMarker("Adjusts the scale of the UI font.");
+
         if (ImGui::Checkbox("Developer Mode", &settings.showDebugInfo)) {
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         } ImGui::SameLine(); UI::HelpMarker("Show extra debug information in the UI and enable unfinished features");

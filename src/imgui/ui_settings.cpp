@@ -17,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(24); // pre-allocate space
+            m_settingsCache.reserve(25); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -27,6 +27,11 @@ namespace gz
             });
             m_settingsCache.push_back({"HideHUDKey",'i',const_cast<int*>(&hideHUDKey),
                 nullptr
+            });
+            m_settingsCache.push_back({"FontSize",'f',const_cast<float*>(&fontSize),
+                []() {
+                    ApplyFontSize();
+                }
             });
             m_settingsCache.push_back({"ShowDebugInfo",'b',const_cast<bool*>(&showDebugInfo),
                 nullptr
@@ -143,35 +148,45 @@ namespace gz
         return m_settingsCache;
     }
 
-    void ConsoleSettings::ReadLine(const char* line)
+    void ConsoleSettings::ReadLine(const char* line) const
     {
         const auto& settings = GetSettings();
 
         for (auto& setting : settings)
         {
-            char format[64];
-            snprintf(format, sizeof(format), "%s=%%d", setting.name);
-
-            int value;
-            if (sscanf_s(line, format, &value) == 1)
+            if (setting.type == 'f')
             {
-                if (setting.type == 'i') {
-                    *(int*)setting.ptr = value;
-                }
-                else if (setting.type == 'b') {
-                    *(bool*)setting.ptr = (value != 0);
-                }
+                char format[64];
+                snprintf(format, sizeof(format), "%s=%%f", setting.name);
+                float fvalue;
+                if (sscanf_s(line, format, &fvalue) == 1)
+                {
+                    *(float*)setting.ptr = fvalue;
 
-                if (setting.onLoad) {
-                    setting.onLoad();
+                    if (setting.onLoad) setting.onLoad();
+                    return;
                 }
+            }
+            else
+            {
+                char format[64];
+                snprintf(format, sizeof(format), "%s=%%d", setting.name);
+                int value;
+                if (sscanf_s(line, format, &value) == 1)
+                {
+                    if (setting.type == 'i')
+                        *(int*)setting.ptr = value;
+                    else if (setting.type == 'b')
+                        *(bool*)setting.ptr = (value != 0);
 
-                return;
+                    if (setting.onLoad) setting.onLoad();
+                    return;
+                }
             }
         }
     }
 
-    void ConsoleSettings::WriteAll(ImGuiTextBuffer* buf)
+    void ConsoleSettings::WriteAll(ImGuiTextBuffer* buf) const
     {
         const auto& settings = GetSettings();
 
@@ -183,10 +198,14 @@ namespace gz
             else if (setting.type == 'b') {
                 buf->appendf("%s=%d\n", setting.name, *(bool*)setting.ptr ? 1 : 0);
             }
+            else if (setting.type == 'f')
+            {
+                buf->appendf("%s=%.1f\n", setting.name, *(float*)setting.ptr);
+            }
         }
     }
 
-    void ConsoleSettings::ApplyDefaults()
+    void ConsoleSettings::ApplyDefaults() const
     {
         const auto& settings = GetSettings();
 
@@ -286,4 +305,20 @@ namespace gz
         return false;
     }
 
+    void ConsoleSettings::ApplyFontSize()
+    {
+        UI* ui = UI::Get();
+        ConsoleSettings& settings = ui->GetSettings();
+        ImGuiStyle& style = ImGui::GetStyle();
+
+        const float ratio = settings.fontSize / settings.lastAppliedFontSize;
+
+        ImGui::GetIO().FontGlobalScale = settings.fontSize;
+
+        const float cursorScale = style.MouseCursorScale; // save
+        style.ScaleAllSizes(ratio);
+        style.MouseCursorScale = cursorScale; // restore, cursor size shouldn't follow font scale
+
+        settings.lastAppliedFontSize = settings.fontSize;
+    }
 } // namespace gz

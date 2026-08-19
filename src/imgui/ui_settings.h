@@ -10,7 +10,7 @@ namespace gz
     // Setting descriptor
     struct Setting {
         const char* name;               // name in config file
-        char type;                      // 'i' = int, 'b' = bool
+        char type;                      // 'i' = int, 'b' = bool, 'f' = float
         void* ptr;                      // pointer to member variable
         std::function<void()> onLoad;   // optional callback after loading
     };
@@ -21,6 +21,8 @@ namespace gz
         int teleportToAimKey = VK_F2;
         int hideHUDKey = VK_F3;
 
+        float fontSize = 1.0f;
+        float lastAppliedFontSize = 1.0f;
         bool showDebugInfo = false;
         bool showHint = true;
         bool quickerStartup = false;
@@ -50,13 +52,15 @@ namespace gz
         const std::vector<Setting>& GetSettings() const;
 
         // Serialization methods
-        void ReadLine(const char* line);
-        void WriteAll(ImGuiTextBuffer* buf);
-        void ApplyDefaults();
+        void ReadLine(const char* line) const;
+        void WriteAll(ImGuiTextBuffer* buf) const;
+        void ApplyDefaults() const;
 
         // helper methods
         static std::string GetKeyName(int vkCode);
         static bool IsValidKey(int vkCode);
+
+        static void ApplyFontSize();
     };
 
 } // namespace gz

@@ -7,6 +7,7 @@
 #include "game/camera_collision_modifier.h"
 #include "game/game_state.h"
 #include "game/game_world.h"
+#include "game/input_manager.h"
 #include "game/ui_manager.h"
 #include "imgui/ui.h"
 
@@ -26,19 +27,21 @@ void Input::Draw(ID3D11DeviceContext* context)
 
     if (!ui->IsVisible() && settings.showHint) {
         // draw input hint
+        const std::string keyName = gz::ConsoleSettings::GetKeyName(settings.toggleUIKey);
+        const char* hint = gz::NInput::g_isUsingGamepad ? "LS + RS" : keyName.c_str();
+
         Graphics::Get()->DrawString(
-            context,
-            gz::ConsoleSettings::GetKeyName(settings.toggleUIKey),
-            0.0078f,
-            0.965f,
-            FONT_SIZE_INPUT,
-            0x5EC9C9C9
+            context, hint, 0.0078f, 0.965f, FONT_SIZE_INPUT, 0x5EC9C9C9
         );
     }
 }
 
 bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
 {
+    // track active input device
+    if (message == WM_KEYDOWN || message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN)
+        gz::NInput::g_isUsingGamepad = false;
+
     gz::UI* ui = gz::UI::Get();
     gz::ConsoleSettings& settings = ui->GetSettings();
 

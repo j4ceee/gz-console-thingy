@@ -14,7 +14,7 @@
 > Use at your own risk and back-up your saves!
 
 ## Features
-- in-game GUI console accessible via a hotkey (F1 by default)
+- in-game GUI console accessible via a hotkey (_F1_ by default / _Left Stick + Right Stick_ on controllers)
 - built with ImGui for easy integration and ease of use for players
 - allows players to modify game values and execute commands in real-time
 - Supported game versions / platforms:
@@ -29,7 +29,7 @@
 - **Unlimited Ammo** (including no reload)
 - **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)
-- **Hiding the HUD** for a cleaner experience (Hotkey: F3 by default)
+- **Hiding the HUD** for a cleaner experience (Hotkey: _F3_ by default)
 - **Fast Travel Anywhere**: travel to any discovered location **and** to your own waypoint over the in-game map
 - Editing **Player Faction**: machines from the selected faction will treat you as an ally (available factions: Resistance, FNIX, Soviets)
 - **Disabling Detection** by enemies
@@ -74,7 +74,7 @@
 - **Teleportation**
   - ... to specific coordinates
   - ... predefined locations (collectibles)
-  - ... or to the current aim position (Hotkey: F2 by default)
+  - ... or to the current aim position (Hotkey: _F2_ by default)
 - **Gravity Control** for physics objects & player character
 - **Control over Time of Day**
   - **Mirror Real Time** (sync in-game time with your system clock)
@@ -103,7 +103,7 @@
 2. Extract the contents of the ZIP file
 3. You will find a folder named `GenerationZeroConsoleThingy` containing the mod file (`xinput9_1_0.dll`), this `README.md` and some license files
 4. Move the `xinput9_1_0.dll` file to your Generation Zero installation directory (where `GenerationZero.exe` is located)
-5. Launch Generation Zero and you can now open the console using F1 (default hotkey)
+5. Launch Generation Zero and you can now open the console using _F1_ (default hotkey) on your keyboard or _LS + RS_ on your controller
 
 ### Linux / Steam Deck
 - add `WINEDLLOVERRIDES="xinput9_1_0.dll=n,b" %command%` to your launch options for Generation Zero in Steam

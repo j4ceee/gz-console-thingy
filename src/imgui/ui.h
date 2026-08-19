@@ -66,6 +66,7 @@ namespace gz
         static void* SettingsHandlerReadOpen(ImGuiContext*, ImGuiSettingsHandler*, const char* name);
         static void SettingsHandlerReadLine(ImGuiContext*, ImGuiSettingsHandler*, void* entry, const char* line);
         static void SettingsHandlerWriteAll(ImGuiContext*, ImGuiSettingsHandler*, ImGuiTextBuffer* buf);
+        static void RenderHelpMarkerButton();
     };
 
     // tab rendering functions (implemented in separate files)

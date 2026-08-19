@@ -15,7 +15,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     // Check if we're in Generation Zero
     if (!GetModuleHandle("GenerationZero_F.exe")) {
         gz::Log("Not in Generation Zero - exiting");
-        return FALSE;
+        return TRUE;
     }
 
     switch (fdwReason) {

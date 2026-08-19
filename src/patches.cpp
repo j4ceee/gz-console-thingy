@@ -18,6 +18,7 @@
 #include "game/deep_water.h"
 #include "game/environment_gfx.h"
 #include "game/game_state.h"
+#include "game/input_manager.h"
 #include "game/intro.h"
 #include "game/player_eq_utils.h"
 #include "game/ui_manager.h"
@@ -146,6 +147,14 @@ bool InitPatchesAndHooks()
 
     // game patches
     try {
+        if (!NInput::SetupFocusHooks()) {
+            throw std::runtime_error("Failed to hook focus events");
+        }
+
+        if (!NInput::SetupUpdateGamepad()) {
+            throw std::runtime_error("Failed to hook update gamepad");
+        }
+
         if (!CCameraCollisionModifier::SetupCheckCollisionHook())
             Log("Failed to setup Camera Distance Patch");
 

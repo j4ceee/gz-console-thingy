@@ -19,7 +19,6 @@
 #include "game/player_eq_utils.h"
 #include "game/ui_manager.h"
 #include "game/camera/camera_director.h"
-#include "game/camera/camera_manager.h"
 
 namespace gz::UITabs
 {

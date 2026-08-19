@@ -27,12 +27,13 @@ namespace gz
     struct KnownCameraIds
     {
         // stable hashes, confirmed across restarts
-        static constexpr uint16_t HASH_ON_FOOT[3]    = { 0xE3DA, 0x4DC3, 0x35BC };
-        static constexpr uint16_t HASH_SPRINTING[3]  = { 0x3176, 0xD192, 0x6913 };
-        static constexpr uint16_t HASH_CROUCHING[3]  = { 0x7244, 0x57BA, 0xD699 };
-        static constexpr uint16_t HASH_VEHICLE[3]    = { 0xBB04, 0xC7E1, 0xA714 };
-        static constexpr uint16_t HASH_REMOTE[3]     = { 0xC3CE, 0x65B6, 0x374F };
-        static constexpr uint16_t HASH_EMOTE[3]      = { 0x5E5A, 0x1DBA, 0xC16F };
+        static constexpr uint16_t HASH_ON_FOOT[3]               = { 0xE3DA, 0x4DC3, 0x35BC };
+        static constexpr uint16_t HASH_SPRINTING[3]             = { 0x3176, 0xD192, 0x6913 };
+        static constexpr uint16_t HASH_SPRINTING_NO_STAMINA[3]  = { 0xB56A, 0x5109, 0x1C69 };
+        static constexpr uint16_t HASH_CROUCHING[3]             = { 0x7244, 0x57BA, 0xD699 };
+        static constexpr uint16_t HASH_VEHICLE[3]               = { 0xBB04, 0xC7E1, 0xA714 };
+        static constexpr uint16_t HASH_REMOTE[3]                = { 0xC3CE, 0x65B6, 0x374F };
+        static constexpr uint16_t HASH_EMOTE[3]                 = { 0x5E5A, 0x1DBA, 0xC16F };
 
         SCameraId onFoot   = {};
         SCameraId vehicle  = {};
@@ -72,6 +73,7 @@ namespace gz
             return (
                 HashMatches(id, HASH_ON_FOOT)
                 || HashMatches(id, HASH_SPRINTING)
+                || HashMatches(id, HASH_SPRINTING_NO_STAMINA)
                 || HashMatches(id, HASH_CROUCHING)
             );
         }

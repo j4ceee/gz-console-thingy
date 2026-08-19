@@ -66,9 +66,9 @@ namespace gz
         int                         m_originalFaction;      // 0x08A8 → 0x08AC
         char                        _pad2[0x2C];            // 0x08AC → 0x08D8
         void**                      m_interactionData;      // 0x08D8 → 0x08E0 - pointer to interaction data
-        char                        _pad3[0x988];           // 0x08E0 → 0x1268
-        CAnimatedModel              m_animatedModel;        // 0x1268 → 0x1390
-        char                        _pad4[0x2010];          // 0x1270 → 0x33A0
+        char                        _pad3[0x990];           // 0x08E0 → 0x1270
+        CAnimatedModel              m_animatedModel;        // 0x1270 → 0x13C0
+        char                        _pad4[0x1FE0];          // 0x13C0 → 0x33A0
         CPfxCharacterInstance*      m_pfxInstance;          // 0x33A0 → 0x33A8
         char                        _pad5[0x8];             // 0x33A8 → 0x33B0
         CObjectBlackboard           m_Blackboard;           // 0x33B0 → 0x33E8
@@ -114,9 +114,9 @@ namespace gz
             return m_animalComponent;
         }
 
-        [[nodiscard]] CAnimatedModel& GetAnimatedModel()
+        [[nodiscard]] CAnimatedModel* GetAnimatedModel()
         {
-            return m_animatedModel;
+            return &m_animatedModel;
         }
 
         [[nodiscard]] CRemoteController* GetRemoteController() const
@@ -252,6 +252,7 @@ namespace gz
             );
         }
     };
+    static_assert(offsetof(CCharacter, m_animatedModel) == 0x1270);
     static_assert(offsetof(CCharacter, m_Blackboard) == 0x33B0);
     static_assert(offsetof(CCharacter, m_pfxInstance) == 0x33A0);
     static_assert(offsetof(CCharacter, m_worldMatrix) == 0x3AA8);
