@@ -34,7 +34,7 @@ namespace gz::Data
         {"Vehicles", Spawnables::all_vehicles, 4, 'v'},
         {"Items & Deployables", Spawnables::all_deployables, 2, 'd'},
         {"Buildings & Props", Spawnables::buildings, 2, 'd'},
-        {"Machines", Spawnables::all_machines, 10, 'm'},
+        // {"Machines", Spawnables::all_machines, 10, 'm'},
         {"NPCs", Spawnables::all_npcs, 6, 'd'},
     };
 } // namespace gz::Data

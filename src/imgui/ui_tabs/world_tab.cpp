@@ -226,15 +226,6 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
                                         ImGui::Separator();
                                         ImGui::Text("For more vehicles please spawn a 'Vehicle Station' object from the 'Buildings & Props' category.");
                                     }
-                                    else if (category.spawnSystemType == 'm')
-                                    {
-                                        ImGui::Spacing();
-                                        ImGui::Separator();
-                                        UI::WarningText("Spawning machines currently does not work properly.\n"
-                                            "There are 2 workarounds available:\n"
-                                            "- Ticks can be spawned via their 'eggs'\n"
-                                            "- Lynx can be spawned via Firebird Vulture Beacon Drop");
-                                    }
                                     ImGui::EndTooltip();
                                 }
                             }

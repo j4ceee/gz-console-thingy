@@ -5,13 +5,13 @@ namespace gz::Data::Spawnables
     static const SpawnableData machines_tick[] = {
         {"Prototype",                       "pest_classa_load01",               0x08cc7b5a},
         {"Prototype - Friendly",            "pest_classa_load02",               0x2948cc07},
-        {"Prototype - Spy - Friendly",      "spy_pest_load01",                  0x76628adc},
+        // {"Prototype - Spy - Friendly",      "spy_pest_load01",                  0x76628adc},
 
         {"Class X - Friendly",              "pest_classx_load01",               0x55fd6052}, // named Prototype in spawn_animals_def.bin
 
         {"Military",                        "pest_classb_load01",               0xc142fcf4},
         {"Military - Friendly",             "pest_classb_load02",               0x4e1f9da7},
-        {"Military - Bunny",                "pest_classb_load03",               0xf28b6d0e},
+        // {"Military - Bunny",                "pest_classb_load03",               0xf28b6d0e},
 
         {"Apocalypse",                      "pest_classd_load01",               0x1dc4144d},
         {"Apocalypse - Friendly",           "pest_classd_load02",               0x91d0f0e9},
@@ -21,22 +21,21 @@ namespace gz::Data::Spawnables
         {"FNIX - Gnome",                    "pest_classc_load03",               0x099f81a8},
 
         {"Event - Gnome",                   "pest_classe1_load01",              0x6c68c372},
-        {"Event - Gnome",                   "pest_classe1_load02",              0xcd844e39},
+        {"Event - Gnome - Friendly",        "pest_classe1_load02",              0xcd844e39},
 
-
-        {"Egg - Prototype",                 "pest_egg_classa_load01",           0xe2e32d82},
-        {"Egg - Prototype - Friendly",      "pest_egg_classa_load01_friendly",  0xcf116b3a},
-
-        {"Egg - Military",                  "pest_egg_classb_load01",           0x12d802f5},
-        {"Egg - Military - Friendly",       "pest_egg_classb_load01_friendly",  0x813ae7eb},
-
-        {"Egg - FNIX",                      "pest_egg_classc_load01",           0x20aed311},
-        {"Egg - FNIX - Friendly",           "pest_egg_classc_load01_friendly",  0xacc99ee7},
-
-        {"Egg - Apocalypse",                "pest_egg_classd_load01",           0x51218a2c}, // named FNIX in spawn_animals_def.bin
-        {"Egg - Apocalypse - Friendly",     "pest_egg_classd_load01_friendly",  0x0c65c92d}, // named FNIX in spawn_animals_def.bin
-
-        {"Egg - Class E1 - Gnome",          "pest_egg_classe1_gnome",           0x0cb7bdad},
+        // {"Egg - Prototype",                 "pest_egg_classa_load01",           0xe2e32d82},
+        // {"Egg - Prototype - Friendly",      "pest_egg_classa_load01_friendly",  0xcf116b3a},
+        //
+        // {"Egg - Military",                  "pest_egg_classb_load01",           0x12d802f5},
+        // {"Egg - Military - Friendly",       "pest_egg_classb_load01_friendly",  0x813ae7eb},
+        //
+        // {"Egg - FNIX",                      "pest_egg_classc_load01",           0x20aed311},
+        // {"Egg - FNIX - Friendly",           "pest_egg_classc_load01_friendly",  0xacc99ee7},
+        //
+        // {"Egg - Apocalypse",                "pest_egg_classd_load01",           0x51218a2c}, // named FNIX in spawn_animals_def.bin
+        // {"Egg - Apocalypse - Friendly",     "pest_egg_classd_load01_friendly",  0x0c65c92d}, // named FNIX in spawn_animals_def.bin
+        //
+        // {"Egg - Class E1 - Gnome",          "pest_egg_classe1_gnome",           0x0cb7bdad},
     };
 
     static const SpawnableData machines_seeker[] = {
@@ -57,8 +56,8 @@ namespace gz::Data::Spawnables
         {"FNIX - Loadout 03",           "skir_classc_load03",   0x68047faf},
 
         {"Apocalypse - Loadout 01",     "skir_classd_load01",   0xe5269587},
-        {"Apocalypse - Loadout 02",     "skir_classd_load02",   0x84ef2130},
-        {"Apocalypse - Loadout 03",     "skir_classd_load03",   0x4fbe2210},
+        // {"Apocalypse - Loadout 02",     "skir_classd_load02",   0x84ef2130},
+        // {"Apocalypse - Loadout 03",     "skir_classd_load03",   0x4fbe2210},
     };
 
     static const SpawnableData machines_companion[] = {
@@ -94,8 +93,8 @@ namespace gz::Data::Spawnables
         {"FNIX - Loadout 03",           "harv_classc_load03",   0x3e1978a0},
 
         {"Apocalypse - Loadout 01",     "harv_classd_load01",   0xa4174988},
-        {"Apocalypse - Loadout 02",     "harv_classd_load02",   0xf276b7e8},
-        {"Apocalypse - Loadout 03",     "harv_classd_load03",   0x8fab7d33},
+        // {"Apocalypse - Loadout 02",     "harv_classd_load02",   0xf276b7e8},
+        // {"Apocalypse - Loadout 03",     "harv_classd_load03",   0x8fab7d33},
     };
 
     static const SpawnableData machines_tank[] = {
@@ -116,14 +115,14 @@ namespace gz::Data::Spawnables
         {"Apocalypse - Loadout 03",     "drea_classd_load03",   0x29090148},
 
         {"Reaper - Loadout 01",         "drea_classr1_load01",  0x0b0181ad},
-        {"Reaper - Loadout 02",         "drea_classr1_load02",  0x3bd3feac},
-        {"Reaper - Loadout 03",         "drea_classr1_load03",  0x23394970},
+        // {"Reaper - Loadout 02",         "drea_classr1_load02",  0x3bd3feac},
+        // {"Reaper - Loadout 03",         "drea_classr1_load03",  0x23394970},
     };
 
     static const SpawnableData machines_lynx[] = {
         {"Scout - Loadout 01",      "lynx_classa_load01",   0x96bd0b95},
 
-        {"Soldier - Loadout 02",    "lynx_classb_load01",   0x30fbcaa6},
+        {"Soldier - Loadout 01",    "lynx_classb_load01",   0x30fbcaa6},
         {"Soldier - Loadout 02",    "lynx_classb_load02",   0xae6989c2},
 
         {"Spetsnaz - Loadout 01",   "lynx_classc_load01",   0x83d89235},
@@ -156,13 +155,13 @@ namespace gz::Data::Spawnables
     };
 
     static const SpawnableCategory all_machines[] = {
-        {"Tick", 23, machines_tick},
-        {"Seeker", 4, machines_seeker},
-        {"Runner", 9, machines_runner},
         {"Companion", 3, machines_companion},
+        {"Tick", 12, machines_tick},
+        {"Seeker", 4, machines_seeker},
+        {"Runner", 7, machines_runner},
         {"Hunter", 9, machines_hunter},
-        {"Harvester", 10, machines_harvester},
-        {"Tank", 15, machines_tank},
+        {"Harvester", 8, machines_harvester},
+        {"Tank", 13, machines_tank},
         {"Lynx", 6, machines_lynx},
         {"Firebird", 7, machines_firebird},
         {"Wolf", 6, machines_wolf},

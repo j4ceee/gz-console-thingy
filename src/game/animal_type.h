@@ -5,6 +5,21 @@
 #pragma pack(push, 1)
 namespace gz
 {
+    class CAnimal;
+
+    class CAnimalGroup
+    {
+    public:
+        char        _pad0[0x382];           // 0x000 → 0x382
+        uint8_t     m_DisableSimulation;    // 0x382 → 0x383
+        char        _pad1[0x15];            // 0x383 → 0x398
+        CAnimal*    m_Leader;               // 0x398 → 0x3A0
+        BasicVector m_Animals;              // 0x3A0 → 0x3B8
+    };
+    static_assert(offsetof(CAnimalGroup, m_DisableSimulation) == 0x382);
+    static_assert(offsetof(CAnimalGroup, m_Leader) == 0x398);
+    static_assert(offsetof(CAnimalGroup, m_Animals) == 0x3A0);
+
     class CAnimalType
     {
     public:
@@ -22,22 +37,22 @@ namespace gz
         char        _pad2[0x04];                    // 0x1A4 → 0x1A8
         GameString  m_Designator;                   // 0x1A8 → 0x1C8 (32 bytes)
 
-        const char* GetName() const
+        [[nodiscard]] const char* GetName() const
         {
             return m_Name.c_str();
         }
 
-        const char* GetMachineClass() const
+        [[nodiscard]] const char* GetMachineClass() const
         {
             return m_MachineClass.c_str();
         }
 
-        const char* GetSpawnTag() const
+        [[nodiscard]] const char* GetSpawnTag() const
         {
             return m_SpawnTag.c_str();
         }
 
-        const char* GetDesignator() const
+        [[nodiscard]] const char* GetDesignator() const
         {
             return m_Designator.c_str();
         }

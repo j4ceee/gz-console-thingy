@@ -35,7 +35,7 @@ namespace gz
         float       m_TargetTimer;          // 0x48 → 0x4C
         float       m_TargetAnimalDistance; // 0x4C → 0x50
 
-        size_t GetSpottedAnimalCount() const
+        [[nodiscard]] size_t GetSpottedAnimalCount() const
         {
             auto& vec = *reinterpret_cast<const std::vector<SSpottedAnimal>*>(&m_SpottedAnimals);
             return vec.size();
@@ -47,17 +47,17 @@ namespace gz
             return (index < vec.size()) ? &vec[index] : nullptr;
         }
 
-        CAnimal* GetTargetAnimal() const
+        [[nodiscard]] CAnimal* GetTargetAnimal() const
         {
             return m_TargetAnimal;
         }
 
-        CAnimal* GetLastTargetAnimal() const
+        [[nodiscard]] CAnimal* GetLastTargetAnimal() const
         {
             return m_LastTargetAnimal;
         }
 
-        float GetTargetAnimalDistance() const
+        [[nodiscard]] float GetTargetAnimalDistance() const
         {
             return m_TargetAnimalDistance;
         }

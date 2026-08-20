@@ -3,6 +3,7 @@
 #include <chrono>
 #include "game/damageable.h"
 #include "game/game_state.h"
+#include "game/animal_network.h"
 #include "game/player_network_manager.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
@@ -66,6 +67,8 @@ namespace gz::Utils
                     worldTime->SetTime(fractionalHour);
                 }
             }
+
+            ProcessPendingHacks();
         }
     }
 } // namespace gz::Utils

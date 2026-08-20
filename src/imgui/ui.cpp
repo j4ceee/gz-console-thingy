@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 #include "imgui_internal.h"
+#include "version.h"
 #include "game/damageable.h"
 #include "game/game_state.h"
 #include "game/input_manager.h"
@@ -234,6 +235,13 @@ void UI::Render()
 
     ImGui::Spacing();
     ImGui::Text("Hello, %s!", networkPlayer->GetProfileName().c_str());
+
+    char versionText[16];
+    snprintf(versionText, sizeof(versionText), "v%s", VERSION_STRING);
+    float textWidth = ImGui::CalcTextSize(versionText).x;
+    ImGui::SameLine(ImGui::GetContentRegionAvail().x - textWidth + ImGui::GetCursorPosX());
+    ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled), "%s", versionText);
+
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();

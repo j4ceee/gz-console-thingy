@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <windows.h>
+#include "version.h"
 
 namespace gz
 {
@@ -86,6 +87,7 @@ private:
         std::ofstream log(s_logFilePath);
         log << "=== Generation Zero Console Thingy Log ===" << std::endl;
         log << "Session started: " << timestamp << std::endl;
+        log << "Version: " << VERSION_STRING << std::endl;
         log << "=========================================" << std::endl << std::endl;
     }
 

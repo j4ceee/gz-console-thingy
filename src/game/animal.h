@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "animal_character.h"
+#include "animal_population.h"
 #include "animal_type.h"
 #include "data_types.h"
 #include "meow_hook/util.h"
@@ -11,7 +12,7 @@
 #pragma pack(push, 1)
 namespace gz
 {
-    class CAnimal;
+    class CSpawnedAnimalNetworkComponent;
 
     class CAnimalHealth
     {
@@ -105,16 +106,25 @@ namespace gz
     class CAnimal
     {
     public:
-        char            _pad0[0x38];            // 0x00 → 0x38
-        uint32_t        m_NetworkComponentId;   // 0x38 → 0x3C
-        char            _pad1[0x54];            // 0x3C → 0x90
-        BasicSharedPtr  m_SpawnedCharacter;     // 0x90 → 0xA0
-        char            _pad3[0x20];            // 0xA0 → 0xC0
-        CAnimalType*    m_AnimalType;           // 0xC0 → 0xC8
-        char            _pad4[0x18];            // 0xC8 → 0xE0
-        CAnimalHealth   m_Health;               // 0xE0 → 0x168 (at current size of 0x88)
-        char            _pad6[0x78];            // 0x168 → 0x1E0
-        uint32_t        m_VisualVariationSeed;  // 0x1E0 → 0x1E4
+        char                _pad0[0x38];                // 0x00 → 0x38
+        uint32_t            m_NetworkComponentId;       // 0x38 → 0x3C
+        char                _pad1[0x45];                // 0x3C → 0x81
+        std::byte           m_Flags;                    // 0x81 → 0x82
+        char                _pad2[0x0E];                // 0x82 → 0x90
+        BasicSharedPtr      m_SpawnedCharacter;         // 0x90 → 0xA0
+        CVector2f           m_MapPosition;              // 0xA0 → 0xA8
+        CVector2f           m_MapDirection;             // 0xA8 → 0xB0
+        char                _pad3[0x04];                // 0xB0 → 0xB4
+        float               m_ScriptedSpawnPositionY;   // 0xB4 → 0xB8
+        char                _pad4[0x8];                 // 0xB8 → 0xC0
+        CAnimalType*        m_AnimalType;               // 0xC0 → 0xC8
+        CAnimalPopulation*  m_AnimalPopulation;         // 0xC8 → 0xD0
+        std::byte           m_Loadout;                  // 0xD0 → 0xD1
+        char                _pad5[0x07];                // 0xD1 → 0xD8
+        CAnimalGroup*       m_Group;                    // 0xD8 → 0xE0
+        CAnimalHealth       m_Health;                   // 0xE0 → 0x168 (at current size of 0x88)
+        char                _pad6[0x78];                // 0x168 → 0x1E0
+        uint32_t            m_VisualVariationSeed;      // 0x1E0 → 0x1E4
 
         [[nodiscard]] CCharacter* GetSpawnedCharacter() const
         {
@@ -123,7 +133,7 @@ namespace gz
             );
         }
 
-        CAnimalCharacterComponent* GetSpawnedCharacterComponent() const
+        [[nodiscard]] CAnimalCharacterComponent* GetSpawnedCharacterComponent() const
         {
             if (auto* spawnedChar = GetSpawnedCharacter())
             {
@@ -155,7 +165,7 @@ namespace gz
         /// <summary>
         /// Sets the machine's health based on a percentage of its max health. For example, 50% will set the health to half of the max health.
         /// </summary>
-        /// TODO: this still is not save: may not be synced properly in multiplayer + SetHealthRatioOnParts() only works on parts that are not already destroyed
+        /// TODO: this still is not safe: may not be synced properly in multiplayer + SetHealthRatioOnParts() only works on parts that are not already destroyed
         void SetHealthInPercentageByLethalDamage(int percentage)
         {
             m_Health.SetHealthInPercentageByLethalDamage(percentage);
@@ -166,6 +176,56 @@ namespace gz
                 animalComp->SetHealthRatioOnParts(partsRatio);
             }
         }
+
+        // currently unused
+        void* CreateNetworkComponent()
+        {
+            auto* mgr = *(void**)GetAddress(INST_NETWORK_COMP_MANAGER);
+
+            void* component = meow_hook::func_call<void*>(
+                GetAddress(NETWORK_COMP_CREATE),
+                mgr,
+                (uint32_t)6,            // component type: animal
+                (void*)nullptr,         // owner character ptr: none yet
+                (uint64_t)0,            // SObjectID: default/empty
+                (uint32_t)0,            // unknown, always 0 in reference
+                (uint32_t)0xFFFFFFFF,   // network id: auto-assign
+                (uint8_t)0xFF,          // owner peer: auto-resolve
+                (uint32_t)0xFFFFFFFF    // parent NC id: none
+            );
+
+            if (!component) return nullptr;
+
+            meow_hook::func_call<void>(GetAddress(NETWORK_COMP_SEND_ADD_EVENT), mgr, component, (uint8_t)0xFF);
+
+            m_NetworkComponentId = *(uint32_t*)((char*)component + 0x10);
+            return component;
+        }
+
+        [[nodiscard]] CSpawnedAnimalNetworkComponent* GetNetworkComponent() const
+        {
+            if (m_NetworkComponentId == 0xFFFFFFFF)
+                return nullptr;
+
+            auto* mgr = (void*)GetAddress(INST_NETWORK_COMP_MANAGER);
+            mgr = *(void**)mgr;
+
+            auto* comp = meow_hook::func_call<CSpawnedAnimalNetworkComponent*>(
+                GetAddress(FIND_NETWORK_COMPONENT_CHILDREN),
+                mgr,
+                m_NetworkComponentId
+            );
+
+            return comp;
+        }
     };
+    static_assert(offsetof(CAnimal, m_NetworkComponentId) == 0x38);
+    static_assert(offsetof(CAnimal, m_Flags) == 0x81);
+    static_assert(offsetof(CAnimal, m_SpawnedCharacter) == 0x90);
+    static_assert(offsetof(CAnimal, m_AnimalType) == 0xC0);
+    static_assert(offsetof(CAnimal, m_AnimalPopulation) == 0xC8);
+    static_assert(offsetof(CAnimal, m_Group) == 0xD8);
+    static_assert(offsetof(CAnimal, m_Health) == 0xE0);
+
 } // namespace gz
 #pragma pack(pop)

@@ -39,6 +39,14 @@ namespace gz
         {
             return *(CMap**)(GetAddress(INST_MAP));
         }
+
+
+        static CVector2f WorldToMapPosition(float worldX, float worldZ)
+        {
+            CVector2f mapPos{};
+            meow_hook::func_call<void>(GetAddress(WORLD_TO_MAP_COORDS), worldX, worldZ, &mapPos);
+            return mapPos;
+        }
     };
 
     static_assert(sizeof(CMap) == 0x6F8, "CMap size mismatch!");

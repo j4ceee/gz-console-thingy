@@ -124,6 +124,11 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_BASE_NETWORK_MANAGER", game_file, result, [&] {
+        auto match = pattern("FF ? ? 90 48 ? ? ? ? ? ? 48 ? ? ? 48 ? ? 74 ? 0F ? ? ? 88", game_file).count(1).get(0).adjust(7);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_PLAYER_INFORMATION", game_file, result, [&] {
         auto match = pattern("48 8B F2 48 8B 0D ? ? ? ? 48 81 C1 ? ? ? ? E8", game_file).count(1).get(0).adjust(6);
         return disp_rebase(game_file, match).as<uintptr_t>();
@@ -211,6 +216,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("INST_NETWORK_COMP_MANAGER", game_file, result, [&] {
+        auto match = pattern("8B ? ? 48 8B ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? 48 85 ? ? ? 0F ? ? ? 33", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -302,6 +315,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("WORLD_TO_MAP_COORDS", game_file, result, [&] {
+        auto match = pattern("F3 ? ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? 4C ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
     // -- input --
 
     FindPattern("INPUT_LOST_FOCUS", game_file, result, [&] {
@@ -367,6 +389,79 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return (intermediate.as<uintptr_t>() + 1);  // add the missing byte
     });
 
+    // -- spawn system --
+
+    FindPattern("SPAWN_SYSTEM_SPAWN", game_file, result, [&] {
+        auto match = pattern("8B 97 ? ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? EB ? 80 B9 ? ? ? ? ? 74", game_file)
+            .count(1)
+            .get(0)
+            .adjust(13)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SPAWN_SYSTEM_PARSE_TAGS", game_file, result, [&] {
+        auto match = pattern("4C 8D 4C ? ? C7 44 ? ? ? ? ? ? 4C 8D ? ? ? E8 ? ? ? ? 85 C0 74", game_file)
+            .count(1)
+            .get(0)
+            .adjust(18)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SPAWN_SYSTEM_GET_MATCHING_RES", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 85 C0 74 ? 4D 8B CF", game_file)
+            .count(1)
+            .get(0)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SPAWN_VEHICLE_OWNERSHIP_CALLBACK", game_file, result, [&] {
+        auto match = pattern("45 33 E4 4C ? ? ? ? ? ? 44 38 A1 ? ? ? ? 74 ? 45 33 C9", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("POPULATION_ADD_GROUP", game_file, result, [&] {
+        auto match = pattern("4C ? ? ? ? ? ? ? 88 ? ? ? E8 ? ? ? ? 48 ? ? ? 5B C3", game_file)
+            .count(1)
+            .get(0)
+            .adjust(12)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SPAWN_ANIMAL", game_file, result, [&] {
+        auto match = pattern("48 ? ? 49 ? ? E8 ? ? ? ? 48 ? ? ? 80", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // -- network stuff --
+
+    FindPattern("NETWORK_COMP_CREATE", game_file, result, [&] {
+        auto match = pattern("8B ? ? ? 89 ? ? ? 8B ? ? ? 89 ? ? ? E8 ? ? ? ? 48 ? ? ? C3", game_file)
+            .count(1)
+            .get(0)
+            .adjust(16)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("NETWORK_COMP_SEND_ADD_EVENT", game_file, result, [&] {
+        auto match = pattern("40 55 48 8D ? ? ? ? ? ? 48 81 ? ? ? ? ? 48 C7 ? ? ? ? ? ? ? 48 89 ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 33 C4 48 89 ? ? ? ? ? 48 8B ? 44", game_file)
+            .count(1)
+            .get(0)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
     // -- random bullshit go --
 
     FindPattern("FUNC_SET_BLACKBOARD_INT_GET_WRAPPER", game_file, result, [&] {
@@ -412,40 +507,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .adjust(7)
             .extract_call();
         return rebase(game_file, match);
-    });
-
-    FindPattern("SPAWN_SYSTEM_SPAWN", game_file, result, [&] {
-        auto match = pattern("8B 97 ? ? ? ? 48 8B 0D ? ? ? ? E8 ? ? ? ? EB ? 80 B9 ? ? ? ? ? 74", game_file)
-            .count(1)
-            .get(0)
-            .adjust(13)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("SPAWN_SYSTEM_PARSE_TAGS", game_file, result, [&] {
-        auto match = pattern("4C 8D 4C ? ? C7 44 ? ? ? ? ? ? 4C 8D ? ? ? E8 ? ? ? ? 85 C0 74", game_file)
-            .count(1)
-            .get(0)
-            .adjust(18)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("SPAWN_SYSTEM_GET_MATCHING_RES", game_file, result, [&] {
-        auto match = pattern("E8 ? ? ? ? 85 C0 74 ? 4D 8B CF", game_file)
-            .count(1)
-            .get(0)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("SPAWN_VEHICLE_OWNERSHIP_CALLBACK", game_file, result, [&] {
-        auto match = pattern("45 33 E4 4C ? ? ? ? ? ? 44 38 A1 ? ? ? ? 74 ? 45 33 C9", game_file)
-            .count(1)
-            .get(0)
-            .adjust(6);
-        return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
     FindPattern("EVENT_SCHEDULER", game_file, result, [&] {
@@ -579,6 +640,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
            .count(1)
            .get(0)
            .adjust(4)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("FIND_NETWORK_COMPONENT_CHILDREN", game_file, result, [&] {
+       auto match = pattern("E8 ? ? ? ? 4C ? ? 45 ? ? 48 ? ? 0F ? ? ? ? ? 8B", game_file)
+           .count(1)
+           .get(0)
            .extract_call();
        return rebase(game_file, match);
     });

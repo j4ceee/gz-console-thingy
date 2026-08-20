@@ -17,6 +17,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_GAME_WORLD] = (is_steam ? 0x142adcb60 : 0x142bea110) + offset;
     g_Address[INST_INPUT_MANAGER] = (is_steam ? 0x1429b2558 : 0x142abfb08) + offset;
     g_Address[INST_NETWORK_PLAYER_MANAGER] = (is_steam ? 0x142adea38 : 0x142bec088) + offset;
+    g_Address[INST_BASE_NETWORK_MANAGER] = (is_steam ? 0x142abe1b0 : 0x142bcb760) + offset;
     g_Address[INST_PLAYER_INFORMATION] = (is_steam ? 0x142abee30 : 0x142bcc3e0) + offset;
     g_Address[INST_PHYSICS_SYSTEM] = (is_steam ? 0x142a35da0 : 0x142b43350) + offset;
     g_Address[INST_ENVIRONMENT_GFX_MANAGER] = (is_steam ? 0x142a2b4e0 : 0x142b38a90) + offset;
@@ -29,6 +30,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_OVERLAY_UI] = (is_steam ? 0x142adfe48 : 0x142bed630) + offset;
     g_Address[INST_CLOCK] = (is_steam ? 0x142a2b4e8 : 0x142b38a98) + offset;
     g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
+    g_Address[INST_NETWORK_COMP_MANAGER] = (is_steam ? 0x142abe1e8 : 0x142bcb798) + offset;
     g_Address[INST_CAMERA_DIRECTOR] = (is_steam ? 0x142abdde8 : 0x142bcb398) + offset;
     g_Address[INST_CAMERA_MANAGER] = (is_steam ? 0x142a2b4d0 : 0x142b38a80) + offset;
     g_Address[INST_GAME_CAMERA_MANAGER] = (is_steam ? 0x142abdba0 : 0x142bcb150) + offset;
@@ -39,6 +41,7 @@ void InitAddresses(bool is_steam)
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;
     g_Address[FUNC_VSNPRINTF] = (is_steam ? 0x140de69b0 : 0x140e2dd60) + offset;
     g_Address[FUNC_SCRIPT_ERROR_REPORT] = (is_steam ? 0x140e7eba0 : 0x140ec5770) + offset;
+    g_Address[WORLD_TO_MAP_COORDS] = (is_steam ? 0x140938830 : 0x140938510) + offset;
     g_Address[INPUT_LOST_FOCUS] = (is_steam ? 0x140101e90 : 0x140101920) + offset;
     g_Address[INPUT_GOT_FOCUS] = (is_steam ? 0x140101e30 : 0x1401018c0) + offset;
     g_Address[UPDATE_GAMEPAD] = (is_steam ? 0x1400ff4f0 : 0x1400fef80) + offset;
@@ -46,15 +49,19 @@ void InitAddresses(bool is_steam)
     g_Address[VAR_GAME_STATE] = (is_steam ? 0x142adcb80 : 0x142bea130) + offset;
     g_Address[VAR_CLOUD_VISIBILITY] = (is_steam ? 0x141bada08 : 0x141c6cbd0) + offset;
     g_Address[VAR_FP_PLAYER_SHADOW] = (is_steam ? 0x142adf1a4 : 0x142bec85c) + offset;
+    g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
+    g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
+    g_Address[SPAWN_SYSTEM_GET_MATCHING_RES] = (is_steam ? 0x140b53ba0 : 0x140b61f60) + offset;
+    g_Address[SPAWN_VEHICLE_OWNERSHIP_CALLBACK] = (is_steam ? 0x140937b80 : 0x140937860) + offset;
+    g_Address[POPULATION_ADD_GROUP] = (is_steam ? 0x1408cb440 : 0x1408cb120) + offset;
+    g_Address[SPAWN_ANIMAL] = (is_steam ? 0x1409064f0 : 0x1409061d0) + offset;
+    g_Address[NETWORK_COMP_CREATE] = (is_steam ? 0x1404013e0 : 0x140400f50) + offset;
+    g_Address[NETWORK_COMP_SEND_ADD_EVENT] = (is_steam ? 0x1409cb970 : 0x1409d4650) + offset;
     g_Address[FUNC_SET_BLACKBOARD_INT_GET_WRAPPER] = (is_steam ? 0x14047d5c0 : 0x14047d1d0) + offset;
     g_Address[FUNC_INTRO_COMPLETE] = (is_steam ? 0x140cb57d0 : 0x140cc0ba0) + offset;
     g_Address[FUNC_UPD_VIS_SHOW] = (is_steam ? 0x140ce7200 : 0x140cf2b30) + offset;
     g_Address[FUNC_IS_UI_SHOWN] = (is_steam ? 0x140cb5a60 : 0x140cc0e30) + offset;
     g_Address[CLOCK_UPDATE_GAME] = (is_steam ? 0x1400ca3e0 : 0x1400c8ce0) + offset;
-    g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
-    g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
-    g_Address[SPAWN_SYSTEM_GET_MATCHING_RES] = (is_steam ? 0x140b53ba0 : 0x140b61f60) + offset;
-    g_Address[SPAWN_VEHICLE_OWNERSHIP_CALLBACK] = (is_steam ? 0x140937b80 : 0x140937860) + offset;
     g_Address[EVENT_SCHEDULER] = (is_steam ? 0x140a02a10 : 0x140a0d4b0) + offset;
     g_Address[TELEPORT] = (is_steam ? 0x14085d210 : 0x14085cd60) + offset;
     g_Address[FAST_TRAVEL] = (is_steam ? 0x14085d000 : 0x14085cb50) + offset;
@@ -70,6 +77,7 @@ void InitAddresses(bool is_steam)
     g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
     g_Address[ANIMATED_MODEL_SET_STATE] = (is_steam ? 0x1403dc320 : 0x1403dbe90) + offset;
     g_Address[DAMAGEABLE_PART_SET_UNIT_HEALTH] = (is_steam ? 0x14062d730 : 0x14062d340) + offset;
+    g_Address[FIND_NETWORK_COMPONENT_CHILDREN] = (is_steam ? 0x1404044f0 : 0x140404060) + offset;
     g_Address[REQUEST_ANIMAL_HACK] = (is_steam ? 0x1409912e0 : 0x140999430) + offset;
     g_Address[REQUEST_ANIMAL_CONTROL] = (is_steam ? 0x1406492d0 : 0x140648ee0) + offset;
     g_Address[RELEASE_ANIMAL_CONTROL] = (is_steam ? 0x14065f780 : 0x14065f390) + offset;

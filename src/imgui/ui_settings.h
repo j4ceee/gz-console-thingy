@@ -45,6 +45,7 @@ namespace gz
         bool unlimitedCarryWeight = false;
         bool unlimitedStorageSize = false;
         bool mirrorRealTime = false;
+        bool machinesForceSpawn = true;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

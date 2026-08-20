@@ -44,6 +44,7 @@
 - **Ghost Mode**: float through walls and objects (no clipping)
 
 ### Machines
+- **Machine Spawning**: Spawn any machine anywhere
 - **Hacking Always Succeeds**: all hacking attempts for machines will automatically succeed
 - **Unlimited Hacking Duration**: hacked machines will stay hacked for a long time without needing to re-hack them
 - **Advanced Hacking**: machines will always attack other machines, even when the 'Hacker' specialization skill is not active
@@ -89,7 +90,6 @@
   - Items & Deployables
   - Buildings (like base defenses that will help you in battle or the different stations, like the workbenches or the crate) 
   - Human NPCs
-  - Machines (very limited, most machines are currently spawned without AI)
 
 ### Game Settings
 - **Quicker Startup**: the game will start loading while the splash screens are still playing

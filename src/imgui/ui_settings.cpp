@@ -17,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(25); // pre-allocate space
+            m_settingsCache.reserve(26); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -140,6 +140,9 @@ namespace gz
             });
             m_settingsCache.push_back({"MirroRealTime",'b',const_cast<bool*>(&mirrorRealTime),
                 nullptr // handled in game update hook
+            });
+            m_settingsCache.push_back({"MachinesForceSpawn",'b',const_cast<bool*>(&machinesForceSpawn),
+                nullptr // handled in imgui ui
             });
 
             m_cacheInitialized = true;

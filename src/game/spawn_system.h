@@ -47,6 +47,16 @@ namespace gz
                     break;
                 }
             case 'm':
+                {
+                    // auto* reserveWorld = CReserveWorld::instance();
+                    // if (reserveWorld && reserveWorld->m_PopulationManager && reserveWorld->m_SpawnSystem)
+                    // {
+                    //     CPlayer* player = CNetworkPlayerManager::instance()->GetPlayer();
+                    //     CVector3f aimPos = player->GetAimPosition();
+                    //     reserveWorld->m_SpawnSystem->SpawnAtPosition(reserveWorld->m_PopulationManager, tag, aimPos);
+                    // }
+                    break;
+                }
             case 'n':
             default:
                 {
