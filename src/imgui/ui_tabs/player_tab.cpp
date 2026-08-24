@@ -10,7 +10,6 @@
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/weapon_consumption.h"
-#include "patches/fasttravel_patches.h"
 #include "patches/vehicle_patches.h"
 
 #include "game/animal_spotting_manager.h"
@@ -194,12 +193,10 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // -- MAP --
-    if (ImGui::CollapsingHeader(ICON_MD_MAP " Map", ImGuiTreeNodeFlags_DefaultOpen) && FastTravelPatches::IsInitialized()) {
-        bool enableFastTravelAnywhere = FastTravelPatches::IsFastTravelAnywhereEnabled();
-        if (ImGui::Checkbox("Enable Fast Travel Anywhere", &enableFastTravelAnywhere)) {
-            FastTravelPatches::ToggleFastTravelAnywhere();
+    if (ImGui::CollapsingHeader(ICON_MD_MAP " Map", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Checkbox("Enable Fast Travel Anywhere", &settings.enableFastTravelAnywhere)) {
+            g_fastTravelAnywhereEnabled = settings.enableFastTravelAnywhere;
             // save setting
-            settings.enableFastTravelAnywhere = enableFastTravelAnywhere;
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
         ImGui::SameLine();

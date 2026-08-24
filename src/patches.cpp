@@ -31,7 +31,6 @@
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
-#include "patches/fasttravel_patches.h"
 #include "patches/map_zoom_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -192,21 +191,28 @@ bool InitPatchesAndHooks()
         if (!AmmoDeployableConsumption::SetupDeployableHook())
             Log("Failed to setup Deployable Consumption hook");
 
-        if (!CBuildingItem::SetupGetSpawnLocationHook() || !CBuildingItem::SetupCanPlaceBuildingHook()
-            || !CControlPointSpawned::SetupAlignToGridHook() || !CBuildingGrid::SetupAddBuildingToGridHook())
-            Log("Failed to setup Building Item hooks");
+        bool buildingHooksOk = true;
+        buildingHooksOk &= CBuildingItem::SetupGetSpawnLocationHook();
+        buildingHooksOk &= CBuildingItem::SetupCanPlaceBuildingHook();
+        buildingHooksOk &= CControlPointSpawned::SetupAlignToGridHook();
+        buildingHooksOk &= CBuildingGrid::SetupAddBuildingToGridHook();
+        if (!buildingHooksOk) Log("Failed to setup Building Item hooks");
 
         EventTimePatch::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
         CloudPatch::Initialize();
-        FastTravelPatches::Initialize();
 
         if (MapZoomPatch::Initialize())
             MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)
 
         if (!CMap::SetupIsAllowedInRegionHook())
             Log("Failed to setup IsAllowedInRegion hook");
+
+        bool fastTravelHooksOk = true;
+        fastTravelHooksOk &= CMap::SetupOnManageInputIconsHook();
+        fastTravelHooksOk &= CMap::SetupFastTravelHook();
+        if (!fastTravelHooksOk) Log("Failed to setup fast travel hooks");
 
         if (!Intro::SetupIntroComplete())
             Log("Failed to setup 'Intro Complete'");

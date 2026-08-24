@@ -801,26 +801,35 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("MAP_ON_MANAGE_INPUT_ICONS", game_file, result, [&] {
+        auto match = pattern("49 8B CF E8 ? ? ? ? C6 ? ? ? ? ? ? 4C ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("MAP_FAST_TRAVEL", game_file, result, [&] {
+        auto match = pattern("48 8B D3 E8 ? ? ? ? E9 ? ? ? ? 81 ? ? ? ? ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("UI_GET_UINT64", game_file, result, [&] {
+        auto match = pattern("48 8B CA E8 ? ? ? ? 4C ? ? 48 ? ? ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
     // ++ BYTE PATCHES ++
     // (these are addresses of single bytes to patch, not functions or variables)
-
-    // fast travel patches
-    FindPattern("PATCH_MAP_FAST_TRAVEL_VALIDATION", game_file, result, [&] { // fast travel validation check when clicking fast travel button on map
-    auto match = pattern("48 ? ? 0f ? ? ? ? ? 80 ? ? ? 0f ? ? ? ? ? F2", game_file)
-            .count(1)
-            .get(0)
-            .adjust(13)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-    FindPattern("PATCH_MAP_FAST_TRAVEL_BUTTON", game_file, result, [&] { // patch to always display fast travel button on map
-    auto match = pattern("4D ? ? 41 ? ? ? 48 8D ? ? ? ? ? 48 8D ? ? E8 ? ? ? ? 45 ? ? ? ?", game_file)
-            .count(1)
-            .get(0)
-            .adjust(23)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
 
     // resource cheat
     FindPattern("PATCH_RESOURCE_CONSUMPTION", game_file, result, [&] { // reduces resources after building placement / crafting
