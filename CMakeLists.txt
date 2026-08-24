@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(gz_console_thingy)
+project(gz_console_thingy VERSION 1.4.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +20,9 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out/${CMAKE_BUILD_TYPE})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out/${CMAKE_BUILD_TYPE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/resource.rc.in ${CMAKE_CURRENT_BINARY_DIR}/generated/resource.rc @ONLY)
 
 #
 # fw1 library
@@ -63,6 +66,7 @@ target_sources(meow-hook PRIVATE ${MEOW_HOOK_SOURCES})
 add_library(xinput9_1_0 SHARED)
 target_compile_definitions(xinput9_1_0 PRIVATE NOMINMAX)
 target_include_directories(xinput9_1_0 PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/generated
     src
     deps/fw1
     deps/minhook/include
@@ -78,8 +82,8 @@ file(GLOB_RECURSE XINPUT_SOURCES
 file(GLOB_RECURSE GENERATOR_SOURCES "src/generator/*")
 list(REMOVE_ITEM XINPUT_SOURCES ${GENERATOR_SOURCES})
 
-target_sources(xinput9_1_0 PRIVATE ${XINPUT_SOURCES} src/xinput9_1_0.def)
-target_link_libraries(xinput9_1_0 PRIVATE fw1 minhook meow-hook imgui)
+target_sources(xinput9_1_0 PRIVATE ${XINPUT_SOURCES} src/xinput9_1_0.def ${CMAKE_CURRENT_BINARY_DIR}/generated/resource.rc)
+target_link_libraries(xinput9_1_0 PRIVATE fw1 minhook imgui)
 
 # set the DEF file (MSVC only)
 if(MSVC)

@@ -102,14 +102,6 @@ bool InitPatchesAndHooks()
 {
     Log("Starting InitPatchesAndHooks");
 
-    Log("Checking sanity check address: %p", (void *)GetAddress(SANITY_CHECK));
-
-    // basic sanity check
-    if (strcmp((const char *)GetAddress(SANITY_CHECK), "Avalanche Engine") != 0) {
-        return false;
-    }
-    Log("Sanity check passed, setting up hooks...");
-
     if (MH_Initialize() != MH_OK)
     {
         Log("Failed to initialize MinHook");
