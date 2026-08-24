@@ -792,6 +792,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("MAP_ALLOWED_IN_REGION", game_file, result, [&] {
+        auto match = pattern("89 ? ? ? E8 ? ? ? ? 84 ? ? ? 48 ? ? ? ? ? ? 40", game_file)
+            .count(1)
+            .get(0)
+            .adjust(4)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
     // ++ BYTE PATCHES ++
     // (these are addresses of single bytes to patch, not functions or variables)
 
@@ -809,15 +818,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(23)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("PATCH_DLC_BOUNDARY", game_file, result, [&] { // patch to allow player entering dlc island
-    auto match = pattern("49 ? ? 48 ? ? ? 48 ? ? 75 ? B0 ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 48 ? ? ? ? 32 C0 48 ? ? ? ? 48 ? ? ? 5F C3", game_file)
-            .count(1)
-            .get(0)
-            .adjust(35)
             .as<uintptr_t>();
         return rebase(game_file, match);
     });

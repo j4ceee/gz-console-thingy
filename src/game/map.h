@@ -7,6 +7,11 @@
 #pragma pack(push, 1)
 namespace gz
 {
+    class CMap;
+
+    using IsAllowedInRegionFunc_t = bool(*)(CMap*, CVector3f*);
+    inline IsAllowedInRegionFunc_t g_origIsAllowedInRegion = nullptr;
+
     class CMap
     {
     public:
@@ -34,12 +39,10 @@ namespace gz
         char _pad5[0x654];      // 0xA4 to end
         // total size: 0x6f8
 
-
         static CMap* instance()
         {
             return *(CMap**)(GetAddress(INST_MAP));
         }
-
 
         static CVector2f WorldToMapPosition(float worldX, float worldZ)
         {
@@ -47,8 +50,18 @@ namespace gz
             meow_hook::func_call<void>(GetAddress(WORLD_TO_MAP_COORDS), worldX, worldZ, &mapPos);
             return mapPos;
         }
-    };
 
+        static bool HookedIsAllowedInRegion(CMap* thisPtr, CVector3f* position)
+        {
+            return true;
+        }
+
+        static bool SetupIsAllowedInRegionHook()
+        {
+            if (g_origIsAllowedInRegion) return true;
+            return MH_CreateHookGZ(MAP_ALLOWED_IN_REGION, &HookedIsAllowedInRegion, &g_origIsAllowedInRegion);
+        }
+    };
     static_assert(sizeof(CMap) == 0x6F8, "CMap size mismatch!");
     static_assert(offsetof(CMap, cursorScreenX) == 0x8C, "cursorWorldX offset mismatch!");
     static_assert(offsetof(CMap, cursorScreenY) == 0x90, "cursorWorldY offset mismatch!");

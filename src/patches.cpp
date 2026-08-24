@@ -22,6 +22,7 @@
 #include "game/game_state.h"
 #include "game/input_manager.h"
 #include "game/intro.h"
+#include "game/map.h"
 #include "game/player_eq_utils.h"
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
@@ -30,7 +31,6 @@
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
-#include "patches/dlc_patches.h"
 #include "patches/fasttravel_patches.h"
 #include "patches/map_zoom_patches.h"
 
@@ -201,10 +201,12 @@ bool InitPatchesAndHooks()
         VehiclePatches::Initialize();
         CloudPatch::Initialize();
         FastTravelPatches::Initialize();
-        if (DLCPatch::Initialize())
-            DLCPatch::EnableDLCBoundaryBypass(); // always keep enabled (enables players to enter DLC areas)
+
         if (MapZoomPatch::Initialize())
             MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)
+
+        if (!CMap::SetupIsAllowedInRegionHook())
+            Log("Failed to setup IsAllowedInRegion hook");
 
         if (!Intro::SetupIntroComplete())
             Log("Failed to setup 'Intro Complete'");
