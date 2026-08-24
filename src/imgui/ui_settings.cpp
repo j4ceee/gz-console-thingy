@@ -1,12 +1,12 @@
 #include "ui_settings.h"
 
 #include "game/animal_network.h"
+#include "game/building_item.h"
 #include "game/event_scheduler.h"
 #include "game/player.h"
 #include "game/player_eq_utils.h"
 #include "game/ui_manager.h"
 #include "game/weapon_consumption.h"
-#include "patches/building_patches.h"
 #include "patches/fasttravel_patches.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -78,15 +78,11 @@ namespace gz
                 }
             }});
             m_settingsCache.push_back({"DisableBuildingRestrictions",'b',const_cast<bool*>(&enableUnrestrictedBuilding),
-                [this]() {
-                if (BuildingPatches::IsInitialized()) {
-                    if (enableUnrestrictedBuilding) {
-                        BuildingPatches::EnableFreeBuild();
-                    } else {
-                        BuildingPatches::DisableFreeBuild();
-                    }
+                [this]()
+                {
+                    g_forceSpawnLocationValid = enableUnrestrictedBuilding;
                 }
-            }});
+            });
             m_settingsCache.push_back({"EnableUnlimitedResources",'b',const_cast<bool*>(&enableUnlimitedResources),
                 [this]() {
                 if (ResourcePatches::IsInitialized()) {

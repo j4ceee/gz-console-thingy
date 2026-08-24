@@ -1,7 +1,6 @@
 #include "../ui.h"
 #include "../fonts/IconsMaterialDesign.h"
 #include "game/player_network_manager.h"
-#include "patches/building_patches.h"
 #include "patches/resource_patch.h"
 
 #include <imgui.h>
@@ -15,6 +14,7 @@
 #include "patches/vehicle_patches.h"
 
 #include "game/animal_spotting_manager.h"
+#include "game/building_item.h"
 #include "game/deep_water.h"
 #include "game/player_eq_utils.h"
 #include "game/ui_manager.h"
@@ -264,19 +264,15 @@ void RenderPlayerTab(CNetworkPlayerManager* playerMgr)
 
     // -- BASE BUILDING --
     if (ImGui::CollapsingHeader(ICON_MD_HOUSE " Base Building", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (BuildingPatches::IsInitialized())
+        if (ImGui::Checkbox("Unrestricted Building", &settings.enableUnrestrictedBuilding))
         {
-            bool freeBuild = BuildingPatches::IsFreeBuildEnabled();
-            if (ImGui::Checkbox("Unrestricted Building", &freeBuild)) {
-                BuildingPatches::ToggleFreeBuild();
-                // save setting
-                settings.enableUnrestrictedBuilding = freeBuild;
-                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-            }
-            ImGui::SameLine();
-            UI::HelpMarker("Allows building structures without collision checks and ignores building limits.",
-                "Warning: Do not build too close to the command center (crossed out tiles) or on tiles blocked due to terrain as these buildings will be deleted on game reload.");
+            g_forceSpawnLocationValid = settings.enableUnrestrictedBuilding;
+            // save setting
+            ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
+        ImGui::SameLine();
+        UI::HelpMarker("Allows building structures without collision checks and ignores building limits.",
+                       "Warning: Do not build too close to the command center (crossed out tiles) or on tiles blocked due to terrain as these buildings will be deleted on game reload.");
 
         if (activeWorldSave)
         {

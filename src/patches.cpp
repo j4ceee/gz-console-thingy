@@ -11,6 +11,8 @@
 #include <imgui.h>
 
 #include "game/animal_network.h"
+#include "game/building_grid.h"
+#include "game/building_item.h"
 #include "game/camera_collision_modifier.h"
 #include "game/clock.h"
 #include "game/event_scheduler.h"
@@ -25,7 +27,6 @@
 #include "game/ui_static_handler.h"
 #include "game/weapon_consumption.h"
 #include "game/camera/camera_director.h"
-#include "patches/building_patches.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
@@ -191,8 +192,11 @@ bool InitPatchesAndHooks()
         if (!AmmoDeployableConsumption::SetupDeployableHook())
             Log("Failed to setup Deployable Consumption hook");
 
+        if (!CBuildingItem::SetupGetSpawnLocationHook() || !CBuildingItem::SetupCanPlaceBuildingHook()
+            || !CControlPointSpawned::SetupAlignToGridHook() || !CBuildingGrid::SetupAddBuildingToGridHook())
+            Log("Failed to setup Building Item hooks");
+
         EventTimePatch::Initialize();
-        BuildingPatches::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
         CloudPatch::Initialize();

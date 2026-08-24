@@ -89,10 +89,11 @@ void InitAddresses(bool is_steam)
     g_Address[GET_EQUIPMENT_WEIGHT] = (is_steam ? 0x140721f40 : 0x140721c00) + offset;
     g_Address[CONSUME_DEPLOYABLES] = (is_steam ? 0x140717580 : 0x140717240) + offset;
     g_Address[CONSUME_AMMO] = (is_steam ? 0x140770ae0 : 0x1407707d0) + offset;
-    g_Address[PATCH_BUILDING_UI_CHECK_1] = (is_steam ? 0x140725640 : 0x140725300) + offset;
-    g_Address[PATCH_BUILDING_UI_CHECK_2] = (is_steam ? 0x140725816 : 0x1407254d6) + offset;
-    g_Address[PATCH_BUILDING_CHECK_COLLISION] = (is_steam ? 0x140bbb00c : 0x140bc933c) + offset;
-    g_Address[PATCH_BUILDING_CHECK_MASTER] = (is_steam ? 0x140716080 : 0x140715d40) + offset;
+    g_Address[BUILDING_CAN_PLACE_BUILDING] = (is_steam ? 0x140716080 : 0x140715d40) + offset;
+    g_Address[BUILDING_ITEM_GET_SPAWN_LOCATION] = (is_steam ? 0x140725490 : 0x140725150) + offset;
+    g_Address[BUILDING_ALIGN_TO_GRID] = (is_steam ? 0x140bbce50 : 0x140bcb180) + offset;
+    g_Address[BUILDING_GRID_ADD_BUILDING] = (is_steam ? 0x140bbaeb0 : 0x140bc91e0) + offset;
+    g_Address[BUILDING_GRID_COMPUTE_FOOTPRINT_BOUNDS] = (is_steam ? 0x140bca7d0 : 0x140bd8b00) + offset;
     g_Address[PATCH_MAP_FAST_TRAVEL_VALIDATION] = (is_steam ? 0x140c26438 : 0x140c33168) + offset;
     g_Address[PATCH_MAP_FAST_TRAVEL_BUTTON] = (is_steam ? 0x140c6e742 : 0x140c7a902) + offset;
     g_Address[PATCH_DLC_BOUNDARY] = (is_steam ? 0x140c38f57 : 0x140c45937) + offset;

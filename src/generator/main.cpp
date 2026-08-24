@@ -747,30 +747,53 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    // ++ BYTE PATCHES ++
-    // (these are addresses of single bytes to patch, not functions or variables)
+    FindPattern("BUILDING_CAN_PLACE_BUILDING", game_file, result, [&] {
+        auto match = pattern("48 8B CF E8 ? ? ? ? 8B ? ? ? ? ? 84 ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
 
-    // building placement patches
-    FindPattern("PATCH_BUILDING_UI_CHECK_1", game_file, result, [&] { // ui collision check before building placement
-        auto match = pattern("E8 ? ? ? ? 84 C0 74 04 B0 01 EB 02 32 C0 88 86", game_file).count(1).get(0).adjust(13).as<uintptr_t>();
+    FindPattern("BUILDING_ITEM_GET_SPAWN_LOCATION", game_file, result, [&] {
+        auto match = pattern("48 8B CF E8 ? ? ? ? C6 ? ? ? ? C6 ? ? ? ? C6 ? ? ? ? 41", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_BUILDING_UI_CHECK_2", game_file, result, [&] { // ui collision check before building placement
-        auto match = pattern("48 8D 4D ? E8 ? ? ? ? 20 9E 80 ? ? ?", game_file).count(1).get(0).adjust(9).as<uintptr_t>();
+
+    FindPattern("BUILDING_ALIGN_TO_GRID", game_file, result, [&] {
+        auto match = pattern("49 8B CA E8 ? ? ? ? 84 C0 74 ? ? ? ? ? 32", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
         return rebase(game_file, match);
     });
-    FindPattern("PATCH_BUILDING_CHECK_COLLISION", game_file, result, [&] { // collision check before building placement
-        auto match = pattern("47 ? ? ? 0f 85 ? ? ? ? 45 ? ? 75 ? 45", game_file).count(1).get(0).adjust(4).as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-    FindPattern("PATCH_BUILDING_CHECK_MASTER", game_file, result, [&] { // master building check before building placement (checks collision & limit)
-        auto match = pattern("48 89 5C ? ? 48 89 6C ? ? 48 89 74 ? ? 57 48 83 ? ? 80 B9 ? ? ? ? ? 48 8B D9", game_file)
+
+    FindPattern("BUILDING_GRID_ADD_BUILDING", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 84 C0 0F ? ? ? ? ? 41 ? ? ? ? ? ? ? ? 41 ? ? 49", game_file)
             .count(1)
             .get(0)
             .adjust(0)
-            .as<uintptr_t>();
+            .extract_call();
         return rebase(game_file, match);
     });
+
+    FindPattern("BUILDING_GRID_COMPUTE_FOOTPRINT_BOUNDS", game_file, result, [&] {
+        auto match = pattern("48 8B CF E8 ? ? ? ? 84 C0 0F ? ? ? ? ? 44 ? ? ? 44", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // ++ BYTE PATCHES ++
+    // (these are addresses of single bytes to patch, not functions or variables)
 
     // fast travel patches
     FindPattern("PATCH_MAP_FAST_TRAVEL_VALIDATION", game_file, result, [&] { // fast travel validation check when clicking fast travel button on map
