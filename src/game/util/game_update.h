@@ -5,6 +5,8 @@
 #include "game/game_state.h"
 #include "game/animal_network.h"
 #include "game/player_network_manager.h"
+#include "game/character_tasks.h"
+#include "game/player_spawn_manager.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/world_time.h"
@@ -29,11 +31,21 @@ namespace gz::Utils
             {
                 CCharacter* playerCharacter = networkPlayerManager->GetCharacter();
 
-                // update player invulnerability status
-                CDamageable* playerDamageable = playerCharacter->GetDamageable();
-                if (playerInvulnerable && !playerDamageable->IsInvulnerable())
+                if (playerCharacter)
                 {
-                    playerDamageable->SetInvulnerable(true);
+                    // update player invulnerability status
+                    CDamageable* playerDamageable = playerCharacter->GetDamageable();
+                    if (playerInvulnerable && !playerDamageable->IsInvulnerable())
+                    {
+                        playerDamageable->SetInvulnerable(true);
+                    }
+
+                    // third person stuff
+                    if (!g_thirdPersonResourcesPrimed)
+                    {
+                        PrimeThirdPersonResources();
+                    }
+                    CharacterTasks::g_jumpSeededThisFrame = false;
                 }
             }
 

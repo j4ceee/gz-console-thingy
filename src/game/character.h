@@ -3,15 +3,74 @@
 #include "animation_control.h"
 #include "remote_controller.h"
 #include "data_types.h"
+#include "game_object.h"
 #include "meow_hook/util.h"
+#include "util/hash_utils.h"
+#include "../log.h"
 
 #pragma pack(push, 1)
 namespace gz
 {
+    /// Third-person animation layer set<br>
+    /// - swaps local player animation layers between the fp set (local_player_character.ee) & tp set (tp_local_player_character.ee) at runtime
+    /// - limit: m_InactiveLayers[8] and m_InactiveBodyParts[8] are fixed 8-byte arrays
+    namespace TpLayers
+    {
+        inline constexpr int kSwapCount = 7;    // slots 0 - 6 exist in both sets
+        inline constexpr int kTpCount   = 6;    // TP render layers, land in slots 0 - 5
+        inline constexpr int kTotalCount = 8;
+        inline constexpr int kSpareSlot = 7;    // parked (hidden) TP layer while in FP mode
+
+        struct LayerFiles
+        {
+            const char* asb;
+            const char* afsmb;
+        };
+
+        #define GZ_TP_SM(name) \
+        { "animations/statemachines/humans/player_thirdperson_" name ".asb", \
+          "animations/statemachines/humans/player_thirdperson_" name ".afsmb" }
+
+        // index here is the TP render layer number (0 - 5)
+        inline constexpr LayerFiles kFiles[kTpCount] = {
+            GZ_TP_SM("fullbody"),                   // -> slot 0
+            GZ_TP_SM("upperbody"),                  // -> slot 1
+            GZ_TP_SM("weapon_handling_additive"),   // -> slot 2
+            GZ_TP_SM("weapon_recoil_additive"),     // -> slot 3
+            GZ_TP_SM("reaction_additive"),          // -> slot 4
+            GZ_TP_SM("face"),                       // -> slot 5
+        };
+
+        #undef GZ_TP_SM
+
+        // name hash that already lives on each target slot in the stock FP set
+        // slot 7 does not exist until GrowToEightLayers() runs
+        inline constexpr uint32_t kUnnamedHash = 0xDEADBEEF;
+        inline constexpr uint32_t kSlotHashes[kTotalCount] = {
+            0x9011E763, // 0 MAINBODY
+            0xA6468F52, // 1 UPPERBODY
+            0x457905E1, // 2 GLOBAL_PARTIAL
+            0xB2BE2993, // 3 SYNCED_ADDITIVE
+            0x85E439F0, // 4 GLOBAL_ADDITIVE
+            0x5A9EF178, // 5 VOCALS
+            kUnnamedHash, // 6
+            kUnnamedHash, // 7
+        };
+
+        inline SAnimationLayerInstance g_fpParked[kTotalCount]{};
+        inline SAnimationLayerInstance g_tpParked[kTpCount]{};
+
+        /// character parked instances belong to. they die with it, so a character swap (world reload, new save) has to reset the install state
+        inline void* g_owner = nullptr;
+
+        inline bool g_installed = false;
+        inline bool g_tpActive = false;
+    }
+
     class CDeepWaterHandling;
     class CAnimalCharacterComponent;
     class CDamageable;
-    class CAvatar {};
+    class CAvatar;
 
     struct CObjectBlackboard
     {
@@ -31,12 +90,16 @@ namespace gz
     class CPfxCharacterInstance
     {
     public:
-        char        _pad[0x4C];         // 0x00 → 0x4C
-        CVector3f   m_WantedVelocityWS; // 0x4C → 0x58
-        char        _pad1[0x68];        // 0x58 → 0xC0
-        float       m_GroundDistance;   // 0xC0 → 0xC4
-        char        _pad2[0x38];        // 0xC4 → 0xFC
-        float       m_Gravity;          // 0xFC → 0x100
+        char        _pad[0x38];                     // 0x00 → 0x38
+        bool        m_InputAirJump;                 // 0x38
+        bool        m_InputJump;                    // 0x39
+        bool        m_InputGameControlledVelocity;  // 0x3A
+        char        _pad0[0x11];                    // 0x3B → 0x4C
+        CVector3f   m_WantedVelocityWS;             // 0x4C → 0x58
+        char        _pad1[0x68];                    // 0x58 → 0xC0
+        float       m_GroundDistance;               // 0xC0 → 0xC4
+        char        _pad2[0x38];                    // 0xC4 → 0xFC
+        float       m_Gravity;                      // 0xFC → 0x100
 
         [[nodiscard]] float GetGravity() const { return m_Gravity; }
         [[nodiscard]] float GetGroundDistance() const { return m_GroundDistance; }
@@ -56,6 +119,8 @@ namespace gz
             m_Gravity = -21; // default gravity value for the player character
         }
     };
+    static_assert(offsetof(CPfxCharacterInstance, m_InputJump) == 0x39);
+    static_assert(offsetof(CPfxCharacterInstance, m_WantedVelocityWS) == 0x4C);
     static_assert(sizeof(CPfxCharacterInstance) == 0x100);
 
     class CCharacter
@@ -103,6 +168,15 @@ namespace gz
         [[nodiscard]] CPfxCharacterInstance* GetPfxInstance()
         {
             return m_pfxInstance;
+        }
+
+        /// CCharacter's CGameObject subobject starts at +0x08.
+        /// Byte arithmetic on purpose: CGameObject is currently an empty class, so
+        /// `reinterpret_cast<CGameObject*>(this) + 8` would scale by sizeof(CGameObject)
+        /// and silently break the moment a member is added to it.
+        [[nodiscard]] CGameObject* GetGameObject()
+        {
+            return reinterpret_cast<CGameObject*>(reinterpret_cast<uint8_t*>(this) + 8);
         }
 
         /// <summary>
@@ -250,6 +324,352 @@ namespace gz
                 0,
                 0
             );
+        }
+
+        // --- third person stuff -----------------------------------------
+    private:
+        /// Builds a fresh SAnimationLayerInstance for TP render layer <code>tpIndex</code> into <code>out</code> (0x28 bytes)
+        /// - tagged for the slot it will occupy
+        /// - returns false if the resources aren't in the cache
+        static bool BuildTpLayerInstance(int tpIndex, int targetSlot, SAnimationLayerInstance* out)
+        {
+            const auto& files = TpLayers::kFiles[tpIndex];
+
+            alignas(8) SAnimationLayerInfo info{};
+            info.m_AfsmFileName.SetTemporary(files.afsmb);
+            info.m_AsFileName.SetTemporary(files.asb);
+            info.m_AfsmFileHash = Utils::HashString(files.afsmb);
+            info.m_AsFileHash = Utils::HashString(files.asb);
+            info.m_LayerHash = TpLayers::kSlotHashes[targetSlot];
+            info.m_LayerIndex = targetSlot;
+
+            alignas(8) SAnimationLayerInstance tmp{};
+            meow_hook::func_call<void>(GetAddress(ANIM_LAYER_CONST), &tmp, &info);
+
+            info.m_AfsmFileName.FreeTemporary();
+            info.m_AsFileName.FreeTemporary();
+
+            if (!tmp.IsResolved())
+            {
+                Log("TpLayers: '%s' failed to resolve (sm=%p animSet=%p)",
+                    files.afsmb, tmp.m_StateMachine.px, tmp.m_AnimSetHandle);
+                meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &tmp);
+                return false;
+            }
+
+            *out = tmp;
+            return true;
+        }
+
+        /// - moves the instance out of <code>m_DefaultLayers[index]</code> into <code>dst</code>
+        /// - slot is zeroed, not destroyed; ownership transfers to <code>dst</code>
+        void MoveOutOfSlot(int index, SAnimationLayerInstance* dst)
+        {
+            auto* slot = GetAnimatedModel()->GetDefaultLayerSlot(index);
+            if (!slot) return;
+            *dst = *slot;
+            memset(slot, 0, sizeof(*slot));
+        }
+
+        /// - moves <code>src</code> into <code>m_DefaultLayers[index]</code>, destroying whatever was there
+        /// - <code>src</code> is zeroed so the same instance can never be installed twice
+        void MoveIntoSlot(int index, SAnimationLayerInstance* src)
+        {
+            auto* slot = GetAnimatedModel()->GetDefaultLayerSlot(index);
+            if (!slot) return;
+            if (slot->m_StateMachine.px) // only destroy a live instance
+                meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), slot);
+            *slot = *src;
+            memset(src, 0, sizeof(*src));
+            slot->m_LayerIndex = index;
+        }
+
+        /// grows m_DefaultLayers from 7 to 8
+        /// - appended instance is a placeholder, it gets replaced before InitializeRuleSystems runs
+        bool GrowToEightLayers()
+        {
+            auto* model = GetAnimatedModel();
+            const int count = model->GetDefaultLayerCount();
+            if (count == TpLayers::kTotalCount) return true;
+            if (count != TpLayers::kTotalCount - 1)
+            {
+                Log("TpLayers: unexpected layer count %d", count);
+                return false;
+            }
+
+            const auto& files = TpLayers::kFiles[0]; // fullbody, known resolvable
+
+            alignas(8) SAnimationLayerInfo info{};
+            info.m_AfsmFileName.SetTemporary(files.afsmb);
+            info.m_AsFileName.SetTemporary(files.asb);
+            info.m_AfsmFileHash = Utils::HashString(files.afsmb);
+            info.m_AsFileHash = Utils::HashString(files.asb);
+            info.m_LayerHash = TpLayers::kUnnamedHash;
+            info.m_LayerIndex = TpLayers::kSpareSlot;
+
+            meow_hook::func_call<void>(GetAddress(ANIM_MODEL_ADD_LAYER), model, &info);
+            info.m_AfsmFileName.FreeTemporary();
+            info.m_AsFileName.FreeTemporary();
+
+            auto* slot = model->GetDefaultLayerSlot(TpLayers::kSpareSlot);
+            if (!slot || !slot->m_StateMachine.px)
+            {
+                Log("TpLayers: could not grow to 8 layers");
+                if (slot) // AddAnimationLayer appends unconditionally - roll it back
+                {
+                    meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), slot);
+                    model->m_DefaultLayers.PopBackRaw(sizeof(SAnimationLayerInstance));
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /// Rebuilds rule systems, body parts and per-slot state-task memory from the current contents of m_DefaultLayers.
+        /// Required after any layer change.
+        void RebuildRuleSystems()
+        {
+            meow_hook::func_call<void>(GetAddress(ANIM_MODEL_INIT_RULE_SYSTEMS),
+                                       GetAnimatedModel(),
+                                       "animations/skeletons/characters/humans/sk100.bsk",
+                                       GetAddress(CHARACTER_ON_STATE_TRANSITION),
+                                       GetGameObject());
+        }
+
+        /// skips driver & pose contribution
+        void SetLayerActive(int index, bool active)
+        {
+            auto* ctrl = GetAnimatedModel()->GetAnimationControl();
+            if (!ctrl || index < 0 || index >= ctrl->GetBodyPartCount()) return;
+
+            ctrl->m_InactiveBodyParts[index] = !active;
+            if (!active)
+                if (void* blender = ctrl->GetBlender(index))
+                    meow_hook::func_call<void>(GetAddress(BLEND_TREE_CLEAR), blender);
+        }
+
+        /// Fully parks a layer we are only storing, not using.
+        ///
+        /// 2 flags:
+        /// - CAnimationControl::m_InactiveBodyParts[i] - skips driver & pose contribution (SetLayerActive)
+        /// - CAnimatedModel::m_InactiveLayers[i] - gates UpdateRuleSystem / the STATE MACHINE itself (SetLayerParked)
+        ///
+        /// NEVER park a layer whose tasks are still needed (the FP logic layers)
+        void SetLayerParked(int index, bool parked)
+        {
+            auto* model = GetAnimatedModel();
+            if (index < 0 || index >= 8) return;
+            model->m_InactiveLayers[index] = parked;
+            SetLayerActive(index, !parked);
+        }
+
+        /// clears every inactivation flag on BOTH arrays. Call AFTER RebuildRuleSystems() and before applying the per-mode flags
+        void ResetLayerFlags()
+        {
+            auto* model = GetAnimatedModel();
+            auto* ctrl = model->GetAnimationControl();
+            if (!ctrl) return;
+
+            for (int i = 0; i < 8; ++i)
+            {
+                model->m_InactiveLayers[i] = false;
+                ctrl->m_InactiveBodyParts[i] = false;
+            }
+        }
+
+        /// TP mode: FP logic layers at 6/7 are hidden from the pose only
+        /// - their rule systems must keep running -> handles sprint, crouch, prone & weapon tasks
+        void ApplyTpLayerFlags()
+        {
+            ResetLayerFlags();
+            SetLayerActive(6, false); // FP UPPERBODY - logic runs, pose hidden
+            SetLayerActive(7, false); // FP MAINBODY - logic runs, pose hidden
+        }
+
+        //// FP mode: everything is stock except the spare TP layer in slot 7 which is fully parked (pose & state machine)
+        void ApplyFpLayerFlags()
+        {
+            ResetLayerFlags();
+            SetLayerParked(TpLayers::kSpareSlot, true);
+        }
+
+        /// Dumps the current layer table
+        void LogLayerState(const char* tag)
+        {
+            auto* model = GetAnimatedModel();
+            auto* ctrl = model->GetAnimationControl();
+            const int count = model->GetDefaultLayerCount();
+
+            Log("TpLayers[%s]: %d layers, %d rule systems, %d body parts",
+                tag, count, model->GetRuleSystemCount(),
+                ctrl ? ctrl->GetBodyPartCount() : -1);
+
+            for (int i = 0; i < count; ++i)
+            {
+                const auto* slot = model->GetDefaultLayerSlot(i);
+                if (!slot) continue;
+                const auto* hashes = model->GetCurrentLayerInfo(i);
+                Log("  [%d] sm=%p animSet=%p afsm=%08X as=%08X name=%08X idx=%d inactiveLayer=%d inactiveBody=%d",
+                    i,
+                    slot->m_StateMachine.px,
+                    slot->m_AnimSetHandle,
+                    hashes ? hashes->m_AfsmFileHash : 0,
+                    hashes ? hashes->m_AsFileHash : 0,
+                    slot->m_LayerHash,
+                    slot->m_LayerIndex,
+                    (i < 8) ? (model->m_InactiveLayers[i] ? 1 : 0) : -1,
+                    (ctrl && i < 8) ? (ctrl->m_InactiveBodyParts[i] ? 1 : 0) : -1);
+            }
+        }
+
+        /// - parked instances belong to one specific character and die with it
+        /// - if the player character changed, drop the install state, do not run destructor on old instances (already gone)
+        /// - neither character nor world change from the main menu trigger this, but let's keep it to be sure
+        void ResetIfCharacterChanged()
+        {
+            using namespace TpLayers;
+            if (g_owner == this) return;
+            if (g_installed)
+                Log("TpLayers: character changed (%p -> %p), resetting install state", g_owner, this);
+
+            memset(g_fpParked, 0, sizeof(g_fpParked));
+            memset(g_tpParked, 0, sizeof(g_tpParked));
+            g_installed = false;
+            g_tpActive = false;
+            g_owner = this;
+        }
+
+        /// First time install
+        bool InstallThirdPersonLayers()
+        {
+            using namespace TpLayers;
+            ResetIfCharacterChanged();
+            if (g_installed) return true;
+
+            auto* model = GetAnimatedModel();
+            if (!model->GetAnimationControl())
+            {
+                Log("TpLayers: no animation controller");
+                return false;
+            }
+            if (model->GetDefaultLayerCount() != kTotalCount - 1)
+            {
+                Log("TpLayers: expected %d stock layers, found %d",
+                    kTotalCount - 1, model->GetDefaultLayerCount());
+                return false;
+            }
+
+            // build all six up front
+            alignas(8) SAnimationLayerInstance staged[kTpCount]{};
+            for (int i = 0; i < kTpCount; ++i)
+            {
+                if (!BuildTpLayerInstance(i, i, &staged[i]))
+                {
+                    for (int j = 0; j < i; ++j)
+                        meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
+                    Log("TpLayers: install aborted, nothing changed");
+                    return false;
+                }
+            }
+
+            if (!GrowToEightLayers())
+            {
+                for (int j = 0; j < kTpCount; ++j)
+                    meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
+                return false;
+            }
+
+            // park FP 0 - 6, slot 7 still holds the GrowToEightLayers placeholder
+            for (int i = 0; i < kSwapCount; ++i)
+                MoveOutOfSlot(i, &g_fpParked[i]);
+
+            // install TP 0 - 5, slot 6 & 7 will be FP
+            for (int i = 0; i < kTpCount; ++i)
+                MoveIntoSlot(i, &staged[i]);
+
+            // install FP 6 & 7
+            MoveIntoSlot(6, &g_fpParked[1]); // slot 6: FP UPPERBODY, hidden logic
+            MoveIntoSlot(7, &g_fpParked[0]); // slot 7: FP MAINBODY, hidden logic
+            // g_fpParked[0]/[1] are now empty; [2 - 6] still hold other FP layers
+
+            RebuildRuleSystems();
+            ApplyTpLayerFlags();
+
+            g_installed = true;
+            g_tpActive  = true;
+            Log("TpLayers: TP render 0-5, hidden FP logic on 6-7");
+            LogLayerState("installed");
+            return true;
+        }
+
+    public:
+        [[nodiscard]] static bool IsThirdPersonInstalled() { return TpLayers::g_installed; }
+        [[nodiscard]] static bool IsThirdPersonActive() { return TpLayers::g_tpActive; }
+
+        /// Toggles between the FP and TP layer sets
+        /// - layer count stays at 8 in both directions
+        /// - in FP mode one TP layer is parked (hidden) in spare slot rather than shrinking m_DefaultLayers
+        bool SetThirdPersonAnimations(bool enable)
+        {
+            using namespace TpLayers;
+            ResetIfCharacterChanged();
+            if (!g_installed) return enable ? InstallThirdPersonLayers() : false;
+            if (g_tpActive == enable) return true;
+
+            auto* model = GetAnimatedModel();
+            if (model->GetDefaultLayerCount() != kTotalCount)
+            {
+                Log("TpLayers: layer count is %d, refusing to swap",
+                    model->GetDefaultLayerCount());
+                return false;
+            }
+
+            LogLayerState(enable ? "before FP->TP" : "before TP->FP");
+
+            if (!enable) // TP -> FP
+            {
+                // park FP 6 & 7
+                MoveOutOfSlot(6, &g_fpParked[1]);
+                MoveOutOfSlot(7, &g_fpParked[0]);
+
+                // park TP 0 - 5, slots 6 & 7 were FP
+                for (int i = 0; i < kTpCount; ++i)
+                    MoveOutOfSlot(i, &g_tpParked[i]);
+
+                // install FP 0 - 6
+                for (int i = 0; i < kSwapCount; ++i)
+                    MoveIntoSlot(i, &g_fpParked[i]);
+
+                // install TP 7
+                MoveIntoSlot(kSpareSlot, &g_tpParked[0]); // park TP fullbody, keeps count at 8
+
+                RebuildRuleSystems();
+                ApplyFpLayerFlags();
+            }
+            else // FP -> TP
+            {
+                // park TP 7
+                MoveOutOfSlot(kSpareSlot, &g_tpParked[0]);
+
+                // park FP 0 - 6
+                for (int i = 0; i < kSwapCount; ++i)
+                    MoveOutOfSlot(i, &g_fpParked[i]);
+
+                // install TP 0 - 5, slots 6 & 7 will be FP
+                for (int i = 0; i < kTpCount; ++i)
+                    MoveIntoSlot(i, &g_tpParked[i]);
+
+                // install FP 6 & 7
+                MoveIntoSlot(6, &g_fpParked[1]);
+                MoveIntoSlot(7, &g_fpParked[0]);
+
+                RebuildRuleSystems();
+                ApplyTpLayerFlags();
+            }
+
+            g_tpActive = enable;
+            LogLayerState(enable ? "after FP->TP" : "after TP->FP");
+            return true;
         }
     };
     static_assert(offsetof(CCharacter, m_animatedModel) == 0x1270);

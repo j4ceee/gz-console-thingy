@@ -34,6 +34,9 @@ namespace gz
         static constexpr uint16_t HASH_VEHICLE[3]               = { 0xBB04, 0xC7E1, 0xA714 };
         static constexpr uint16_t HASH_REMOTE[3]                = { 0xC3CE, 0x65B6, 0x374F };
         static constexpr uint16_t HASH_EMOTE[3]                 = { 0x5E5A, 0x1DBA, 0xC16F };
+        static constexpr uint16_t HASH_AIMING[3]                = { 0xE979, 0xC0C2, 0x263D };
+        static constexpr uint16_t HASH_PRONE[3]                 = { 0xF483, 0x865D, 0x9BBC };
+        static constexpr uint16_t HASH_PRONE_AIMING[3]          = { 0xA08E, 0x415C, 0xF2C3 };
 
         SCameraId onFoot   = {};
         SCameraId vehicle  = {};
@@ -75,6 +78,9 @@ namespace gz
                 || HashMatches(id, HASH_SPRINTING)
                 || HashMatches(id, HASH_SPRINTING_NO_STAMINA)
                 || HashMatches(id, HASH_CROUCHING)
+                || HashMatches(id, HASH_AIMING)
+                || HashMatches(id, HASH_PRONE)
+                || HashMatches(id, HASH_PRONE_AIMING)
             );
         }
     };
