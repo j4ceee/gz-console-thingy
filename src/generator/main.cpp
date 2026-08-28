@@ -240,6 +240,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_CAMERA_REGISTRY", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? 48 8B D0 E8 ? ? ? ? 48 85 C0 74 ? F6", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_CAMERA_MANAGER", game_file, result, [&] {
        auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
            .count(1)
@@ -812,6 +820,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(25)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("DIRECTOR_POP_CAMERA", game_file, result, [&] {
+        auto match = pattern("48 8B D0 E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 CC", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
             .extract_call();
         return rebase(game_file, match);
     });

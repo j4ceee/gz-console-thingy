@@ -29,7 +29,6 @@
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
 #include "game/weapon_consumption.h"
-#include "game/camera/camera_director.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
@@ -163,9 +162,6 @@ bool InitPatchesAndHooks()
 
         if (!PlayerEqUtils::SetupGetEquipmentWeightHook())
             Log("Failed to setup GetEquipmentWeight hook");
-
-        if (!CCameraDirector::SetupPushCameraHook())
-            Log("Failed to setup CameraDirector PushCamera hook");
 
         if (!CDeepWaterHandling::SetupGetWaterHeightHook())
             Log("Failed to setup Deep Water Cached Height hook");

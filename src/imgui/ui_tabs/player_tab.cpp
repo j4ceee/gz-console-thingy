@@ -19,6 +19,8 @@
 #include "game/player_spawn_manager.h"
 #include "game/ui_manager.h"
 #include "game/camera/camera_director.h"
+#include "game/camera/camera_registry.h"
+#include "game/camera/third_person_camera.h"
 
 namespace gz::UITabs
 {
@@ -490,6 +492,7 @@ namespace gz::UITabs
                 {
                     character->SetThirdPersonAnimations(tp);
                     character->SetThirdPersonBodyVisible(tp);
+                    ThirdPersonCamera::Set(tp);
                 }
                 ImGui::SameLine();
                 UI::HelpMarker("Toggles between First Person & Third Person view", "Note: some behaviours may not work entirely in Third Person.");
@@ -501,47 +504,34 @@ namespace gz::UITabs
                 {
                     if (ImGui::Button("Reset Camera"))
                     {
-                        g_forceEmoteCamera = false;
-                        g_forceVehicleCamera = false;
-                        g_forceRemoteCamera = false;
                         cameraDirector->ResetToDefaultCamera();
                     }
 
-                    if (g_cameraIds.vehicleCached)
+                    if (ImGui::TreeNode("Registered Cameras##cameraregistry"))
                     {
-                        if (ImGui::Button("Force Vehicle Camera"))
+                        if (auto* registry = CCameraRegistry::instance())
                         {
-                            cameraDirector->PushCamera(&g_cameraIds.vehicle);
-                            g_forceEmoteCamera = true;
+                            const auto entries = registry->Enumerate();
+                            ImGui::Text("%d registered cameras", (int)entries.size());
+                            for (const auto& e : entries)
+                            {
+                                ImGui::Text("0x%08X id=%04X%04X%04X:%04X prio=%d %s",
+                                            e.m_NameHash,
+                                            e.m_Id.m_Hash[2], e.m_Id.m_Hash[1], e.m_Id.m_Hash[0],
+                                            e.m_Id.m_UserData,
+                                            e.m_Pipeline->m_Prio,
+                                            CameraNames::Lookup(e.m_NameHash));
+                                ImGui::SameLine();
+                                ImGui::PushID(e.m_Pipeline);
+                                if (ImGui::SmallButton("Push"))
+                                {
+                                    SCameraId id = e.m_Id;
+                                    cameraDirector->PushCamera(&id);
+                                }
+                                ImGui::PopID();
+                            }
                         }
-                    }
-                    else
-                    {
-                        ImGui::TextDisabled("Vehicle camera not yet cached. Enter a vehicle once.");
-                    }
-                    if (g_cameraIds.emoteCached)
-                    {
-                        if (ImGui::Button("Force Emote Camera"))
-                        {
-                            cameraDirector->PushCamera(&g_cameraIds.emote);
-                            g_forceEmoteCamera = true;
-                        }
-                    }
-                    else
-                    {
-                        ImGui::TextDisabled("Emote camera not yet cached. Trigger a third person emote once.");
-                    }
-                    if (g_cameraIds.remoteCached)
-                    {
-                        if (ImGui::Button("Force Remote Camera"))
-                        {
-                            cameraDirector->PushCamera(&g_cameraIds.remote);
-                            g_forceRemoteCamera = true;
-                        }
-                    }
-                    else
-                    {
-                        ImGui::TextDisabled("Remote camera not yet cached. Take control of a machine once.");
+                        ImGui::TreePop();
                     }
 
                     if (ImGui::TreeNode("Debug Info Camera Director##cameradirector"))

@@ -7,6 +7,7 @@
 #include "meow_hook/util.h"
 #include "util/hash_utils.h"
 #include "../log.h"
+#include "camera/third_person_camera.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -534,6 +535,7 @@ namespace gz
 
             memset(g_fpParked, 0, sizeof(g_fpParked));
             memset(g_tpParked, 0, sizeof(g_tpParked));
+            ThirdPersonCamera::Reset();
             g_installed = false;
             g_tpActive = false;
             g_owner = this;
