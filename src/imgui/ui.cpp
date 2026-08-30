@@ -162,7 +162,7 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
 {
     UI* ui = Get();
 
-    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey && !ui->m_isCapturingHideHUDKey) {
+    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey && !ui->m_isCapturingHideHUDKey && !ui->m_isCapturingThirdPersonKey) {
         return false;
     }
 
@@ -170,23 +170,33 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
         return true;
     }
 
-    if (ui->m_isCapturingToggleUI) {
+    if (ui->m_isCapturingToggleUI)
+    {
         ui->m_settings.toggleUIKey = static_cast<int>(wParam);
         ui->m_isCapturingToggleUI = false;
         ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         Log("Toggle UI key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
     }
-    else if (ui->m_isCapturingTeleportKey) {
+    else if (ui->m_isCapturingTeleportKey)
+    {
         ui->m_settings.teleportToAimKey = static_cast<int>(wParam);
         ui->m_isCapturingTeleportKey = false;
         ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         Log("Teleport to Aim key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
     }
-    else if (ui->m_isCapturingHideHUDKey) {
+    else if (ui->m_isCapturingHideHUDKey)
+    {
         ui->m_settings.hideHUDKey = static_cast<int>(wParam);
         ui->m_isCapturingHideHUDKey = false;
         ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         Log("Hide HUD key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
+    }
+    else if (ui->m_isCapturingThirdPersonKey)
+    {
+        ui->m_settings.thirdPersonKey = static_cast<int>(wParam);
+        ui->m_isCapturingThirdPersonKey = false;
+        ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        Log("Third Person key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
     }
 
     return true;
@@ -209,6 +219,18 @@ void UI::Render()
     }
     s_wasComboPressed = isComboPressed;
     // -------------------------------
+
+    // --- THIRD PERSON CONTROLLER LOGIC ---
+    static float s_lastR3PressTime = -999.f;
+
+    if (ImGui::IsKeyPressed(ImGuiKey_GamepadR3)) {
+        const float now = ImGui::GetTime();
+        if (now - s_lastR3PressTime < 0.35f) {
+            TpState::g_toggleRequested.store(true, std::memory_order_relaxed);
+        }
+        s_lastR3PressTime = now;
+    }
+    // -------------------------------------
 
     if (!m_visible) {
         return;

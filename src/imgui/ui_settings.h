@@ -20,6 +20,7 @@ namespace gz
         int toggleUIKey = VK_F1;
         int teleportToAimKey = VK_F2;
         int hideHUDKey = VK_F3;
+        int thirdPersonKey = VK_F4;
 
         float fontSize = 1.0f;
         float lastAppliedFontSize = 1.0f;

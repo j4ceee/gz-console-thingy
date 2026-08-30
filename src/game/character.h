@@ -595,13 +595,9 @@ namespace gz
             TpState::g_layersInstalled = true;
             TpState::g_animationsActive  = true;
             Log("TpLayers: TP render 0-5, hidden FP logic on 6-7");
-            LogLayerState("installed");
+            // LogLayerState("installed");
             return true;
         }
-
-    public:
-        [[nodiscard]] static bool IsThirdPersonInstalled() { return TpState::g_layersInstalled; }
-        [[nodiscard]] static bool IsThirdPersonActive() { return TpState::g_animationsActive; }
 
         /// Toggles between the FP and TP layer sets
         /// - layer count stays at 8 in both directions
@@ -621,7 +617,7 @@ namespace gz
                 return false;
             }
 
-            LogLayerState(enable ? "before FP->TP" : "before TP->FP");
+            // LogLayerState(enable ? "before FP->TP" : "before TP->FP");
 
             if (!enable) // TP -> FP
             {
@@ -665,8 +661,19 @@ namespace gz
             }
 
             TpState::g_animationsActive = enable;
-            LogLayerState(enable ? "after FP->TP" : "after TP->FP");
+            // LogLayerState(enable ? "after FP->TP" : "after TP->FP");
             return true;
+        }
+
+    public:
+        [[nodiscard]] static bool IsThirdPersonInstalled() { return TpState::g_layersInstalled; }
+        [[nodiscard]] static bool IsThirdPersonActive() { return TpState::g_animationsActive; }
+
+        void SetThirdPerson(bool enable)
+        {
+            SetThirdPersonAnimations(enable);
+            SetThirdPersonBodyVisible(enable);
+            ThirdPersonCamera::Set(enable);
         }
     };
     static_assert(offsetof(CCharacter, m_animatedModel) == 0x1270);
