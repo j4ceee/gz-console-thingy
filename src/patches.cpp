@@ -14,6 +14,7 @@
 #include "game/building_grid.h"
 #include "game/building_item.h"
 #include "game/camera_collision_modifier.h"
+#include "game/character_tasks.h"
 #include "game/clock.h"
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
@@ -24,10 +25,10 @@
 #include "game/intro.h"
 #include "game/map.h"
 #include "game/player_eq_utils.h"
+#include "game/player_spawn_manager.h"
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
 #include "game/weapon_consumption.h"
-#include "game/camera/camera_director.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 #include "patches/cloud_patch.h"
@@ -162,15 +163,16 @@ bool InitPatchesAndHooks()
         if (!PlayerEqUtils::SetupGetEquipmentWeightHook())
             Log("Failed to setup GetEquipmentWeight hook");
 
-        if (!CCameraDirector::SetupPushCameraHook())
-            Log("Failed to setup CameraDirector PushCamera hook");
-
         if (!CDeepWaterHandling::SetupGetWaterHeightHook())
             Log("Failed to setup Deep Water Cached Height hook");
 
-        if (!Utils::SetupHashFunction()) {
+        if (!Utils::SetupHashFunction() || !Utils::SetupHashBufferFunction()) {
             // required for several patches -> fail initialization
             throw std::runtime_error("Failed to setup hash function");
+        }
+
+        if (!InitThirdPersonResourcePriming()) {
+            throw std::runtime_error("Failed to setup loading third person body");
         }
 
         if (!CSpawnedAnimalNetworkComponent::SetupHackRequestHook())
@@ -190,6 +192,9 @@ bool InitPatchesAndHooks()
 
         if (!AmmoDeployableConsumption::SetupDeployableHook())
             Log("Failed to setup Deployable Consumption hook");
+
+        if(!CharacterTasks::SetupJumpUpdate() || !CharacterTasks::SetupSteeringUpdate())
+            Log("Failed to setup Jump Hooks");
 
         bool buildingHooksOk = true;
         buildingHooksOk &= CBuildingItem::SetupGetSpawnLocationHook();

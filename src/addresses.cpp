@@ -17,6 +17,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_GAME_WORLD] = (is_steam ? 0x142adcb60 : 0x142bea110) + offset;
     g_Address[INST_INPUT_MANAGER] = (is_steam ? 0x1429b2558 : 0x142abfb08) + offset;
     g_Address[INST_NETWORK_PLAYER_MANAGER] = (is_steam ? 0x142adea38 : 0x142bec088) + offset;
+    g_Address[INST_PLAYER_SPAWN_MANAGER] = (is_steam ? 0x142adea50 : 0x142bec0c8) + offset;
     g_Address[INST_BASE_NETWORK_MANAGER] = (is_steam ? 0x142abe1b0 : 0x142bcb760) + offset;
     g_Address[INST_PLAYER_INFORMATION] = (is_steam ? 0x142abee30 : 0x142bcc3e0) + offset;
     g_Address[INST_PHYSICS_SYSTEM] = (is_steam ? 0x142a35da0 : 0x142b43350) + offset;
@@ -32,6 +33,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_RESERVE_WORLD] = (is_steam ? 0x142abeed8 : 0x142bcc488) + offset;
     g_Address[INST_NETWORK_COMP_MANAGER] = (is_steam ? 0x142abe1e8 : 0x142bcb798) + offset;
     g_Address[INST_CAMERA_DIRECTOR] = (is_steam ? 0x142abdde8 : 0x142bcb398) + offset;
+    g_Address[INST_CAMERA_REGISTRY] = (is_steam ? 0x142abdad0 : 0x142bcb080) + offset;
     g_Address[INST_CAMERA_MANAGER] = (is_steam ? 0x142a2b4d0 : 0x142b38a80) + offset;
     g_Address[INST_GAME_CAMERA_MANAGER] = (is_steam ? 0x142abdba0 : 0x142bcb150) + offset;
     g_Address[WND_PROC] = (is_steam ? 0x1400a4b40 : 0x1400a3430) + offset;
@@ -39,6 +41,7 @@ void InitAddresses(bool is_steam)
     g_Address[ALLOC] = (is_steam ? 0x14009ddc0 : 0x14009e230) + offset;
     g_Address[FREE] = (is_steam ? 0x14185ca84 : 0x1418f3154) + offset;
     g_Address[HASHING_FUNC] = (is_steam ? 0x140de6b00 : 0x140e2deb0) + offset;
+    g_Address[HASHING_FUNC_BUFF] = (is_steam ? 0x140de6aa0 : 0x140e2de50) + offset;
     g_Address[FUNC_VSNPRINTF] = (is_steam ? 0x140de69b0 : 0x140e2dd60) + offset;
     g_Address[FUNC_SCRIPT_ERROR_REPORT] = (is_steam ? 0x140e7eba0 : 0x140ec5770) + offset;
     g_Address[WORLD_TO_MAP_COORDS] = (is_steam ? 0x140938830 : 0x140938510) + offset;
@@ -55,6 +58,14 @@ void InitAddresses(bool is_steam)
     g_Address[SPAWN_VEHICLE_OWNERSHIP_CALLBACK] = (is_steam ? 0x140937b80 : 0x140937860) + offset;
     g_Address[POPULATION_ADD_GROUP] = (is_steam ? 0x1408cb440 : 0x1408cb120) + offset;
     g_Address[SPAWN_ANIMAL] = (is_steam ? 0x1409064f0 : 0x1409061d0) + offset;
+    g_Address[SPAWN_PLAYER] = (is_steam ? 0x140a00ca0 : 0x140a0b420) + offset;
+    g_Address[SPAWN_PLAYER_ENTITY_LOADED] = (is_steam ? 0x1409ed860 : 0x1409f72b0) + offset;
+    g_Address[RESOURCE_SET_MERGE] = (is_steam ? 0x14044d3a0 : 0x14044ce90) + offset;
+    g_Address[ANIM_LAYER_CONST] = (is_steam ? 0x1403b8f60 : 0x1403b8ad0) + offset;
+    g_Address[ANIM_LAYER_DEST] = (is_steam ? 0x1403bad50 : 0x1403ba8c0) + offset;
+    g_Address[ANIM_MODEL_INIT_RULE_SYSTEMS] = (is_steam ? 0x1403d0030 : 0x1403cfba0) + offset;
+    g_Address[ANIM_MODEL_ADD_LAYER] = (is_steam ? 0x1403bd510 : 0x1403bd080) + offset;
+    g_Address[CHARACTER_ON_STATE_TRANSITION] = (is_steam ? 0x14061d160 : 0x14061cd70) + offset;
     g_Address[NETWORK_COMP_CREATE] = (is_steam ? 0x1404013e0 : 0x140400f50) + offset;
     g_Address[NETWORK_COMP_SEND_ADD_EVENT] = (is_steam ? 0x1409cb970 : 0x1409d4650) + offset;
     g_Address[FUNC_SET_BLACKBOARD_INT_GET_WRAPPER] = (is_steam ? 0x14047d5c0 : 0x14047d1d0) + offset;
@@ -64,6 +75,8 @@ void InitAddresses(bool is_steam)
     g_Address[CLOCK_UPDATE_GAME] = (is_steam ? 0x1400ca3e0 : 0x1400c8ce0) + offset;
     g_Address[EVENT_SCHEDULER] = (is_steam ? 0x140a02a10 : 0x140a0d4b0) + offset;
     g_Address[TELEPORT] = (is_steam ? 0x14085d210 : 0x14085cd60) + offset;
+    g_Address[FUNC_STEERING_UPDATE] = (is_steam ? 0x140694b80 : 0x140694790) + offset;
+    g_Address[FUNC_JUMP_UPDATE] = (is_steam ? 0x14067d910 : 0x14067d520) + offset;
     g_Address[FAST_TRAVEL] = (is_steam ? 0x14085d000 : 0x14085cb50) + offset;
     g_Address[SET_WEATHER_PRESET_FROM_HASH] = (is_steam ? 0x140129820 : 0x1401292b0) + offset;
     g_Address[RESTORE_DYNAMIC_WEATHER] = (is_steam ? 0x140134a00 : 0x140134490) + offset;
@@ -76,6 +89,7 @@ void InitAddresses(bool is_steam)
     g_Address[CHARACTER_REVIVE] = (is_steam ? 0x140624590 : 0x1406241a0) + offset;
     g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
     g_Address[ANIMATED_MODEL_SET_STATE] = (is_steam ? 0x1403dc320 : 0x1403dbe90) + offset;
+    g_Address[BLEND_TREE_CLEAR] = (is_steam ? 0x1417fc1f0 : 0x1418926e0) + offset;
     g_Address[DAMAGEABLE_PART_SET_UNIT_HEALTH] = (is_steam ? 0x14062d730 : 0x14062d340) + offset;
     g_Address[FIND_NETWORK_COMPONENT_CHILDREN] = (is_steam ? 0x1404044f0 : 0x140404060) + offset;
     g_Address[REQUEST_ANIMAL_HACK] = (is_steam ? 0x1409912e0 : 0x140999430) + offset;
@@ -84,6 +98,7 @@ void InitAddresses(bool is_steam)
     g_Address[GET_SIGNAL_STRENGTH] = (is_steam ? 0x14064d850 : 0x14064d460) + offset;
     g_Address[CAMERA_CHECK_COLLISION] = (is_steam ? 0x140597840 : 0x140597450) + offset;
     g_Address[DIRECTOR_PUSH_CAMERA] = (is_steam ? 0x1403a2110 : 0x1403a1c80) + offset;
+    g_Address[DIRECTOR_POP_CAMERA] = (is_steam ? 0x1403a16f0 : 0x1403a1260) + offset;
     g_Address[DEEP_WATER_CACHED_HEIGHT] = (is_steam ? 0x14064be40 : 0x14064ba50) + offset;
     g_Address[GET_BACKPACK_WEIGHT] = (is_steam ? 0x14071f630 : 0x14071f2f0) + offset;
     g_Address[GET_EQUIPMENT_WEIGHT] = (is_steam ? 0x140721f40 : 0x140721c00) + offset;

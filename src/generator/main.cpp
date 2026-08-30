@@ -124,6 +124,11 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_PLAYER_SPAWN_MANAGER", game_file, result, [&] {
+        auto match = pattern("4C ? ? ? 33 D2 48 ? ? ? ? ? ? E8 ? ? ? ? EB", game_file).count(1).get(0).adjust(9);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_BASE_NETWORK_MANAGER", game_file, result, [&] {
         auto match = pattern("FF ? ? 90 48 ? ? ? ? ? ? 48 ? ? ? 48 ? ? 74 ? 0F ? ? ? 88", game_file).count(1).get(0).adjust(7);
         return disp_rebase(game_file, match).as<uintptr_t>();
@@ -235,6 +240,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_CAMERA_REGISTRY", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? 48 8B D0 E8 ? ? ? ? 48 85 C0 74 ? F6", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_CAMERA_MANAGER", game_file, result, [&] {
        auto match = pattern("48 83 EC 38 48 8B 05 ? ? ? ? 48 8B 88", game_file)
            .count(1)
@@ -295,6 +308,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .get(0)
             .adjust(23);
         return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("HASHING_FUNC_BUFF", game_file, result, [&] {
+        auto match = pattern("45 33 C0 41 ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 89 ? ? ? ? ? ? 48 ? ? ? ? ? ? ? 49", game_file)
+            .count(1)
+            .get(0)
+            .adjust(14)
+            .extract_call();
+        return rebase(game_file, match);
     });
 
     FindPattern("FUNC_VSNPRINTF", game_file, result, [&] {
@@ -443,6 +465,80 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("SPAWN_PLAYER", game_file, result, [&] {
+        auto match = pattern("44 8B CB 40 0F B6 D7 E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(7)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SPAWN_PLAYER_ENTITY_LOADED", game_file, result, [&] {
+        auto match = pattern("48 8B CE E8 ? ? ? ? 48 8B 0B 48 85 C9 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // -- resource loading --
+
+    FindPattern("RESOURCE_SET_MERGE", game_file, result, [&] {
+        auto match = pattern("49 ? ? ? ? ? ? E8 ? ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 4D", game_file)
+            .count(1)
+            .get(0)
+            .adjust(7)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // -- animation stuff --
+
+    FindPattern("ANIM_LAYER_CONST", game_file, result, [&] {
+        auto match = pattern("48 8B D3 48 ? ? ? ? E8 ? ? ? ? 90 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 74", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("ANIM_LAYER_DEST", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? 48 ? ? ? E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 48 ? ? 0F ? ? ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(8)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("ANIM_MODEL_INIT_RULE_SYSTEMS", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 49 8B CE E8 ? ? ? ? 49 ? ? ? ? ? ? 48 ? ? ? ? ? ? ? 74 ? 8B", game_file)
+            .count(1)
+            .get(0)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("ANIM_MODEL_ADD_LAYER", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? 49 ? ? ? ? ? ? E8 ? ? ? ? 90 48 ? ? ? 48 ? ? ? 72", game_file)
+            .count(1)
+            .get(0)
+            .adjust(11)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_ON_STATE_TRANSITION", game_file, result, [&] {
+        auto match = pattern("4C ? ? ? ? ? ? 49 ? ? ? ? ? ? E8 ? ? ? ? 49 8B CE E8 ? ? ? ? 49 ? ? ? ? ? ? 48 ? ? ? ? ? ? ? 74 ? 8B", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     // -- network stuff --
 
     FindPattern("NETWORK_COMP_CREATE", game_file, result, [&] {
@@ -521,6 +617,22 @@ FindPatternResult Generate(const char* name, const char* exepath)
     // teleport function used when falling into water
     FindPattern("TELEPORT", game_file, result, [&] {
         auto match = pattern("48 89 5c ? ? 48 89 6c ? ? 48 89 74 ? ? 48 89 7c ? ? ? ? 48 83 ? ? 48 8b 05 ? ? ? ? 33 db 49 8b e8", game_file)
+            .count(1)
+            .get(0)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_STEERING_UPDATE", game_file, result, [&] {
+        auto match = pattern("48 8B C4 48 89 48 08 55 56 57 41 54 41 55 41 56 41 57 48 ? ? ? ? ? ? 48 81 EC 80 03 00 00", game_file)
+            .count(1)
+            .get(0)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_JUMP_UPDATE", game_file, result, [&] {
+        auto match = pattern("48 89 5C 24 08 57 48 81 EC 30 01 00 00 48 8B 19", game_file)
             .count(1)
             .get(0)
             .as<uintptr_t>();
@@ -635,6 +747,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("BLEND_TREE_CLEAR", game_file, result, [&] {
+       auto match = pattern("48 8B D9 E8 ? ? ? ? 90 48 ? ? ? 48 ? ? 74 ? 48 ? ? BA ? ? ? ? FF ? ? 90", game_file)
+           .count(1)
+           .get(0)
+           .adjust(3)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("DAMAGEABLE_PART_SET_UNIT_HEALTH", game_file, result, [&] {
        auto match = pattern("48 ? ? ? E8 ? ? ? ? 48 ? ? ? 48 ? ? 75 ? 48 ? ? ? ? 49", game_file)
            .count(1)
@@ -699,6 +820,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(25)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("DIRECTOR_POP_CAMERA", game_file, result, [&] {
+        auto match = pattern("48 8B D0 E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 CC", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
             .extract_call();
         return rebase(game_file, match);
     });
