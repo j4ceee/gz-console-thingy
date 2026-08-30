@@ -41,8 +41,14 @@ namespace gz::Utils
                     }
 
                     // third person stuff
+                    if (TpState::g_toggleRequested.exchange(false, std::memory_order_relaxed) && TpState::g_resourcesPrimed)
+                    {
+                        playerCharacter->SetThirdPerson(!CCharacter::IsThirdPersonActive());
+                    }
                     if (TpState::g_animationsActive)
+                    {
                         playerCharacter->SetThirdPersonBodyVisible(true);
+                    }
                     if (!TpState::g_resourcesPrimed)
                     {
                         PrimeThirdPersonResources();

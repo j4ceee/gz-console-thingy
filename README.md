@@ -22,6 +22,8 @@
   - Steam Deck / Linux
 
 ### Player Settings
+- **Hiding the HUD** for a cleaner experience (Hotkey: _F3_ by default)
+- **Third Person** mode (Hotkey: _F4_ by default / _2x Right Stick_ on controllers)
 - **Health Modification** & **Invincibility**
 - **Infinite Stamina**
 - **Unlimited Carry Weight** for the player inventory
@@ -29,7 +31,6 @@
 - **Unlimited Ammo** (including no reload)
 - **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)
-- **Hiding the HUD** for a cleaner experience (Hotkey: _F3_ by default)
 - **Fast Travel Anywhere**: travel to any discovered location **and** to your own waypoint over the in-game map
 - Editing **Player Faction**: machines from the selected faction will treat you as an ally (available factions: Resistance, FNIX, Soviets)
 - **Disabling Detection** by enemies

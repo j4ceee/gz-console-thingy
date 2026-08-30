@@ -11,7 +11,7 @@
 #include "game/ui_manager.h"
 #include "imgui/ui.h"
 
-static constexpr float   FONT_SIZE_INPUT    = 0.0155f;
+static constexpr float FONT_SIZE_INPUT = 0.0155f;
 
 void Input::Draw(ID3D11DeviceContext* context)
 {
@@ -89,6 +89,12 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
             // save setting
             settings.hideHud = gz::CUIManager::IsHudHidden();
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+            return true;
+        }
+
+        if (wParam == settings.thirdPersonKey)
+        {
+            gz::TpState::g_toggleRequested.store(true, std::memory_order_relaxed);
             return true;
         }
     }

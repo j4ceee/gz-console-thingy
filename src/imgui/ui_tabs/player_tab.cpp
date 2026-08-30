@@ -207,8 +207,186 @@ namespace gz::UITabs
                 ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
             }
             ImGui::SameLine();
-            UI::HelpMarker(
-                "Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden. Hotkey can be configured in the Settings tab.");
+            UI::HelpMarker(("Toggles the in-game HUD visibility. When enabled, all HUD elements will be hidden. "
+                "Hotkey: " + ConsoleSettings::GetKeyName(settings.toggleUIKey)).c_str());
+        }
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (TpState::g_resourcesPrimed && character)
+            {
+                bool tp = CCharacter::IsThirdPersonActive();
+                if (ImGui::Checkbox("Third Person", &tp))
+                    character->SetThirdPerson(tp);
+                ImGui::SameLine();
+                UI::HelpMarker(("Toggles between First Person & Third Person view. "
+                    " Hotkey: " + ConsoleSettings::GetKeyName(settings.thirdPersonKey) + " / 2x Right Stick on controllers").c_str(),
+                    {
+                        "Some behaviours may not work entirely in TP",
+                        "Reload animations will play twice in TP",
+                        "After switching to TP and back to FP once, reload weapon animations in FP will be delayed"
+                    });
+            }
+
+            if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##camera"))
+            {
+                if (auto* cameraDirector = CCameraDirector::instance())
+                {
+                    if (ImGui::Button("Reset Camera"))
+                    {
+                        cameraDirector->ResetToDefaultCamera();
+                    }
+
+                    if (ImGui::TreeNode("Registered Cameras##cameraregistry"))
+                    {
+                        if (auto* registry = CCameraRegistry::instance())
+                        {
+                            const auto entries = registry->Enumerate();
+                            ImGui::Text("%d registered cameras", (int)entries.size());
+                            for (const auto& e : entries)
+                            {
+                                ImGui::Text("0x%08X id=%04X%04X%04X:%04X prio=%d %s",
+                                            e.m_NameHash,
+                                            e.m_Id.m_Hash[2], e.m_Id.m_Hash[1], e.m_Id.m_Hash[0],
+                                            e.m_Id.m_UserData,
+                                            e.m_Pipeline->m_Prio,
+                                            CameraNames::Lookup(e.m_NameHash));
+                                ImGui::SameLine();
+                                ImGui::PushID(e.m_Pipeline);
+                                if (ImGui::SmallButton("Push"))
+                                {
+                                    SCameraId id = e.m_Id;
+                                    cameraDirector->PushCamera(&id);
+                                }
+                                ImGui::PopID();
+                            }
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::TreeNode("Debug Info Camera Director##cameradirector"))
+                    {
+                        auto& sel = cameraDirector->m_SelectedCamera;
+                        ImGui::Text("Selected Camera ID:");
+                        ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                                    sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                        // default camera for reference
+                        auto& def = cameraDirector->m_DefaultCamera;
+                        ImGui::Text("Default Camera ID:");
+                        ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
+                                    def.m_Hash[0], def.m_Hash[1], def.m_Hash[2], def.m_UserData);
+
+                        ImGui::Text("Selected (raw): %04X%04X%04X%04X",
+                                    sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
+
+                        ImGui::TreePop();
+                    }
+                }
+
+                ImGui::Separator();
+
+                if (character && ImGui::Button("Enable TP Body (Blackboard)"))
+                {
+                    character->SetThirdPersonBodyVisible(true);
+                }
+                ImGui::SameLine();
+                if (character && ImGui::Button("Disable TP Body (Blackboard)"))
+                {
+                    character->SetThirdPersonBodyVisible(false);
+                }
+
+                ImGui::Separator();
+
+                if (character && ImGui::TreeNode("Debug Info Anim Layers##animlayers"))
+                {
+                    auto* model = character->GetAnimatedModel();
+                    auto* ctrl = model->GetAnimationControl();
+
+                    // CCharacter::s_LayerNames, hashed with HASHING_FUNC_BUFF
+                    auto knownLabel = [](uint32_t hash) -> const char*
+                    {
+                        switch (hash)
+                        {
+                        case 0x9011E763: return " (MAINBODY)";
+                        case 0xA6468F52: return " (UPPERBODY)";
+                        case 0x457905E1: return " (GLOBAL_PARTIAL)";
+                        case 0xB2BE2993: return " (SYNCED_ADDITIVE)";
+                        case 0x85E439F0: return " (GLOBAL_ADDITIVE)";
+                        case 0x5A9EF178: return " (VOCALS)";
+                        case 0xDEADBEEF: return " (unnamed)";
+                        default: return "";
+                        }
+                    };
+
+                    auto layerRow = [&](int i, const SAnimationLayerInstance* slot)
+                    {
+                        if (!slot) return;
+                        ImGui::Text(
+                            "  [%d] hash=0x%08X%s idx=%d sm=0x%p animSet=0x%p afsmHash=0x%08X asHash=0x%08X",
+                            i,
+                            slot->m_LayerHash, knownLabel(slot->m_LayerHash),
+                            slot->m_LayerIndex,
+                            slot->m_StateMachine.px,
+                            slot->m_AnimSetHandle,
+                            slot->m_AfsmFileHash,
+                            slot->m_AsFileHash);
+                    };
+
+                    const int defaultCount = model->GetDefaultLayerCount();
+                    ImGui::Text("m_DefaultLayers count: %d", defaultCount);
+                    for (int i = 0; i < defaultCount; i++)
+                        layerRow(i, model->GetDefaultLayerSlot(i));
+
+                    ImGui::Separator();
+
+                    const int externalCount = model->GetExternalLayerCount();
+                    ImGui::Text("m_ExternalLayers count: %d", externalCount);
+                    for (int i = 0; i < externalCount; i++)
+                        layerRow(i, model->GetExternalLayerSlot(i));
+
+                    ImGui::Separator();
+
+                    const int hashCount = model->GetCurrentLayerHashCount();
+                    ImGui::Text("m_CurrentLayerHashes count: %d", hashCount);
+                    for (int i = 0; i < hashCount; i++)
+                    {
+                        const auto* hashes = model->GetCurrentLayerInfo(i);
+                        if (!hashes) continue;
+                        ImGui::Text("  [%d] afsmHash=0x%08X asHash=0x%08X",
+                                    i, hashes->m_AfsmFileHash, hashes->m_AsFileHash);
+                    }
+
+                    ImGui::Separator();
+
+                    const int animSetCount = model->GetAnimationSetCount();
+                    ImGui::Text("m_AnimationSets count: %d", animSetCount);
+                    for (int i = 0; i < animSetCount; i++)
+                        ImGui::Text("  [%d] handle=0x%p", i, model->GetAnimationSetHandle(i));
+
+                    ImGui::Separator();
+
+                    const int ruleCount = model->GetRuleSystemCount();
+                    ImGui::Text("m_RuleSystems count: %d / body parts: %d",
+                                ruleCount, ctrl ? ctrl->GetBodyPartCount() : -1);
+                    for (int i = 0; i < ruleCount && i < 8; i++)
+                    {
+                        const auto* mem = model->GetStateTaskMemory(i);
+                        ImGui::Text("  [%d] rs=0x%p  taskMem=0x%p (%u bytes)  inactiveLayer=%d inactiveBody=%d",
+                                    i,
+                                    model->GetRuleSystem(i),
+                                    mem ? mem->m_Memory : nullptr,
+                                    mem ? mem->m_Size : 0,
+                                    model->m_InactiveLayers[i] ? 1 : 0,
+                                    ctrl ? (ctrl->m_InactiveBodyParts[i] ? 1 : 0) : -1);
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::TreePop();
+            }
         }
 
         ImGui::Spacing();
@@ -477,197 +655,6 @@ namespace gz::UITabs
                 UI::HelpMarker(
                     "Enables ghost mode for the player, allowing to float through the environment and objects without collision.",
                     "Note: To disable ghost mode, press the refresh button or teleport (via hotkey or world tab).");
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Spacing();
-
-        if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            if (TpState::g_resourcesPrimed && character)
-            {
-                bool tp = CCharacter::IsThirdPersonActive();
-                if (ImGui::Checkbox("Third Person", &tp))
-                {
-                    character->SetThirdPersonAnimations(tp);
-                    character->SetThirdPersonBodyVisible(tp);
-                    ThirdPersonCamera::Set(tp);
-                }
-                ImGui::SameLine();
-                UI::HelpMarker("Toggles between First Person & Third Person view", "Note: some behaviours may not work entirely in Third Person.");
-            }
-
-            if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##camera"))
-            {
-                if (auto* cameraDirector = CCameraDirector::instance())
-                {
-                    if (ImGui::Button("Reset Camera"))
-                    {
-                        cameraDirector->ResetToDefaultCamera();
-                    }
-
-                    if (ImGui::TreeNode("Registered Cameras##cameraregistry"))
-                    {
-                        if (auto* registry = CCameraRegistry::instance())
-                        {
-                            const auto entries = registry->Enumerate();
-                            ImGui::Text("%d registered cameras", (int)entries.size());
-                            for (const auto& e : entries)
-                            {
-                                ImGui::Text("0x%08X id=%04X%04X%04X:%04X prio=%d %s",
-                                            e.m_NameHash,
-                                            e.m_Id.m_Hash[2], e.m_Id.m_Hash[1], e.m_Id.m_Hash[0],
-                                            e.m_Id.m_UserData,
-                                            e.m_Pipeline->m_Prio,
-                                            CameraNames::Lookup(e.m_NameHash));
-                                ImGui::SameLine();
-                                ImGui::PushID(e.m_Pipeline);
-                                if (ImGui::SmallButton("Push"))
-                                {
-                                    SCameraId id = e.m_Id;
-                                    cameraDirector->PushCamera(&id);
-                                }
-                                ImGui::PopID();
-                            }
-                        }
-                        ImGui::TreePop();
-                    }
-
-                    if (ImGui::TreeNode("Debug Info Camera Director##cameradirector"))
-                    {
-                        auto& sel = cameraDirector->m_SelectedCamera;
-                        ImGui::Text("Selected Camera ID:");
-                        ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
-                                    sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
-
-                        // default camera for reference
-                        auto& def = cameraDirector->m_DefaultCamera;
-                        ImGui::Text("Default Camera ID:");
-                        ImGui::Text("  Hash: %04X %04X %04X  UserData: %04X",
-                                    def.m_Hash[0], def.m_Hash[1], def.m_Hash[2], def.m_UserData);
-
-                        ImGui::Text("Selected (raw): %04X%04X%04X%04X",
-                                    sel.m_Hash[0], sel.m_Hash[1], sel.m_Hash[2], sel.m_UserData);
-
-                        ImGui::TreePop();
-                    }
-                }
-
-                ImGui::Separator();
-
-                if (character && ImGui::Button("Enable TP Body (Blackboard)"))
-                {
-                    character->SetThirdPersonBodyVisible(true);
-                }
-                ImGui::SameLine();
-                if (character && ImGui::Button("Disable TP Body (Blackboard)"))
-                {
-                    character->SetThirdPersonBodyVisible(false);
-                }
-
-                ImGui::Separator();
-
-                if (CPlayerSpawnManager* spawnManager = CPlayerSpawnManager::instance())
-                {
-                    if (spawnManager->IsLoading())
-                        UI::WarningText("Currently loading", true);
-
-                    if (TpState::g_resourcesPrimed && character)
-                    {
-                        bool tp = CCharacter::IsThirdPersonActive();
-                        if (ImGui::Checkbox("Third Person Animations", &tp))
-                            character->SetThirdPersonAnimations(tp);
-                    }
-                }
-
-                if (character && ImGui::TreeNode("Debug Info Anim Layers##animlayers"))
-                {
-                    auto* model = character->GetAnimatedModel();
-                    auto* ctrl = model->GetAnimationControl();
-
-                    // CCharacter::s_LayerNames, hashed with HASHING_FUNC_BUFF
-                    auto knownLabel = [](uint32_t hash) -> const char*
-                    {
-                        switch (hash)
-                        {
-                        case 0x9011E763: return " (MAINBODY)";
-                        case 0xA6468F52: return " (UPPERBODY)";
-                        case 0x457905E1: return " (GLOBAL_PARTIAL)";
-                        case 0xB2BE2993: return " (SYNCED_ADDITIVE)";
-                        case 0x85E439F0: return " (GLOBAL_ADDITIVE)";
-                        case 0x5A9EF178: return " (VOCALS)";
-                        case 0xDEADBEEF: return " (unnamed)";
-                        default: return "";
-                        }
-                    };
-
-                    auto layerRow = [&](int i, const SAnimationLayerInstance* slot)
-                    {
-                        if (!slot) return;
-                        ImGui::Text(
-                            "  [%d] hash=0x%08X%s idx=%d sm=0x%p animSet=0x%p afsmHash=0x%08X asHash=0x%08X",
-                            i,
-                            slot->m_LayerHash, knownLabel(slot->m_LayerHash),
-                            slot->m_LayerIndex,
-                            slot->m_StateMachine.px,
-                            slot->m_AnimSetHandle,
-                            slot->m_AfsmFileHash,
-                            slot->m_AsFileHash);
-                    };
-
-                    const int defaultCount = model->GetDefaultLayerCount();
-                    ImGui::Text("m_DefaultLayers count: %d", defaultCount);
-                    for (int i = 0; i < defaultCount; i++)
-                        layerRow(i, model->GetDefaultLayerSlot(i));
-
-                    ImGui::Separator();
-
-                    const int externalCount = model->GetExternalLayerCount();
-                    ImGui::Text("m_ExternalLayers count: %d", externalCount);
-                    for (int i = 0; i < externalCount; i++)
-                        layerRow(i, model->GetExternalLayerSlot(i));
-
-                    ImGui::Separator();
-
-                    const int hashCount = model->GetCurrentLayerHashCount();
-                    ImGui::Text("m_CurrentLayerHashes count: %d", hashCount);
-                    for (int i = 0; i < hashCount; i++)
-                    {
-                        const auto* hashes = model->GetCurrentLayerInfo(i);
-                        if (!hashes) continue;
-                        ImGui::Text("  [%d] afsmHash=0x%08X asHash=0x%08X",
-                                    i, hashes->m_AfsmFileHash, hashes->m_AsFileHash);
-                    }
-
-                    ImGui::Separator();
-
-                    const int animSetCount = model->GetAnimationSetCount();
-                    ImGui::Text("m_AnimationSets count: %d", animSetCount);
-                    for (int i = 0; i < animSetCount; i++)
-                        ImGui::Text("  [%d] handle=0x%p", i, model->GetAnimationSetHandle(i));
-
-                    ImGui::Separator();
-
-                    const int ruleCount = model->GetRuleSystemCount();
-                    ImGui::Text("m_RuleSystems count: %d / body parts: %d",
-                                ruleCount, ctrl ? ctrl->GetBodyPartCount() : -1);
-                    for (int i = 0; i < ruleCount && i < 8; i++)
-                    {
-                        const auto* mem = model->GetStateTaskMemory(i);
-                        ImGui::Text("  [%d] rs=0x%p  taskMem=0x%p (%u bytes)  inactiveLayer=%d inactiveBody=%d",
-                                    i,
-                                    model->GetRuleSystem(i),
-                                    mem ? mem->m_Memory : nullptr,
-                                    mem ? mem->m_Size : 0,
-                                    model->m_InactiveLayers[i] ? 1 : 0,
-                                    ctrl ? (ctrl->m_InactiveBodyParts[i] ? 1 : 0) : -1);
-                    }
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::TreePop();
             }
         }
     }

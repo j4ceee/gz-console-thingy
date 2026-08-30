@@ -366,8 +366,8 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
         if (ImGui::Button("Teleport to Aim Position")) {
             gameWorld->TeleportToAimPosition(player);
         }
-        UI::HoverTooltip("Teleport the player to the position they are currently aiming at. "
-            "This is generally the safest way to teleport. Can also be triggered via hotkey.");
+        UI::HoverTooltip(("Teleport the player to the position they are currently aiming at. "
+            "This is generally the safest way to teleport. Hotkey: " + ConsoleSettings::GetKeyName(settings.teleportToAimKey)).c_str());
 
         ImGui::Spacing();
 

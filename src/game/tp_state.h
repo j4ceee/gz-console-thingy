@@ -1,7 +1,11 @@
 #pragma once
 
+#include <atomic>
+
 namespace gz::TpState
 {
+    inline std::atomic<bool> g_toggleRequested{false};
+
     // --- resource priming (player_spawn_manager.h) ---
     inline bool g_primingResources = false;
     inline bool g_resourcesPrimed = false;

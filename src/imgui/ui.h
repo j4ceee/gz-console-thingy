@@ -51,6 +51,7 @@ namespace gz
         bool m_isCapturingToggleUI = false;
         bool m_isCapturingTeleportKey = false;
         bool m_isCapturingHideHUDKey = false;
+        bool m_isCapturingThirdPersonKey = false;
 
     private:
         UI() = default;

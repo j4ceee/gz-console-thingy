@@ -37,6 +37,7 @@ void RenderSettingsTab()
                 ui->m_isCapturingToggleUI = true;
                 ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingHideHUDKey = false;
+                ui->m_isCapturingThirdPersonKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for toggling the UI");
 
@@ -55,9 +56,10 @@ void RenderSettingsTab()
 
             if (ImGui::Button(teleportKeyLabel.c_str(), ImVec2(120, 0)))
             {
-                ui->m_isCapturingTeleportKey = true;
                 ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingTeleportKey = true;
                 ui->m_isCapturingHideHUDKey = false;
+                ui->m_isCapturingThirdPersonKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for teleporting to aim position");
 
@@ -75,11 +77,33 @@ void RenderSettingsTab()
 
             if (ImGui::Button(hideHudKeyLabel.c_str(), ImVec2(120, 0)))
             {
-                ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingHideHUDKey = true;
+                ui->m_isCapturingThirdPersonKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for hiding the HUD");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // -- THIRD PERSON HOTKEY --
+            ImGui::Text("Third Person:");
+
+            ImGui::TableNextColumn();
+
+            std::string thirdPersonKeyLabel = ui->m_isCapturingThirdPersonKey
+                                                  ? "Press a key...##thirdperson"
+                                                  : (ConsoleSettings::GetKeyName(settings.thirdPersonKey) + "##thirdperson");
+
+            if (ImGui::Button(thirdPersonKeyLabel.c_str(), ImVec2(120, 0)))
+            {
+                ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingTeleportKey = false;
+                ui->m_isCapturingHideHUDKey = false;
+                ui->m_isCapturingThirdPersonKey = true;
+            }
+            UI::HoverTooltip("Click to change the hotkey for toggling third person view");
 
             ImGui::EndTable();
         }
@@ -88,13 +112,19 @@ void RenderSettingsTab()
 
         // -- RESET TO DEFAULTS BUTTON --
         if (ImGui::Button("Reset to Defaults")) {
+            ui->m_isCapturingToggleUI = false;
+            ui->m_isCapturingTeleportKey = false;
+            ui->m_isCapturingHideHUDKey = false;
+            ui->m_isCapturingThirdPersonKey = false;
+
             settings.toggleUIKey = VK_F1;
             settings.teleportToAimKey = VK_F2;
             settings.hideHUDKey = VK_F3;
+            settings.thirdPersonKey = VK_F4;
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Reset hotkeys to F1 (Toggle UI), F2 (Teleport to Aim) and F3 (Hide HUD)");
+        UI::HelpMarker("Reset hotkeys to F1 (Toggle UI), F2 (Teleport to Aim), F3 (Hide HUD) and F4 (Third Person)");
     }
 
     ImGui::Spacing();
