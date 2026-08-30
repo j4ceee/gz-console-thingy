@@ -7,6 +7,7 @@
 #include "meow_hook/util.h"
 #include "util/hash_utils.h"
 #include "../log.h"
+#include "tp_state.h"
 #include "camera/third_person_camera.h"
 
 #pragma pack(push, 1)
@@ -60,12 +61,6 @@ namespace gz
 
         inline SAnimationLayerInstance g_fpParked[kTotalCount]{};
         inline SAnimationLayerInstance g_tpParked[kTpCount]{};
-
-        /// character parked instances belong to. they die with it, so a character swap (world reload, new save) has to reset the install state
-        inline void* g_owner = nullptr;
-
-        inline bool g_installed = false;
-        inline bool g_tpActive = false;
     }
 
     class CDeepWaterHandling;
@@ -529,16 +524,16 @@ namespace gz
         void ResetIfCharacterChanged()
         {
             using namespace TpLayers;
-            if (g_owner == this) return;
-            if (g_installed)
-                Log("TpLayers: character changed (%p -> %p), resetting install state", g_owner, this);
+            if (TpState::g_layerOwner == this) return;
+            if (TpState::g_layersInstalled)
+                Log("TpLayers: character changed (%p -> %p), resetting install state", TpState::g_layerOwner, this);
 
             memset(g_fpParked, 0, sizeof(g_fpParked));
             memset(g_tpParked, 0, sizeof(g_tpParked));
             ThirdPersonCamera::Reset();
-            g_installed = false;
-            g_tpActive = false;
-            g_owner = this;
+            TpState::g_layersInstalled = false;
+            TpState::g_animationsActive = false;
+            TpState::g_layerOwner = this;
         }
 
         /// First time install
@@ -546,7 +541,7 @@ namespace gz
         {
             using namespace TpLayers;
             ResetIfCharacterChanged();
-            if (g_installed) return true;
+            if (TpState::g_layersInstalled) return true;
 
             auto* model = GetAnimatedModel();
             if (!model->GetAnimationControl())
@@ -597,16 +592,16 @@ namespace gz
             RebuildRuleSystems();
             ApplyTpLayerFlags();
 
-            g_installed = true;
-            g_tpActive  = true;
+            TpState::g_layersInstalled = true;
+            TpState::g_animationsActive  = true;
             Log("TpLayers: TP render 0-5, hidden FP logic on 6-7");
             LogLayerState("installed");
             return true;
         }
 
     public:
-        [[nodiscard]] static bool IsThirdPersonInstalled() { return TpLayers::g_installed; }
-        [[nodiscard]] static bool IsThirdPersonActive() { return TpLayers::g_tpActive; }
+        [[nodiscard]] static bool IsThirdPersonInstalled() { return TpState::g_layersInstalled; }
+        [[nodiscard]] static bool IsThirdPersonActive() { return TpState::g_animationsActive; }
 
         /// Toggles between the FP and TP layer sets
         /// - layer count stays at 8 in both directions
@@ -615,8 +610,8 @@ namespace gz
         {
             using namespace TpLayers;
             ResetIfCharacterChanged();
-            if (!g_installed) return enable ? InstallThirdPersonLayers() : false;
-            if (g_tpActive == enable) return true;
+            if (!TpState::g_layersInstalled) return enable ? InstallThirdPersonLayers() : false;
+            if (TpState::g_animationsActive == enable) return true;
 
             auto* model = GetAnimatedModel();
             if (model->GetDefaultLayerCount() != kTotalCount)
@@ -669,7 +664,7 @@ namespace gz
                 ApplyTpLayerFlags();
             }
 
-            g_tpActive = enable;
+            TpState::g_animationsActive = enable;
             LogLayerState(enable ? "after FP->TP" : "after TP->FP");
             return true;
         }

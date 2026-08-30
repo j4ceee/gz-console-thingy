@@ -1,13 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <iterator>
 #include <utility>
 #include "camera_registry.h"
-
-namespace gz
-{
-    struct SCameraEntry;
-}
+#include "game/tp_state.h"
 
 namespace gz::ThirdPersonCamera
 {
@@ -37,8 +34,9 @@ namespace gz::ThirdPersonCamera
         "BinocularAimScopeProne",
     };
 
-    inline bool g_active = false;
     inline std::vector<std::pair<SCameraId, int32_t>> g_savedPrios;
+    inline std::vector<SCameraId> g_beatenIds; // ids tp outranks, cached at enable
+    inline SCameraId g_tpId{};
 
     inline bool ShouldOverrideTp(uint32_t nameHash)
     {
@@ -87,49 +85,114 @@ namespace gz::ThirdPersonCamera
         g_savedPrios.clear();
     }
 
-    inline bool Set(bool enable)
+    /// caches the ids of every camera tp outranks, so NeedsRepush() is plain comparisons
+    inline void CacheBeatenIds(const std::vector<SCameraEntry>& entries)
     {
+        g_beatenIds.clear();
+        g_beatenIds.reserve(std::size(kThirdPersonBeats));
+
+        for (const auto& e : entries)
+        {
+            if (e.m_NameHash == kCameraNameHash) continue; // the tp camera itself
+            if (ShouldOverrideTp(e.m_NameHash)) continue; // boosted, outranks us
+            g_beatenIds.push_back(e.m_Id);
+        }
+    }
+
+    inline bool NeedsRepush()
+    {
+        if (!TpState::g_cameraActive) return false;
+
         auto* director = CCameraDirector::instance();
+        if (!director) return false;
+
+        const SCameraId& sel = director->m_SelectedCamera;
+
+        // stack wiped -> m_SelectedCamera is zeroed
+        if (sel.m_Hash[0] == 0 && sel.m_Hash[1] == 0 && sel.m_Hash[2] == 0)
+            return true;
+
+        if (sel == g_tpId) return false;
+
+        // an fp camera we should be beating is selected -> we fell off the stack
+        for (const auto& id : g_beatenIds)
+            if (id == sel) return true;
+
+        // anything else is a boosted camera (vehicle, rc, ragdoll), leave it alone
+        return false;
+    }
+
+    inline bool Reapply()
+    {
         auto* registry = CCameraRegistry::instance();
-        if (!director || !registry) return false;
+        auto* director = CCameraDirector::instance();
+        if (!registry || !director) return false;
 
         const auto entries = registry->Enumerate();
+        RestorePriorities(entries);
 
         SCameraEntry tp{};
         bool haveTp = false;
         for (const auto& e : entries)
-        {
-            if (e.m_NameHash == kCameraNameHash) { tp = e; haveTp = true; break; }
-        }
-
-        if (enable)
-        {
-            if (!haveTp)
+            if (e.m_NameHash == kCameraNameHash)
             {
-                Log("ThirdPersonCamera: camera 0x%08X is not registered", kCameraNameHash);
-                return false;
+                tp = e;
+                haveTp = true;
+                break;
             }
-            if (g_active) return true;
 
-            ApplyPriorities(entries);
-            director->PushCamera(&tp.m_Id);
-            g_active = true;
-        }
-        else
+        if (!haveTp)
         {
-            if (haveTp) director->PopCamera(&tp.m_Id);
-            RestorePriorities(entries);
-            g_active = false;
+            Log("ThirdPersonCamera: camera 0x%08X is not registered", kCameraNameHash);
+            return false;
         }
+
+        ApplyPriorities(entries);
+        CacheBeatenIds(entries);
+        g_tpId = tp.m_Id;
+        director->PushCamera(&tp.m_Id);
         return true;
     }
 
-    [[nodiscard]] inline bool IsActive() { return g_active; }
+    inline bool Set(bool enable)
+    {
+        if (enable)
+        {
+            if (TpState::g_cameraActive) return true;
+            if (!Reapply()) return false;
+            TpState::g_cameraActive = true;
+            return true;
+        }
+
+        auto* registry = CCameraRegistry::instance();
+        auto* director = CCameraDirector::instance();
+        if (registry && director)
+        {
+            const auto entries = registry->Enumerate();
+            for (const auto& e : entries)
+                if (e.m_NameHash == kCameraNameHash)
+                {
+                    SCameraId id = e.m_Id;
+                    director->PopCamera(&id);
+                    break;
+                }
+            RestorePriorities(entries);
+        }
+
+        g_beatenIds.clear();
+        g_tpId = SCameraId{};
+        TpState::g_cameraActive = false;
+        return true;
+    }
 
     /// call when player character changes
     inline void Reset()
     {
         g_savedPrios.clear();
-        g_active = false;
+        g_beatenIds.clear();
+        g_tpId = SCameraId{};
+        TpState::g_cameraActive = false;
     }
+
+    [[nodiscard]] inline bool IsActive() { return TpState::g_cameraActive; }
 }

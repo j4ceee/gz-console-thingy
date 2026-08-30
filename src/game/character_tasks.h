@@ -2,15 +2,16 @@
 
 #include "data_types.h"
 #include "player_network_manager.h"
+#include "tp_state.h"
 
 namespace gz::CharacterTasks
 {
     inline bool  g_jumpSeededThisFrame = false;
 
-    using JumpTaskFunc = void(__cdecl*)(void* ctx, void* taskData, void* mem);
-    inline JumpTaskFunc g_origJumpOnEnter = nullptr;
-    inline JumpTaskFunc g_origJumpUpdate  = nullptr;
-    inline JumpTaskFunc g_origSteeringUpdate  = nullptr;
+    using TaskFunc = void(__cdecl*)(void* ctx, void* taskData, void* mem);
+    inline TaskFunc g_origJumpOnEnter = nullptr;
+    inline TaskFunc g_origJumpUpdate  = nullptr;
+    inline TaskFunc g_origSteeringUpdate  = nullptr;
 
     inline float CurrentWantedY()
     {
@@ -37,13 +38,11 @@ namespace gz::CharacterTasks
 
     inline void __cdecl SteeringUpdateDetour(void* ctx, void* taskData, void* mem)
     {
-        using namespace TpLayers;
-
         auto* mgr = CNetworkPlayerManager::instance();
         auto* ch  = mgr ? mgr->GetCharacter() : nullptr;
         auto* pfx = ch ? ch->GetPfxInstance() : nullptr;
 
-        if (!g_installed || !g_tpActive || !pfx)
+        if (!TpState::g_layersInstalled || !TpState::g_animationsActive || !pfx)
         {
             g_origSteeringUpdate(ctx, taskData, mem);
             return;

@@ -41,11 +41,15 @@ namespace gz::Utils
                     }
 
                     // third person stuff
-                    if (!g_thirdPersonResourcesPrimed)
+                    if (TpState::g_animationsActive)
+                        playerCharacter->SetThirdPersonBodyVisible(true);
+                    if (!TpState::g_resourcesPrimed)
                     {
                         PrimeThirdPersonResources();
                     }
                     CharacterTasks::g_jumpSeededThisFrame = false;
+                    if (ThirdPersonCamera::NeedsRepush())
+                        ThirdPersonCamera::Reapply();
                 }
             }
 

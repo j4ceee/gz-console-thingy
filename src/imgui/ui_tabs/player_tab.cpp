@@ -485,7 +485,7 @@ namespace gz::UITabs
 
         if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (g_thirdPersonResourcesPrimed && character)
+            if (TpState::g_resourcesPrimed && character)
             {
                 bool tp = CCharacter::IsThirdPersonActive();
                 if (ImGui::Checkbox("Third Person", &tp))
@@ -573,7 +573,7 @@ namespace gz::UITabs
                     if (spawnManager->IsLoading())
                         UI::WarningText("Currently loading", true);
 
-                    if (g_thirdPersonResourcesPrimed && character)
+                    if (TpState::g_resourcesPrimed && character)
                     {
                         bool tp = CCharacter::IsThirdPersonActive();
                         if (ImGui::Checkbox("Third Person Animations", &tp))

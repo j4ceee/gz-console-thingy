@@ -71,8 +71,6 @@ namespace gz
 
     using EntityLoadedFunc = void(__fastcall*)(CPlayerSpawnManager*);
     inline EntityLoadedFunc g_originalEntityLoaded = nullptr;
-    inline bool g_primingThirdPersonResources = false;
-    inline bool g_thirdPersonResourcesPrimed = false;
 
     /// Primes the resource cache with tp_local_player_character.ee (NOT tp_player_character.ee, it lacks the two player_thirdperson_control layers)
     /// Temporarily rewrites the remote entity name so the game's own load pipeline fetches the local-TP archive;
@@ -105,7 +103,7 @@ namespace gz
         memcpy(saved, remote, sizeof(GameString));
         remote->SetTemporary(name.c_str());
 
-        g_primingThirdPersonResources = true;
+        TpState::g_primingResources = true;
         CMatrix4f identity{};
         const bool ok = mgr->SpawnPlayer(0xF0, identity);
 
@@ -114,7 +112,7 @@ namespace gz
 
         if (!ok)
         {
-            g_primingThirdPersonResources = false;
+            TpState::g_primingResources = false;
             Log("PrimeThirdPersonResources: SpawnPlayer refused (already loading?)");
         }
         return ok;
@@ -122,14 +120,14 @@ namespace gz
 
     inline void __fastcall EntityLoadedDetour(CPlayerSpawnManager* this_)
     {
-        if (g_primingThirdPersonResources)
+        if (TpState::g_primingResources)
         {
-            g_primingThirdPersonResources = false;
+            TpState::g_primingResources = false;
 
             if (auto* loader = this_->m_EntityResourceLoader)
             {
                 meow_hook::func_call<void>(GetAddress(RESOURCE_SET_MERGE), &this_->m_ResourceSet, &loader->InstanceSet);
-                g_thirdPersonResourcesPrimed = true;
+                TpState::g_resourcesPrimed = true;
                 Log("EntityLoadedDetour: third-person resources primed");
             }
             return;
