@@ -28,6 +28,7 @@
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
 #include "game/weather.h"
+#include "game/custom/damage_multipliers.h"
 #include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -194,6 +195,9 @@ bool InitPatchesAndHooks()
 
         if(!CharacterTasks::SetupJumpUpdate() || !CharacterTasks::SetupSteeringUpdate())
             Log("Failed to setup Jump Hooks");
+
+        if(!DamageMultipliers::SetupBulletSkillDmgMultHook())
+            Log("Failed to setup Bullet Skill Damage Multiplier Hook");
 
         bool buildingHooksOk = true;
         buildingHooksOk &= CBuildingItem::SetupGetSpawnLocationHook();

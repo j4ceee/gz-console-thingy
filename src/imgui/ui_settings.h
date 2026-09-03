@@ -47,6 +47,7 @@ namespace gz
         bool unlimitedStorageSize = false;
         bool mirrorRealTime = false;
         bool machinesForceSpawn = true;
+        float machineBulletDmgMultiplier = 1.0f;
 
         mutable std::vector<Setting> m_settingsCache;
         mutable bool m_cacheInitialized = false;

@@ -726,6 +726,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    FindPattern("ANIMAL_APPLY_BULLET_SKILL_DAMAGE", game_file, result, [&] {
+       auto match = pattern("4D 8B C5 49 8B D6 49 8B CC E8", game_file)
+           .count(1)
+           .get(0)
+           .adjust(9)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     FindPattern("CHARACTER_REVIVE", game_file, result, [&] {
        auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
            .count(1)

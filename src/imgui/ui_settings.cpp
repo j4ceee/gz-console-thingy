@@ -6,6 +6,7 @@
 #include "game/player.h"
 #include "game/custom/player_eq_utils.h"
 #include "game/ui_manager.h"
+#include "game/custom/damage_multipliers.h"
 #include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -16,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(27); // pre-allocate space
+            m_settingsCache.reserve(28); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -133,6 +134,9 @@ namespace gz
             });
             m_settingsCache.push_back({"MachinesForceSpawn",'b',const_cast<bool*>(&machinesForceSpawn),
                 nullptr // handled in imgui ui
+            });
+            m_settingsCache.push_back({"MachineBulletDmgMultiplier",'f',const_cast<float*>(&machineBulletDmgMultiplier),
+                [this]() { DamageMultipliers::g_applyBulletDamageMultiplier = machineBulletDmgMultiplier; }
             });
 
             m_cacheInitialized = true;

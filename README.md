@@ -32,6 +32,7 @@
 - **Infinite Deployables & Consumables** (e.g. mines, turrets, medkits)
 - **Unlimited Resources** (e.g. for crafting or base building)
 - **Fast Travel Anywhere**: travel to any discovered location **and** to your own waypoint over the in-game map
+- **Bullet Damage Multiplier**: increase the bullet damage dealt to enemies
 - Editing **Player Faction**: machines from the selected faction will treat you as an ally (available factions: Resistance, FNIX, Soviets)
 - **Disabling Detection** by enemies
 - **Unrestricted Base Building** (removing build limits and restrictions)
@@ -83,9 +84,15 @@
   - freeze time
   - adjust time speed
   - set specific time
-- **Weather / GFX Control**
-  - set atmospheric conditions, including wind, fog & cloud cover (rain or snow cannot be triggered directly)
-  - apply various post-processing effects & filters (allows you to apply any effect from photo mode or the binoculars)
+- **Weather Control**: set atmospheric conditions
+  - cloud density
+  - downpour (snow & rain)
+  - ground snow (snow covering the world)
+  - ground wetness
+  - lightning chance during cloudy weather & rain
+  - cloud height & range
+  - wind strength
+- **GFX / Post-Process Control**: apply various post-processing effects & filters (allows you to apply any effect from photo mode or the binoculars)
 - **Spawn System**
   - Vehicles
   - Items & Deployables

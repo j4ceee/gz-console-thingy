@@ -87,6 +87,7 @@ void InitAddresses(bool is_steam)
     g_Address[DAMAGEABLE_SET_INVULNERABLE] = (is_steam ? 0x1406e3b00 : 0x1406e3710) + offset;
     g_Address[DAMAGEABLE_IS_INVULNERABLE] = (is_steam ? 0x1406db850 : 0x1406db460) + offset;
     g_Address[ANIMAL_HEALTH_DAMAGE] = (is_steam ? 0x1408cd2e0 : 0x1408ccfc0) + offset;
+    g_Address[ANIMAL_APPLY_BULLET_SKILL_DAMAGE] = (is_steam ? 0x1405e38b0 : 0x1405e34c0) + offset;
     g_Address[CHARACTER_REVIVE] = (is_steam ? 0x140624590 : 0x1406241a0) + offset;
     g_Address[CHARACTER_GHOST_MODE] = (is_steam ? 0x140626950 : 0x140626560) + offset;
     g_Address[ANIMATED_MODEL_SET_STATE] = (is_steam ? 0x1403dc320 : 0x1403dbe90) + offset;

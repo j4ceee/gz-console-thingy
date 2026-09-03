@@ -19,6 +19,7 @@
 #include "game/ui_manager.h"
 #include "game/camera_director.h"
 #include "game/camera_registry.h"
+#include "game/custom/damage_multipliers.h"
 #include "game/custom/third_person_camera.h"
 
 namespace gz::UITabs
@@ -430,9 +431,16 @@ namespace gz::UITabs
         ImGui::Spacing();
         ImGui::Spacing();
 
-        // -- FACTIONS & DETECTION --
+        // -- DAMAGE, FACTIONS & DETECTION --
         if (ImGui::CollapsingHeader(ICON_MD_FLAG " Machine Interaction", ImGuiTreeNodeFlags_DefaultOpen) && character)
         {
+            // -- machine dmg multiplier
+            ImGui::SliderFloat("Bullet Damage Multiplier", &DamageMultipliers::g_applyBulletDamageMultiplier, 0.1f, 100.0f, "%.1f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                settings.machineBulletDmgMultiplier = DamageMultipliers::g_applyBulletDamageMultiplier;
+                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+            } ImGui::SameLine(); UI::HelpMarker("Multiplies the damage dealt to machines by bullets.");
+
             // -- detection
             bool isUndetectable = !character->IsDetectable();
             if (ImGui::Checkbox("Undetectable by Machines", &isUndetectable))
