@@ -167,6 +167,11 @@ namespace gz
             return m_AnimationSets.Count<void*>();
         }
 
+        [[nodiscard]] int GetLayerInfoCount() const
+        {
+            return m_LayerInfos.Count<SAnimationLayerInfo>();
+        }
+
         [[nodiscard]] int GetCurrentLayerHashCount() const
         {
             return m_CurrentLayerHashes.Count<SLayerHashes>();

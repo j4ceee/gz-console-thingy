@@ -1,10 +1,6 @@
 #pragma once
 #include <cstdint>
-
 #include "data.h"
-
-// Auto-generated file - do not edit manually!
-// Generated from collectible JSON files
 
 namespace gz::Data::Weather
 {
@@ -17,12 +13,13 @@ namespace gz::Data::Weather
 
     // natural weather states
     static const WeatherPreset weather_states[] = {
-        {"Thick Fog",       "fog_thick",        0x072F4F29},
+        {"Windy",           "windy",            0xDC26FDAF},
         {"Overcast",        "overcast",         0x118D3F7D},
+        {"Thick Fog",       "fog_thick",        0x072F4F29},
         {"Post Rain Fog",   "post_rain_fog",    0x86F336CE},
         {"Snow",            "snow",             0xA4CA1BFB},
         {"Rain",            "rain",             0xB6720744},
-        {"Windy",           "windy",            0xDC26FDAF},
+        {"Heavy Rain",      "forced_rain",      0xA4D3322D},
     };
 
     // vision mode overlays (used by devices/skills)
@@ -57,13 +54,21 @@ namespace gz::Data::Weather
     };
 
     static const WeatherPresets all_weather_presets[] = {
-        {"Weather States",  6,  weather_states},
-        {"Vision Modes",    4,  vision_modes},
-        {"Visual Effects",  6,  visual_effects},
-        {"Game Effects",    3,  game_effects},
-        {"Environmental",   2,  environmental},
+        {"Weather", 7, weather_states},
     };
 
-    static constexpr size_t all_weather_presets_count = 5;
+    static const WeatherPresets all_gfx_presets[] = {
+        {"Vision Modes",    4, vision_modes},
+        {"Visual Effects",  6, visual_effects},
+        {"Game Effects",    3, game_effects},
+        {"Environmental",   2, environmental},
+    };
 
+    static const WeatherPresets all_presets[] = {
+        {"Weather",         7, weather_states},
+        {"Vision Modes",    4, vision_modes},
+        {"Visual Effects",  6, visual_effects},
+        {"Game Effects",    3, game_effects},
+        {"Environmental",   2, environmental},
+    };
 } // namespace gz::Data::Weather

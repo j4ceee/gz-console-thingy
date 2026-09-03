@@ -10,6 +10,7 @@
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/world_time.h"
+#include "game/custom/preset_override.h"
 #include "imgui/ui.h"
 
 #pragma pack(push, 1)
@@ -91,6 +92,8 @@ namespace gz::Utils
             }
 
             ProcessPendingHacks();
+
+            PresetOverride::OnGameUpdate();
         }
     }
 } // namespace gz::Utils

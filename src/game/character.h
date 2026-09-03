@@ -7,21 +7,21 @@
 #include "meow_hook/util.h"
 #include "util/hash_utils.h"
 #include "../log.h"
-#include "tp_state.h"
-#include "camera/third_person_camera.h"
+#include "custom/tp_state.h"
+#include "custom/third_person_camera.h"
 
 #pragma pack(push, 1)
 namespace gz
 {
     /// Third-person animation layer set<br>
     /// - swaps local player animation layers between the fp set (local_player_character.ee) & tp set (tp_local_player_character.ee) at runtime
-    /// - limit: m_InactiveLayers[8] and m_InactiveBodyParts[8] are fixed 8-byte arrays
+    /// - limit: m_InactiveLayers[8] and m_InactiveBodyParts[8] are fixed 8-byte arrays, so 8 is the hard max
     namespace TpLayers
     {
-        inline constexpr int kSwapCount = 7;    // slots 0 - 6 exist in both sets
-        inline constexpr int kTpCount   = 6;    // TP render layers, land in slots 0 - 5
-        inline constexpr int kTotalCount = 8;
-        inline constexpr int kSpareSlot = 7;    // parked (hidden) TP layer while in FP mode
+        inline constexpr int kSwapCount = 7; // stock fp layer count (slots 0 - 6)
+        inline constexpr int kTotalCount = 8; // tp layer count
+        inline constexpr int kTpFileCount = 8; // entries in kFiles
+        inline constexpr int kSpareSlot = 7; // holds a parked tp layer in fp mode
 
         struct LayerFiles
         {
@@ -33,17 +33,48 @@ namespace gz
         { "animations/statemachines/humans/player_thirdperson_" name ".asb", \
           "animations/statemachines/humans/player_thirdperson_" name ".afsmb" }
 
-        // index here is the TP render layer number (0 - 5)
-        inline constexpr LayerFiles kFiles[kTpCount] = {
-            GZ_TP_SM("fullbody"),                   // -> slot 0
-            GZ_TP_SM("upperbody"),                  // -> slot 1
-            GZ_TP_SM("weapon_handling_additive"),   // -> slot 2
-            GZ_TP_SM("weapon_recoil_additive"),     // -> slot 3
-            GZ_TP_SM("reaction_additive"),          // -> slot 4
-            GZ_TP_SM("face"),                       // -> slot 5
+        // index here is a file index, referenced by kTpPlan - not a slot
+        inline constexpr LayerFiles kFiles[kTpFileCount] = {
+            GZ_TP_SM("fullbody"),                   // 0
+            GZ_TP_SM("upperbody"),                  // 1
+            GZ_TP_SM("weapon_handling_additive"),   // 2
+            GZ_TP_SM("weapon_recoil_additive"),     // 3
+            GZ_TP_SM("reaction_additive"),          // 4
+            GZ_TP_SM("face"),                       // 5
+            GZ_TP_SM("control_extras"),             // 6 - unused, see kTpPlan
+            GZ_TP_SM("control"),                    // 7 - unused, see kTpPlan
         };
 
         #undef GZ_TP_SM
+
+        enum class Src : uint8_t { Tp, Fp };
+
+        struct SlotPlan
+        {
+            Src src;
+            int index; // Src::Tp -> index into kFiles; Src::Fp -> stock FP slot
+        };
+
+        /// tp mode layout. both fp entries are mandatory and were verified by testing:
+        /// - replacing slot 6 with tp control_extras breaks shooting
+        /// - replacing slot 7 with tp control breaks movement (sprint, jump, crouch, prone)
+        inline constexpr SlotPlan kTpPlan[kTotalCount] = {
+            { Src::Tp, 0 }, // 0 MAINBODY           TP fullbody
+            { Src::Tp, 1 }, // 1 UPPERBODY          TP upperbody
+            { Src::Tp, 2 }, // 2 GLOBAL_PARTIAL     TP weapon_handling_additive
+            { Src::Tp, 3 }, // 3 SYNCED_ADDITIVE    TP weapon_recoil_additive
+            { Src::Tp, 4 }, // 4 GLOBAL_ADDITIVE    TP reaction_additive
+            { Src::Tp, 5 }, // 5 VOCALS             TP face
+            { Src::Fp, 1 }, // 6                    FP UPPERBODY (weapons, items, ADS)
+            { Src::Fp, 0 }, // 7                    FP MAINBODY  (movement, sprint, jump)
+        };
+
+        constexpr int CountSrc(Src s)
+        {
+            int n = 0;
+            for (const auto& p : kTpPlan) if (p.src == s) ++n;
+            return n;
+        }
 
         // name hash that already lives on each target slot in the stock FP set
         // slot 7 does not exist until GrowToEightLayers() runs
@@ -59,8 +90,8 @@ namespace gz
             kUnnamedHash, // 7
         };
 
-        inline SAnimationLayerInstance g_fpParked[kTotalCount]{};
-        inline SAnimationLayerInstance g_tpParked[kTpCount]{};
+        inline SAnimationLayerInstance g_fpParked[kSwapCount]{}; // indexed by stock FP slot
+        inline SAnimationLayerInstance g_tpParked[kTpFileCount]{}; // indexed by kFiles index
     }
 
     class CDeepWaterHandling;
@@ -324,12 +355,12 @@ namespace gz
 
         // --- third person stuff -----------------------------------------
     private:
-        /// Builds a fresh SAnimationLayerInstance for TP render layer <code>tpIndex</code> into <code>out</code> (0x28 bytes)
-        /// - tagged for the slot it will occupy
+        /// Builds a fresh SAnimationLayerInstance for <code>kFiles[fileIndex]</code> into <code>out</code>
+        /// - tagged with name hash & index of slot it will occupy
         /// - returns false if the resources aren't in the cache
-        static bool BuildTpLayerInstance(int tpIndex, int targetSlot, SAnimationLayerInstance* out)
+        static bool BuildTpLayerInstance(int fileIndex, int targetSlot, SAnimationLayerInstance* out)
         {
-            const auto& files = TpLayers::kFiles[tpIndex];
+            const auto& files = TpLayers::kFiles[fileIndex];
 
             alignas(8) SAnimationLayerInfo info{};
             info.m_AfsmFileName.SetTemporary(files.afsmb);
@@ -382,6 +413,7 @@ namespace gz
 
         /// grows m_DefaultLayers from 7 to 8
         /// - appended instance is a placeholder, it gets replaced before InitializeRuleSystems runs
+        /// - INSTALL ONLY, call once & never call again!
         bool GrowToEightLayers()
         {
             auto* model = GetAnimatedModel();
@@ -460,6 +492,8 @@ namespace gz
         }
 
         /// clears every inactivation flag on BOTH arrays. Call AFTER RebuildRuleSystems() and before applying the per-mode flags
+        /// - CAnimationControl::m_InactiveBodyParts[i] - skips the driver & pose contribution
+        /// - CAnimatedModel::m_InactiveLayers[i]       - gates UpdateRuleSystem / the state machine
         void ResetLayerFlags()
         {
             auto* model = GetAnimatedModel();
@@ -473,16 +507,18 @@ namespace gz
             }
         }
 
-        /// TP mode: FP logic layers at 6/7 are hidden from the pose only
+        /// tp mode: fp logic layers at 6/7 are hidden from the pose only
         /// - their rule systems must keep running -> handles sprint, crouch, prone & weapon tasks
         void ApplyTpLayerFlags()
         {
+            using namespace TpLayers;
             ResetLayerFlags();
-            SetLayerActive(6, false); // FP UPPERBODY - logic runs, pose hidden
-            SetLayerActive(7, false); // FP MAINBODY - logic runs, pose hidden
+            for (int i = 0; i < kTotalCount; ++i)
+                if (kTpPlan[i].src == Src::Fp)
+                    SetLayerActive(i, false); // logic runs, pose hidden
         }
 
-        //// FP mode: everything is stock except the spare TP layer in slot 7 which is fully parked (pose & state machine)
+        /// fp mode: everything is stock except the spare TP layer in slot 7 which is fully parked (pose & state machine)
         void ApplyFpLayerFlags()
         {
             ResetLayerFlags();
@@ -496,9 +532,8 @@ namespace gz
             auto* ctrl = model->GetAnimationControl();
             const int count = model->GetDefaultLayerCount();
 
-            Log("TpLayers[%s]: %d layers, %d rule systems, %d body parts",
-                tag, count, model->GetRuleSystemCount(),
-                ctrl ? ctrl->GetBodyPartCount() : -1);
+            Log("TpLayers[%s]: %d layers, %d rule systems, %d body parts, %d layer infos",
+                tag, count, model->GetRuleSystemCount(), ctrl ? ctrl->GetBodyPartCount() : -1, model->GetLayerInfoCount());
 
             for (int i = 0; i < count; ++i)
             {
@@ -536,6 +571,14 @@ namespace gz
             TpState::g_layerOwner = this;
         }
 
+        /// installs the tp layout. <code>tpSource</code> is file-indexed, so it takes either <code>staged</code> array or parked g_tpParked buffer
+        void ApplyPlan(SAnimationLayerInstance* tpSource)
+        {
+            using namespace TpLayers;
+            for (int i = 0; i < kTotalCount; ++i)
+                MoveIntoSlot(i, kTpPlan[i].src == Src::Tp ? &tpSource[kTpPlan[i].index] : &g_fpParked[kTpPlan[i].index]);
+        }
+
         /// First time install
         bool InstallThirdPersonLayers()
         {
@@ -556,52 +599,49 @@ namespace gz
                 return false;
             }
 
-            // build all six up front
-            alignas(8) SAnimationLayerInstance staged[kTpCount]{};
-            for (int i = 0; i < kTpCount; ++i)
+            // build every tp machine the plan asks for up front
+            alignas(8) SAnimationLayerInstance staged[kTpFileCount]{};
+            bool built[kTpFileCount]{};
+            for (int i = 0; i < kTotalCount; ++i)
             {
-                if (!BuildTpLayerInstance(i, i, &staged[i]))
+                const auto& p = kTpPlan[i];
+                if (p.src != Src::Tp || built[p.index]) continue;
+                if (!BuildTpLayerInstance(p.index, i, &staged[p.index]))
                 {
-                    for (int j = 0; j < i; ++j)
-                        meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
+                    for (int j = 0; j < kTpFileCount; ++j)
+                        if (built[j]) meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
                     Log("TpLayers: install aborted, nothing changed");
                     return false;
                 }
+                built[p.index] = true;
             }
 
             if (!GrowToEightLayers())
             {
-                for (int j = 0; j < kTpCount; ++j)
-                    meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
+                for (int j = 0; j < kTpFileCount; ++j)
+                    if (built[j]) meow_hook::func_call<void>(GetAddress(ANIM_LAYER_DEST), &staged[j]);
                 return false;
             }
 
-            // park FP 0 - 6, slot 7 still holds the GrowToEightLayers placeholder
+            // park the stock fp layers, then lay out the plan (slot 7 currently holds GrowToEightLayers placeholder, which ApplyPlan destroys)
             for (int i = 0; i < kSwapCount; ++i)
                 MoveOutOfSlot(i, &g_fpParked[i]);
 
-            // install TP 0 - 5, slot 6 & 7 will be FP
-            for (int i = 0; i < kTpCount; ++i)
-                MoveIntoSlot(i, &staged[i]);
-
-            // install FP 6 & 7
-            MoveIntoSlot(6, &g_fpParked[1]); // slot 6: FP UPPERBODY, hidden logic
-            MoveIntoSlot(7, &g_fpParked[0]); // slot 7: FP MAINBODY, hidden logic
-            // g_fpParked[0]/[1] are now empty; [2 - 6] still hold other FP layers
+            ApplyPlan(staged);
 
             RebuildRuleSystems();
             ApplyTpLayerFlags();
 
             TpState::g_layersInstalled = true;
-            TpState::g_animationsActive  = true;
-            Log("TpLayers: TP render 0-5, hidden FP logic on 6-7");
+            TpState::g_animationsActive = true;
+            Log("TpLayers: installed (%d TP render, %d FP logic layers)", CountSrc(Src::Tp), CountSrc(Src::Fp));
             // LogLayerState("installed");
             return true;
         }
 
-        /// Toggles between the FP and TP layer sets
+        /// Toggles between the fp and tp layer sets
         /// - layer count stays at 8 in both directions
-        /// - in FP mode one TP layer is parked (hidden) in spare slot rather than shrinking m_DefaultLayers
+        /// - in fp mode one tp layer is parked (hidden) in spare slot rather than shrinking m_DefaultLayers
         bool SetThirdPersonAnimations(bool enable)
         {
             using namespace TpLayers;
@@ -619,42 +659,34 @@ namespace gz
 
             // LogLayerState(enable ? "before FP->TP" : "before TP->FP");
 
+            // whichever TP file sits at slot 0 is the one parked in the spare slot
+            static_assert(kTpPlan[0].src == Src::Tp, "spare slot parks a TP layer");
+            constexpr int kSpareFile = kTpPlan[0].index;
+
             if (!enable) // TP -> FP
             {
-                // park FP 6 & 7
-                MoveOutOfSlot(6, &g_fpParked[1]);
-                MoveOutOfSlot(7, &g_fpParked[0]);
+                for (int i = 0; i < kTotalCount; ++i)
+                {
+                    const auto& p = kTpPlan[i];
+                    MoveOutOfSlot(i, p.src == Src::Tp ? &g_tpParked[p.index] : &g_fpParked[p.index]);
+                }
 
-                // park TP 0 - 5, slots 6 & 7 were FP
-                for (int i = 0; i < kTpCount; ++i)
-                    MoveOutOfSlot(i, &g_tpParked[i]);
-
-                // install FP 0 - 6
                 for (int i = 0; i < kSwapCount; ++i)
                     MoveIntoSlot(i, &g_fpParked[i]);
 
-                // install TP 7
-                MoveIntoSlot(kSpareSlot, &g_tpParked[0]); // park TP fullbody, keeps count at 8
+                MoveIntoSlot(kSpareSlot, &g_tpParked[kSpareFile]); // keeps count at 8
 
                 RebuildRuleSystems();
                 ApplyFpLayerFlags();
             }
             else // FP -> TP
             {
-                // park TP 7
-                MoveOutOfSlot(kSpareSlot, &g_tpParked[0]);
+                MoveOutOfSlot(kSpareSlot, &g_tpParked[kSpareFile]);
 
-                // park FP 0 - 6
                 for (int i = 0; i < kSwapCount; ++i)
                     MoveOutOfSlot(i, &g_fpParked[i]);
 
-                // install TP 0 - 5, slots 6 & 7 will be FP
-                for (int i = 0; i < kTpCount; ++i)
-                    MoveIntoSlot(i, &g_tpParked[i]);
-
-                // install FP 6 & 7
-                MoveIntoSlot(6, &g_fpParked[1]);
-                MoveIntoSlot(7, &g_fpParked[0]);
+                ApplyPlan(g_tpParked);
 
                 RebuildRuleSystems();
                 ApplyTpLayerFlags();

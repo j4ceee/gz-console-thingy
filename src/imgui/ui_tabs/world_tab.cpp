@@ -6,14 +6,16 @@
 #include "game/environment_gfx.h"
 #include "game/event_scheduler.h"
 #include "game/game_world.h"
+#include "game/landscape_manager.h"
 #include "game/physics_system.h"
 #include "game/player_network_manager.h"
 #include "game/spawn_system.h"
+#include "game/weather.h"
 #include "game/world_time.h"
+#include "game/custom/preset_override.h"
 #include "game/data/collectibles_data.h"
 #include "game/data/data_funcs.h"
 #include "game/data/spawnables_data.h"
-#include "patches/cloud_patch.h"
 
 namespace gz::UITabs
 {
@@ -450,91 +452,203 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     ImGui::Spacing();
 
     // --- WEATHER ---
-    if (ImGui::CollapsingHeader(ICON_MD_WB_SUNNY " Weather & GFX", ImGuiTreeNodeFlags_DefaultOpen))
+    const auto* landscapeManager = CLandscapeManager::instance();
+    auto* weather = landscapeManager ? landscapeManager->GetWeather() : nullptr;
+    auto* envGfxMgr = CEnvironmentGfxManager::instance();
+
+    if (ImGui::CollapsingHeader(ICON_MD_WB_SUNNY " Weather", ImGuiTreeNodeFlags_DefaultOpen) && landscapeManager && weather)
     {
-        if (CloudPatch::IsInitialized())
         {
-            bool hideClouds = CloudPatch::IsHideCloudsEnabled();
-            if (ImGui::Checkbox("Hide Clouds", &hideClouds))
+            auto& wo = Weather::g_overrides;
+
+            ImGui::Checkbox("Control Weather", &wo.enabled);
+            ImGui::SameLine();
+            UI::HelpMarker("Takes over the game's dynamic weather system.");
+
+            ImGui::BeginDisabled(!wo.enabled);
             {
-                CloudPatch::ToggleHideClouds();
-            }
-            ImGui::SameLine();
-            UI::HelpMarker("Toggles the visibility of clouds in the game world."
-                "\nCredit: pigeon",
-                "Note: Does not disable weather effects, only the clouds themselves.");
+                ImGui::Indent();
+                ImGui::Spacing();
 
-            ImGui::Separator();
+                ImGui::SliderFloat("Cloud Density", &wo.cloudDensity, 0.0f, 8.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("Control cloud thickness and with it rain and lightning. "
+                               "Vanilla game range is ~1.6 to 6. Below ~2 the sky is clear, above ~5 it rains continuously.");
+
+                ImGui::SliderFloat("Transition", &wo.transitionTime, 0.0f, 60.0f, "%.0f sec");
+                ImGui::SameLine();
+                UI::HelpMarker("How long the sky takes to reach the chosen cloud density.");
+
+                ImGui::Spacing();
+                ImGui::Checkbox("Manual Downpour", &wo.overrideDownpour);
+                ImGui::SameLine();
+                UI::HelpMarker("Decouples rain and snow from the clouds. Lets you have rain under a clear sky or an overcast sky with none.");
+
+                ImGui::BeginDisabled(!wo.overrideDownpour);
+                {
+                    ImGui::SliderFloat("Downpour", &wo.downpour, 0.0f, 1.0f, "%.2f");
+                    ImGui::SameLine();
+                    UI::HelpMarker("Amount of rain / snow.");
+                }
+                ImGui::EndDisabled();
+
+                ImGui::SliderFloat("Snow Ratio", &wo.snowRatio, 0.0f, 1.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("Below 0.5 is rain, above 0.5 becomes snow.");
+
+                ImGui::Spacing();
+
+                ImGui::SliderFloat("Ground Snow", &wo.groundSnow, 0.0f, 1.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("Amount of snow covering the world.");
+
+                ImGui::SliderFloat("Snow Randomness", &wo.snowRandomness, 0.0f, 1.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("How uniform or random the snow is. 0.0 is completely uniform, 1.0 is completely random.");
+
+                ImGui::SliderFloat("Ground Wetness", &wo.groundWetness, 0.0f, 1.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("How wet surfaces look.");
+
+                ImGui::Spacing();
+
+                ImGui::SliderFloat("Lightning", &wo.lightningChance, 0.0f, 20.0f, "%.2f");
+                ImGui::SameLine();
+                UI::HelpMarker("Chance of lightning in the clouds.",
+                               "Needs thick clouds, has no effect below roughly 4 cloud density.");
+
+                ImGui::SliderFloat("Cloud Height", &wo.cloudHeight, 0.0f, 3000.0f, "%.0f");
+                ImGui::SameLine();
+                UI::HelpMarker("The height at which the clouds appear.");
+
+                ImGui::SliderFloat("Cloud Range", &wo.cloudThickness, 0.0f, 2000.0f, "%.0f");
+                ImGui::SameLine();
+                UI::HelpMarker("The distance from the cloud height upwards where clouds can form.");
+
+                ImGui::Spacing();
+
+                ImGui::SliderFloat("Wind Strength", &wo.gustStrength, 0.0f, 50.0f, "%.0f");
+                ImGui::SameLine();
+                UI::HelpMarker("The strength of the wind. Keep between 2 & 8 for best results.");
+
+                ImGui::Spacing();
+                if (ImGui::Button(ICON_MD_REFRESH " Reset to Defaults"))
+                {
+                    const bool wasEnabled = wo.enabled;
+                    wo = Weather::Overrides{};
+                    wo.enabled = wasEnabled;
+                }
+
+                ImGui::Unindent();
+            }
+            ImGui::EndDisabled();
         }
 
-        auto* envGfxMgr = CEnvironmentGfxManager::instance();
-        if (envGfxMgr)
+        if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Weather"))
         {
-            auto* currentName = envGfxMgr->GetCurrentWeatherPresetName();
-            ImGui::Text("Current Weather / GFX Preset: %s", currentName ? currentName : "Unknown");
+            auto* precipitation = weather->GetPrecipitation();
+            auto* atmos = landscapeManager->GetAtmosphere();
 
-            if (ImGui::Button("Restore Dynamic Weather / GFX")) {
-                if (envGfxMgr->RestoreDynamicWeather()) {
-                    Log("Dynamic weather restored.");
-                } else {
-                    Log("Failed to restore dynamic weather.");
-                }
-            }
-            ImGui::SameLine();
-            UI::HelpMarker("Restores the game's dynamic weather / GFX system, reverting any manually set weather / GFX presets.");
+            ImGui::Text("CLandscapeManager: 0x%p", landscapeManager);
+            ImGui::Text("CAtmosphere: 0x%p", atmos);
+            ImGui::Text("    render weather: %s", atmos->RenderWeather() ? "true" : "false");
+            ImGui::Text("CWeather: 0x%p", weather);
+            ImGui::Text("    cloud coverage: %.2f", weather->m_CloudCoverage);
+            ImGui::Text("    next cloud coverage: %.2f", weather->m_NextCloudCoverage);
+            ImGui::Text("    snow ration: %.2f", weather->m_SnowRatio);
+            ImGui::Text("    snow amount: %.2f", weather->m_SnowAmount);
+            ImGui::Text("    rain intensity: %.2f", weather->m_RainIntensity);
+            ImGui::Text("    wetness: %.2f", weather->m_Wetness);
+            ImGui::Text("    lightning intensity: %.2f", weather->m_LightningIntensity);
+            ImGui::Text("    lightning possibility: %.2f", weather->m_LightningPossibility);
+            ImGui::Text("    air density: %.2f", weather->m_AirDensity);
+            ImGui::Text("    severity: %.2f -> %.2f (update in %.2f)", weather->m_Severity, weather->m_SeverityTarget, weather->m_SeverityUpdateTime);
+            ImGui::Text("    severity min/max: %.2f / %.2f", weather->m_SeverityMin, weather->m_SeverityMax);
+            ImGui::Text("    do update severity: %s", weather->m_DoUpdateSeverity ? "true" : "false");
+            ImGui::Text("    transition time/freq: %.2f / %.2f", weather->m_SeverityTransitionTime, weather->m_SeverityTransitionFrequency);
+            ImGui::Text("    precip threshold: %.2f", weather->m_PrecipitationThreshold);
+            ImGui::Text("    visibility: %.2f", weather->m_Visibility);
+            ImGui::Text("    force update: %d", weather->m_ForceUpdate);
+            ImGui::Text("    cloud base/height: %.1f / %.1f", weather->m_CloudBase, weather->m_CloudHeight);
+            ImGui::Text("CPrecipitation: 0x%p", precipitation);
+            ImGui::Text("    intensity: %.2f", precipitation->m_Intensity);
+            ImGui::Text("    amount: %.2f", precipitation->m_ConstantAmount);
+            ImGui::Text("    snow ratio: %.2f", precipitation->m_SnowRatio);
+            ImGui::Text("    user controlled: %s", precipitation->m_UserControlled ? "true" : "false");
+            ImGui::Text("    enabled: %s", precipitation->m_Enabled ? "true" : "false");
 
-            ImGui::Separator();
-
-            ImGui::Text("Available Weather / GFX Presets:");
-            ImGui::Spacing();
-
-            ImGui::Indent();
-            for (const auto & category : Data::Weather::all_weather_presets) {
-                if (ImGui::CollapsingHeader(category.displayName)) {
-                    if (ImGui::BeginTable("##weather_presets_grid", 3, ImGuiTableFlags_SizingStretchSame)) {
-                        for (size_t i = 0; i < category.count; i++) {
-                            const auto& preset = category.data[i];
-
-                            ImGui::TableNextColumn();
-
-                            // button for setting weather preset
-                            char buttonLabel[256];
-                            snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", preset.name, preset.hash);
-                            if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
-                                if (envGfxMgr->m_isActive) {
-                                    envGfxMgr->RestoreDynamicWeather();
-                                }
-                                if (envGfxMgr->SetWeatherPresetFromHash(preset.hash)) {
-                                    Log("Weather preset set to: %s", preset.name);
-                                } else {
-                                    Log("Failed to set weather preset: %s", preset.name);
-                                }
-                            }
-                            // tooltip with details
-                            char tooltipText[256];
-                            snprintf(tooltipText, sizeof(tooltipText), "Set the current weather / GFX preset to %s", preset.name);
-                            UI::HoverTooltip(tooltipText,
-                                "Note: Does not change clouds, rain, or other weather effects, only the visual GFX preset.");
-
-                        }
-                        ImGui::EndTable();
-                    }
-                }
-            }
-            ImGui::Unindent();
-
-            if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Weather")) {
+            if (envGfxMgr)
+            {
                 ImGui::Text("CEnvironmentGfxManager: 0x%p", envGfxMgr);
-                ImGui::Text("m_weatherPresetsArray: 0x%p", envGfxMgr->m_weatherPresetsArray);
-                ImGui::Text("m_weatherPresetsEnd: 0x%p", envGfxMgr->m_weatherPresetsEnd);
-                ImGui::Text("m_weatherPresetHashes: 0x%p", envGfxMgr->m_weatherPresetHashes);
-                ImGui::Text("Preset Count: %zu", envGfxMgr->GetPresetCount());
-                ImGui::Text("m_isActive: %s", envGfxMgr->m_isActive ? "true" : "false");
-                ImGui::Text("m_currentPresetIndex: %d", envGfxMgr->m_currentPresetIndex);
-                ImGui::Text("m_previousPresetIndex: %d", envGfxMgr->m_previousPresetIndex);
-                ImGui::TreePop();
+                ImGui::Text("    m_weatherPresetsArray: 0x%p", envGfxMgr->m_weatherPresetsArray);
+                ImGui::Text("    m_weatherPresetsEnd: 0x%p", envGfxMgr->m_weatherPresetsEnd);
+                ImGui::Text("    m_weatherPresetHashes: 0x%p", envGfxMgr->m_weatherPresetHashes);
+                ImGui::Text("    Preset Count: %zu", envGfxMgr->GetPresetCount());
+                ImGui::Separator();
+                ImGui::Text("Param Set Stack (%zu):", envGfxMgr->GetParamSetCount());
+                for (auto* p = envGfxMgr->m_paramSetsBegin; p != envGfxMgr->m_paramSetsEnd; ++p)
+                {
+                    const auto* data = CEnvironmentGfxManager::GetWeatherPresetDataByHash(
+                        p->m_ID < envGfxMgr->GetPresetCount() ? envGfxMgr->m_weatherPresetHashes[p->m_ID] : 0);
+
+                    ImGui::BulletText("id 0x%08X prio %-4u blend %.2f  t %.1f/%.1f  res %p %s%s%s",
+                                      p->m_ID, p->m_Priority, p->m_BlendValue, p->m_TimeBlend, p->m_TotalBlendTime,
+                                      p->m_Parameters, (p->m_Flags & 1) ? "[in]" : "", (p->m_Flags & 2) ? "[out]" : "",
+                                      data ? data->name : "");
+                }
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- GFX ---
+    if (ImGui::CollapsingHeader(ICON_MD_FILTER_VINTAGE " GFX & Filters", ImGuiTreeNodeFlags_DefaultOpen) && envGfxMgr)
+    {
+        const uint32_t activeFilter = PresetOverride::ActiveFilterHash();
+
+        ImGui::Indent();
+        for (const auto& category : Data::Weather::all_gfx_presets)
+        {
+            if (ImGui::CollapsingHeader(category.displayName))
+            {
+                if (ImGui::BeginTable("##gfx_presets_grid", 3, ImGuiTableFlags_SizingStretchSame))
+                {
+                    for (size_t i = 0; i < category.count; i++)
+                    {
+                        const auto& preset = category.data[i];
+                        ImGui::TableNextColumn();
+
+                        const bool isActive = (activeFilter != 0 && preset.hash == activeFilter);
+                        if (isActive)
+                            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+
+                        char buttonLabel[256];
+                        snprintf(buttonLabel, sizeof(buttonLabel), "%s##f0x%08X", preset.name, preset.hash);
+                        if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0)))
+                        {
+                            if (isActive)
+                                PresetOverride::ClearFilter();
+                            else
+                                PresetOverride::ApplyFilter(preset.hash, 0.0f); // filters snap
+                        }
+
+                        if (isActive)
+                            ImGui::PopStyleColor();
+                    }
+                    ImGui::EndTable();
+                }
             }
         }
+        ImGui::Unindent();
+
+        ImGui::Spacing();
+        ImGui::BeginDisabled(!PresetOverride::IsFilterActive());
+        if (ImGui::Button(ICON_MD_REFRESH " Clear Filter"))
+            PresetOverride::ClearFilter();
+        ImGui::EndDisabled();
     }
 }
 } // namespace gz::UITabs

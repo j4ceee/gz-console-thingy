@@ -1,26 +1,25 @@
+#include <imgui.h>
+
 #include "../ui.h"
 #include "../fonts/IconsMaterialDesign.h"
 #include "game/player_network_manager.h"
 #include "patches/resource_patch.h"
-
-#include <imgui.h>
-
 #include "game/map.h"
 #include "game/player_info.h"
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
-#include "game/weapon_consumption.h"
+#include "game/custom/weapon_consumption.h"
 #include "patches/vehicle_patches.h"
-
 #include "game/animal_spotting_manager.h"
 #include "game/building_item.h"
 #include "game/deep_water.h"
-#include "game/player_eq_utils.h"
+#include "game/network_manager.h"
+#include "game/custom/player_eq_utils.h"
 #include "game/player_spawn_manager.h"
 #include "game/ui_manager.h"
-#include "game/camera/camera_director.h"
-#include "game/camera/camera_registry.h"
-#include "game/camera/third_person_camera.h"
+#include "game/camera_director.h"
+#include "game/camera_registry.h"
+#include "game/custom/third_person_camera.h"
 
 namespace gz::UITabs
 {
@@ -29,7 +28,8 @@ namespace gz::UITabs
         UI* ui = UI::Get();
         ConsoleSettings& settings = ui->GetSettings();
 
-        auto* character = playerMgr->GetPlayer()->GetCharacter();
+        auto* player = playerMgr->GetPlayer();
+        auto* character = player->GetCharacter();
 
         // -- HEALTH --
         if (ImGui::CollapsingHeader(ICON_MD_FAVORITE " Health", ImGuiTreeNodeFlags_DefaultOpen))
@@ -54,12 +54,19 @@ namespace gz::UITabs
                 ImGui::Text("Player Count: %d", playerMgr->GetPlayerCount());
 
                 ImGui::Spacing();
-                CVector3f aimPos = playerMgr->GetPlayer()->GetAimPosition();
+                CVector3f aimPos = player->GetAimPosition();
                 ImGui::Text("Aim Position: (%.2f, %.2f, %.2f)", aimPos.x, aimPos.y, aimPos.z);
-                CVector3f worldPos = playerMgr->GetPlayer()->GetPositionVector();
+                CVector3f worldPos = player->GetPositionVector();
                 ImGui::Text("World Position: (%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z);
-                float raycastDistance = playerMgr->GetPlayer()->GetAimRaycastDistance();
+                float raycastDistance = player->GetAimRaycastDistance();
                 ImGui::Text("Aim Raycast Distance: %.2f", raycastDistance);
+
+                auto* netMgr = CBaseNetworkManager::instance();
+                ImGui::Spacing();
+                ImGui::Text("CBaseNetworkManager Address: 0x%p", netMgr);
+                ImGui::Text("Local Peer ID: %u", netMgr->GetLocalPeerID());
+                ImGui::Text("Host Peer ID: %u", netMgr->GetHostPeerID());
+                ImGui::Text("Local GUID: 0x%016llx", netMgr->GetLocalGuid());
 
                 ImGui::Spacing();
                 ImGui::Text("All players");
@@ -70,17 +77,21 @@ namespace gz::UITabs
                     {
                         std::string profileName = remotePlayer->GetProfileName();
                         bool isLocal = (remotePlayer == localNetworkPlayer);
-                        CPlayer* player = remotePlayer->GetPlayer();
-                        CCharacter* plCharacter = remotePlayer->GetCharacter();
+                        bool isHost = remotePlayer->IsHost();
+                        CPlayer* remPlayer = remotePlayer->GetPlayer();
                         CNetworkPlayerComponent* netComp = remotePlayer->GetNetworkComponent();
-                        CPfxCharacterInstance* pfxChar = plCharacter->GetPfxInstance();
+                        CCharacter* plCharacter = remotePlayer->GetCharacter();
+                        CPfxCharacterInstance* pfxChar = plCharacter ? plCharacter->GetPfxInstance() : nullptr;
 
-                        ImGui::Text("Player %d: %s%s", i, profileName.c_str(), isLocal ? " (Local Player)" : "");
+                        ImGui::Text("Player %d: %s %s %s", i, profileName.c_str(), isLocal ? "(Local Player)" : "",
+                            isHost ? "(Host)" : "");
                         ImGui::Text("    CNetworkPlayer Address: 0x%p", remotePlayer);
-                        ImGui::Text("    CPlayer Address: 0x%p", player);
+                        ImGui::Text("    CPlayer Address: 0x%p", remPlayer);
                         ImGui::Text("    CCharacter Address: 0x%p", plCharacter);
-                        ImGui::Text("    CNetworkPlayerComponent Address: 0x%p", netComp);
                         ImGui::Text("    CPfxCharacterInstance Address: 0x%p", pfxChar);
+                        ImGui::Text("    CNetworkPlayerComponent Address: 0x%p", netComp);
+                        ImGui::Text("    Peer ID: %u", remotePlayer->m_peerID);
+                        ImGui::Text("    GUID: 0x%016llx", remotePlayer->m_guid);
                     }
                     else
                     {

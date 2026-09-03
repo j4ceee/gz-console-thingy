@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "../../addresses.h"
-#include "../../data_types.h"
+#include "../addresses.h"
+#include "../data_types.h"
 #include "meow_hook/util.h"
 
 #pragma pack(push, 1)

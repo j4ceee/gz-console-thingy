@@ -22,6 +22,7 @@ void InitAddresses(bool is_steam)
     g_Address[INST_PLAYER_INFORMATION] = (is_steam ? 0x142abee30 : 0x142bcc3e0) + offset;
     g_Address[INST_PHYSICS_SYSTEM] = (is_steam ? 0x142a35da0 : 0x142b43350) + offset;
     g_Address[INST_ENVIRONMENT_GFX_MANAGER] = (is_steam ? 0x142a2b4e0 : 0x142b38a90) + offset;
+    g_Address[INST_LANDSCAPE_MANAGER] = (is_steam ? 0x142abc0f8 : 0x142bc96a8) + offset;
     g_Address[INST_SPAWN_SYSTEM] = (is_steam ? 0x142abed20 : 0x142bcc2d0) + offset;
     g_Address[INST_WORLDTIME] = (is_steam ? 0x142abdb48 : 0x142bcb0f8) + offset;
     g_Address[INST_MAP] = (is_steam ? 0x142adfec8 : 0x142bed558) + offset;
@@ -50,7 +51,6 @@ void InitAddresses(bool is_steam)
     g_Address[UPDATE_GAMEPAD] = (is_steam ? 0x1400ff4f0 : 0x1400fef80) + offset;
     g_Address[VAR_GAME_STATE_FRONTEND] = (is_steam ? 0x1428444e0 : 0x1429483f8) + offset;
     g_Address[VAR_GAME_STATE] = (is_steam ? 0x142adcb80 : 0x142bea130) + offset;
-    g_Address[VAR_CLOUD_VISIBILITY] = (is_steam ? 0x141bada08 : 0x141c6cbd0) + offset;
     g_Address[VAR_FP_PLAYER_SHADOW] = (is_steam ? 0x142adf1a4 : 0x142bec85c) + offset;
     g_Address[SPAWN_SYSTEM_SPAWN] = (is_steam ? 0x140b83d90 : 0x140b91ed0) + offset;
     g_Address[SPAWN_SYSTEM_PARSE_TAGS] = (is_steam ? 0x140b67c70 : 0x140b75d80) + offset;
@@ -78,9 +78,10 @@ void InitAddresses(bool is_steam)
     g_Address[FUNC_STEERING_UPDATE] = (is_steam ? 0x140694b80 : 0x140694790) + offset;
     g_Address[FUNC_JUMP_UPDATE] = (is_steam ? 0x14067d910 : 0x14067d520) + offset;
     g_Address[FAST_TRAVEL] = (is_steam ? 0x14085d000 : 0x14085cb50) + offset;
-    g_Address[SET_WEATHER_PRESET_FROM_HASH] = (is_steam ? 0x140129820 : 0x1401292b0) + offset;
-    g_Address[RESTORE_DYNAMIC_WEATHER] = (is_steam ? 0x140134a00 : 0x140134490) + offset;
-    g_Address[WEATHER_UPDATE] = (is_steam ? 0x14012ca80 : 0x14012c510) + offset;
+    g_Address[GFX_ADD_PARAM_SET] = (is_steam ? 0x14010fa20 : 0x14010f4b0) + offset;
+    g_Address[GFX_REMOVE_PRESET] = (is_steam ? 0x14012ca80 : 0x14012c510) + offset;
+    g_Address[WEATHER_UPDATE] = (is_steam ? 0x1402ec7a0 : 0x1402ec310) + offset;
+    g_Address[WEATHER_PRE_UPDATE] = (is_steam ? 0x1402e8fa0 : 0x1402e8b10) + offset;
     g_Address[DAMAGEABLE_SET_HEALTH] = (is_steam ? 0x1406e3980 : 0x1406e3590) + offset;
     g_Address[DAMAGEABLE_RESTORE_HEALTH] = (is_steam ? 0x1406e2670 : 0x1406e2280) + offset;
     g_Address[DAMAGEABLE_SET_INVULNERABLE] = (is_steam ? 0x1406e3b00 : 0x1406e3710) + offset;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "network_manager.h"
 #include "player_skills.h"
 
 #pragma pack(push, 1)
@@ -60,6 +61,12 @@ namespace gz
         [[nodiscard]] std::string GetProfileName() const
         {
             return std::string(m_profileName, strnlen_s(m_profileName, sizeof(m_profileName)));
+        }
+
+        [[nodiscard]] bool IsHost() const
+        {
+            auto* netNgr = CBaseNetworkManager::instance();
+            return netNgr && netNgr->IsHost(m_peerID);
         }
     };
 } // namespace gz

@@ -19,19 +19,18 @@
 #include "game/event_scheduler.h"
 #include "game/debug_logger.h"
 #include "game/deep_water.h"
-#include "game/environment_gfx.h"
 #include "game/game_state.h"
 #include "game/input_manager.h"
 #include "game/intro.h"
 #include "game/map.h"
-#include "game/player_eq_utils.h"
+#include "game/custom/player_eq_utils.h"
 #include "game/player_spawn_manager.h"
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
-#include "game/weapon_consumption.h"
+#include "game/weather.h"
+#include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
-#include "patches/cloud_patch.h"
 #include "patches/map_zoom_patches.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -184,8 +183,8 @@ bool InitPatchesAndHooks()
         if (!EventManager::Initialize())
             Log("Failed to setup EventManager hook");
 
-        if (!SetupWeatherUpdateHook())
-            Log("Failed to setup WeatherUpdate hook");
+        if (!Weather::SetupWeatherHooks())
+            Log("Failed to setup weather hooks");
 
         if (!AmmoDeployableConsumption::SetupAmmoHook())
             Log("Failed to setup Ammo Consumption hook");
@@ -206,7 +205,6 @@ bool InitPatchesAndHooks()
         EventTimePatch::Initialize();
         ResourcePatches::Initialize();
         VehiclePatches::Initialize();
-        CloudPatch::Initialize();
 
         if (MapZoomPatch::Initialize())
             MapZoomPatch::DisableMapZoomLimit(); // always keep enabled (removes max zoom cap)

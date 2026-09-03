@@ -155,6 +155,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_LANDSCAPE_MANAGER", game_file, result, [&] {
+        auto match = pattern("F3 ? ? ? 41 ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(10);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_SPAWN_SYSTEM", game_file, result, [&] {
         auto match = pattern("48 89 73 ? 48 89 73 ? 48 8B 05 ? ? ? ? FF 88 ? ? ? ?", game_file)
             .count(1)
@@ -390,14 +398,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(2);
-        return disp_rebase(game_file, match).as<uintptr_t>();
-    });
-
-    FindPattern("VAR_CLOUD_VISIBILITY", game_file, result, [&] {
-        auto match = pattern("F3 0F 59 ? ? ? ? ? F3 0F 5C C8 F3 0F 5F CC F3", game_file)
-            .count(1)
-            .get(0)
-            .adjust(4);
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
@@ -650,29 +650,35 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
-    FindPattern("SET_WEATHER_PRESET_FROM_HASH", game_file, result, [&] {
-        auto match = pattern("48 8B CF E8 ? ? ? ? 48 8B 0D ? ? ? ? 8B D0 E8 ? ? ? ? 84 C0 75", game_file)
+    FindPattern("GFX_ADD_PARAM_SET", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 8B ? ? ? ? ? 89 ? ? ? ? ? B0 ? 89", game_file)
             .count(1)
             .get(0)
-            .adjust(17)
             .extract_call();
         return rebase(game_file, match);
     });
 
-    FindPattern("RESTORE_DYNAMIC_WEATHER", game_file, result, [&] {
-        auto match = pattern("48 8B 0D ? ? ? ? E8 ? ? ? ? 84 C0 74 ? 33 C0 EB ? 3B 1D", game_file)
-            .count(1)
-            .get(0)
-            .adjust(7)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("WEATHER_UPDATE", game_file, result, [&] {
+    FindPattern("GFX_REMOVE_PRESET", game_file, result, [&] {
        auto match = pattern("85 D2 ? ? E8 ? ? ? ? 44 8B 83 ? ? ? ? 45", game_file)
            .count(1)
            .get(0)
            .adjust(4)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("WEATHER_UPDATE", game_file, result, [&] {
+       auto match = pattern("E8 ? ? ? ? 48 ? ? ? ? ? ? 33 D2 E8 ? ? ? ? 48 ? ? ? ? ? ? BA ? ? ? ? 0F", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("WEATHER_PRE_UPDATE", game_file, result, [&] {
+       auto match = pattern("E8 ? ? ? ? 80 ? ? ? 75 ? 48 ? ? ? ? ? ? 33", game_file)
+           .count(1)
+           .get(0)
            .extract_call();
        return rebase(game_file, match);
     });

@@ -3,8 +3,8 @@
 #include <vector>
 #include <iterator>
 #include <utility>
-#include "camera_registry.h"
-#include "game/tp_state.h"
+#include "../camera_registry.h"
+#include "tp_state.h"
 
 namespace gz::ThirdPersonCamera
 {

@@ -16,7 +16,7 @@ namespace gz
         char                _pad2[0x4];         // 0x64 → 0x68
         CNetworkPlayer*     m_LocalPlayer;      // 0x68
 
-        static CNetworkPlayerManager* instance()
+        [[nodiscard]] static CNetworkPlayerManager* instance()
         {
             return *(CNetworkPlayerManager**)GetAddress(INST_NETWORK_PLAYER_MANAGER);
         }
@@ -25,7 +25,7 @@ namespace gz
         /// Gets the local player by dereferencing through the local player structure.
         /// </summary>
         /// @return Pointer to the local player's CPlayer, or nullptr if not available.
-        CPlayer* GetPlayer()
+        [[nodiscard]] CPlayer* GetPlayer()
         {
             return GetNetworkPlayer()->GetPlayer();
         }
@@ -34,7 +34,7 @@ namespace gz
         /// Gets the local player's character directly from CNetworkPlayerManager.
         /// </summary>
         /// @return Pointer to the local player's CCharacter, or nullptr if not available.
-        CCharacter* GetCharacter()
+        [[nodiscard]] CCharacter* GetCharacter()
         {
             return GetNetworkPlayer()->GetCharacter();
         }
@@ -43,23 +43,27 @@ namespace gz
         /// Gets the local player's network component.
         /// </summary>
         /// @return Pointer to the local player's CNetworkPlayerComponent, or nullptr if not available.
-        CNetworkPlayerComponent* GetPlayerNetworkComponent()
+        [[nodiscard]] CNetworkPlayerComponent* GetPlayerNetworkComponent()
         {
             return GetNetworkPlayer()->GetNetworkComponent();
         }
 
-        CNetworkPlayer* GetNetworkPlayer()
+        /// <summary>
+        /// Gets the local player's network player instance.
+        /// </summary>
+        /// @return Pointer to the local player's CNetworkPlayer, or nullptr if not available.
+        [[nodiscard]] CNetworkPlayer* GetNetworkPlayer()
         {
             return m_LocalPlayer;
         }
 
-        int GetPlayerCount() const
+        [[nodiscard]] int GetPlayerCount() const
         {
             return m_playerCount;
         }
 
         // get other players by index (not yet tested, may not be correct)
-        CNetworkPlayer* GetRemotePlayer(int index)
+        [[nodiscard]] CNetworkPlayer* GetRemotePlayer(int index)
         {
             if (index < 0 || index >= 4) {
                 return nullptr; // index must be between 0 and 3

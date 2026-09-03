@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
-#include "../../addresses.h"
-#include "../../log.h"
-#include "../util/hash_utils.h"
+#include "../addresses.h"
+#include "../log.h"
+#include "util/hash_utils.h"
 #include "camera_director.h"
 
 #pragma pack(push, 1)

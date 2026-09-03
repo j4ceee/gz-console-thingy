@@ -1,13 +1,12 @@
 #include "ui_settings.h"
-
 #include "game/animal_network.h"
 #include "game/building_item.h"
 #include "game/event_scheduler.h"
 #include "game/map.h"
 #include "game/player.h"
-#include "game/player_eq_utils.h"
+#include "game/custom/player_eq_utils.h"
 #include "game/ui_manager.h"
-#include "game/weapon_consumption.h"
+#include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
 
