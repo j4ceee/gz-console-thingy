@@ -964,6 +964,24 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("GET_VEHICLE_TORQUE", game_file, result, [&] {
+        auto match = pattern("CC 4C ? ? ? ? ? ? 48 ? ? 4C ? ? ? ? ? ? 43", game_file)
+            .count(1)
+            .get(0)
+            .adjust(1)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CALC_LAND_AERODYNAMICS", game_file, result, [&] {
+        auto match = pattern("48 8B CF E8 ? ? ? ? F3 ? ? ? ? ? 4C ? ? ? ? ? ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
     FindPattern("UI_GET_UINT64", game_file, result, [&] {
         auto match = pattern("48 8B CA E8 ? ? ? ? 4C ? ? 48 ? ? ? 0F", game_file)
             .count(1)

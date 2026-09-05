@@ -4,6 +4,8 @@
 #include "remote_controller.h"
 #include "data_types.h"
 #include "game_object.h"
+#include "vehicle.h"
+#include "vehicle_manager.h"
 #include "meow_hook/util.h"
 #include "util/hash_utils.h"
 #include "../log.h"
@@ -351,6 +353,17 @@ namespace gz
                 0,
                 0
             );
+        }
+
+        static CVehicle* GetVehicle()
+        {
+            CVehicleManager* vehicleManager = CVehicleManager::instance();
+            if (!vehicleManager)
+            {
+                return nullptr;
+            }
+
+            return vehicleManager->GetPlayerVehicle();
         }
 
         // --- third person stuff -----------------------------------------
@@ -703,6 +716,9 @@ namespace gz
 
         void SetThirdPerson(bool enable)
         {
+            if (this->IsControllingEntity() || (GetVehicle() && GetVehicle()->IsPlayerInVehicle()))
+                return; // crashes the game
+
             SetThirdPersonAnimations(enable);
             SetThirdPersonBodyVisible(enable);
             ThirdPersonCamera::Set(enable);

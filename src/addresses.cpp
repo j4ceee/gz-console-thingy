@@ -114,6 +114,8 @@ void InitAddresses(bool is_steam)
     g_Address[MAP_ALLOWED_IN_REGION] = (is_steam ? 0x140c38ec0 : 0x140c458a0) + offset;
     g_Address[MAP_ON_MANAGE_INPUT_ICONS] = (is_steam ? 0x140c6e670 : 0x140c7a830) + offset;
     g_Address[MAP_FAST_TRAVEL] = (is_steam ? 0x140c26380 : 0x140c330b0) + offset;
+    g_Address[GET_VEHICLE_TORQUE] = (is_steam ? 0x14022ab70 : 0x14022a620) + offset;
+    g_Address[CALC_LAND_AERODYNAMICS] = (is_steam ? 0x140211080 : 0x140210b30) + offset;
     g_Address[UI_GET_UINT64] = (is_steam ? 0x140ca4720 : 0x140cafaf0) + offset;
     g_Address[PATCH_RESOURCE_CONSUMPTION] = (is_steam ? 0x1407460ce : 0x140745d8e) + offset;
     g_Address[PATCH_INFINITE_FUEL] = (is_steam ? 0x140d488f4 : 0x140d54184) + offset;

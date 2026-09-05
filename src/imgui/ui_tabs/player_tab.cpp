@@ -21,6 +21,7 @@
 #include "game/camera_registry.h"
 #include "game/custom/damage_multipliers.h"
 #include "game/custom/third_person_camera.h"
+#include "game/custom/vehicle_speed.h"
 
 namespace gz::UITabs
 {
@@ -29,8 +30,9 @@ namespace gz::UITabs
         UI* ui = UI::Get();
         ConsoleSettings& settings = ui->GetSettings();
 
-        auto* player = playerMgr->GetPlayer();
-        auto* character = player->GetCharacter();
+        CPlayer* player = playerMgr->GetPlayer();
+        CCharacter* character = player->GetCharacter();
+        CVehicleManager* vehicleManager = CVehicleManager::instance();
 
         // -- HEALTH --
         if (ImGui::CollapsingHeader(ICON_MD_FAVORITE " Health", ImGuiTreeNodeFlags_DefaultOpen))
@@ -230,17 +232,25 @@ namespace gz::UITabs
         {
             if (TpState::g_resourcesPrimed && character)
             {
-                bool tp = CCharacter::IsThirdPersonActive();
-                if (ImGui::Checkbox("Third Person", &tp))
-                    character->SetThirdPerson(tp);
-                ImGui::SameLine();
-                UI::HelpMarker(("Toggles between First Person & Third Person view. "
-                    " Hotkey: " + ConsoleSettings::GetKeyName(settings.thirdPersonKey) + " / 2x Right Stick on controllers").c_str(),
-                    {
-                        "Some behaviours may not work entirely in TP",
-                        "Reload animations will play twice in TP",
-                        "After switching to TP and back to FP once, reload weapon animations in FP will be delayed"
-                    });
+                if (character->IsControllingEntity() || (vehicleManager && vehicleManager->GetPlayerVehicle() &&
+                    vehicleManager->GetPlayerVehicle()->IsPlayerInVehicle()))
+                {
+                    UI::WarningText("You can't switch to third person while controlling a machine or vehicle.", true);
+                }
+                else
+                {
+                    bool tp = CCharacter::IsThirdPersonActive();
+                    if (ImGui::Checkbox("Third Person", &tp))
+                        character->SetThirdPerson(tp);
+                    ImGui::SameLine();
+                    UI::HelpMarker(("Toggles between First Person & Third Person view. "
+                                       " Hotkey: " + ConsoleSettings::GetKeyName(settings.thirdPersonKey) + " / 2x Right Stick on controllers").c_str(),
+                                   {
+                                       "Some behaviours may not work entirely in TP",
+                                       "Reload animations will play twice in TP",
+                                       "After switching to TP and back to FP once, reload weapon animations in FP will be delayed"
+                                   });
+                }
             }
 
             if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##camera"))
@@ -513,22 +523,30 @@ namespace gz::UITabs
         ImGui::Spacing();
 
         // -- VEHICLES --
-        if (ImGui::CollapsingHeader(ICON_MD_PEDAL_BIKE " Vehicles", ImGuiTreeNodeFlags_DefaultOpen) &&
-            VehiclePatches::IsInitialized())
+        if (ImGui::CollapsingHeader(ICON_MD_PEDAL_BIKE " Vehicles", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            bool infiniteFuel = VehiclePatches::IsInfiniteFuelEnabled();
-            if (ImGui::Checkbox("Infinite Vehicle Fuel", &infiniteFuel))
+            if (VehiclePatches::IsInitialized())
             {
-                VehiclePatches::ToggleInfiniteFuel();
+                bool infiniteFuel = VehiclePatches::IsInfiniteFuelEnabled();
+                if (ImGui::Checkbox("Infinite Vehicle Fuel", &infiniteFuel))
+                {
+                    VehiclePatches::ToggleInfiniteFuel();
+                }
+                ImGui::SameLine();
+                UI::HelpMarker("Prevents vehicle fuel from decreasing while driving.\n"
+                    "Credit: aSwedishMagyar & sanitka");
             }
-            ImGui::SameLine();
-            UI::HelpMarker("Prevents vehicle fuel from decreasing while driving.\n"
-                "Credit: aSwedishMagyar & sanitka");
+
+            ImGui::SliderFloat("Vehicle Acceleration & Speed", &VehicleSpeed::g_VehicleSpeedMultiplier, 0.1f, 1000.0f, "%.1f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine(); UI::HelpMarker("Multiplies the speed of all vehicles.",
+                "Speed of motorbikes is still limited.\nAir resistance will still limit the top speed, use the button below to disable it.");
+
+            ImGui::Checkbox("No Air Resistance", &VehicleSpeed::g_NoAirResistance);
+            ImGui::SameLine(); UI::HelpMarker("Removes aerodynamic drag from vehicles. Greatly increases top speed.");
 
             ImGui::Spacing();
             ImGui::Spacing();
 
-            auto* vehicleManager = CVehicleManager::instance();
             if (vehicleManager)
             {
                 auto* vehicle = vehicleManager->GetPlayerVehicle();

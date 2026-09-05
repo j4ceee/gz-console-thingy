@@ -29,6 +29,7 @@
 #include "game/ui_static_handler.h"
 #include "game/weather.h"
 #include "game/custom/damage_multipliers.h"
+#include "game/custom/vehicle_speed.h"
 #include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
 #include "patches/vehicle_patches.h"
@@ -198,6 +199,12 @@ bool InitPatchesAndHooks()
 
         if(!DamageMultipliers::SetupBulletSkillDmgMultHook())
             Log("Failed to setup Bullet Skill Damage Multiplier Hook");
+
+        if(!VehicleSpeed::SetupVehicleTorqueOnWheelHook())
+            Log("Failed to setup Vehicle Torque on Wheel hook");
+
+        if(!VehicleSpeed::SetupCalculateLandAerodynamicsHook())
+            Log("Failed to setup Calculate Land Aerodynamics hook");
 
         bool buildingHooksOk = true;
         buildingHooksOk &= CBuildingItem::SetupGetSpawnLocationHook();

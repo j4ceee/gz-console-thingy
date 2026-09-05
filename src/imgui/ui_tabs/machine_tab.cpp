@@ -27,78 +27,86 @@ namespace gz::UITabs
         if (ImGui::CollapsingHeader(ICON_MD_ADD_CIRCLE " Spawning", ImGuiTreeNodeFlags_DefaultOpen)
             && reserveWorld && reserveWorld->GetPopulationManager() && reserveWorld->GetSpawnSystem())
         {
-            if (ImGui::Checkbox("Force Spawn Machines", &settings.machinesForceSpawn))
+            if (manager->GetNetworkPlayer() == nullptr || !manager->GetNetworkPlayer()->IsHost())
             {
-                // save setting
-                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+                UI::WarningText("You must be the host to spawn machines.", true);
             }
-            ImGui::SameLine();
-            UI::HelpMarker("Forces the spawning of machines at the requested position. Otherwise machines are only safely spawned in valid positions.",
-                "If this is disabled and you try to spawn a machine in an invalid position, nothing will happen.");
-
-            static bool hackMachineOnSpawn = false;
-            ImGui::Checkbox("Spawn machines as friendly", &hackMachineOnSpawn);
-            ImGui::SameLine();
-            UI::HelpMarker("Spawned machines are instantly hacked.");
-
-            ImGui::Indent();
-            if (ImGui::CollapsingHeader("Machines"))
+            else
             {
-                ImGui::Indent();
-                for (const auto & category : Data::Spawnables::all_machines)
+                if (ImGui::Checkbox("Force Spawn Machines", &settings.machinesForceSpawn))
                 {
-                    if (ImGui::CollapsingHeader(category.displayName))
+                    // save setting
+                    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+                }
+                ImGui::SameLine();
+                UI::HelpMarker("Forces the spawning of machines at the requested position. Otherwise machines are only safely spawned in valid positions.",
+                    "If this is disabled and you try to spawn a machine in an invalid position, nothing will happen.");
+
+                static bool hackMachineOnSpawn = false;
+                ImGui::Checkbox("Spawn machines as friendly", &hackMachineOnSpawn);
+                ImGui::SameLine();
+                UI::HelpMarker("Spawned machines are instantly hacked.");
+
+                ImGui::Indent();
+                if (ImGui::CollapsingHeader("Machines"))
+                {
+                    ImGui::Indent();
+                    for (const auto & category : Data::Spawnables::all_machines)
                     {
-                        if (category.description)
+                        if (ImGui::CollapsingHeader(category.displayName))
                         {
-                            ImGui::TextWrapped("%s", category.description);
-                        }
-                        if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
-                        {
-                            for (size_t i = 0; i < category.count; i++)
+                            if (category.description)
                             {
-                                const auto& spawnable = category.data[i];
-
-                                ImGui::TableNextColumn();
-
-                                // button for spawn
-                                char buttonLabel[256];
-                                snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
-                                if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) // -FLT_MIN makes it fill column width
+                                ImGui::TextWrapped("%s", category.description);
+                            }
+                            if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
+                            {
+                                for (size_t i = 0; i < category.count; i++)
                                 {
-                                    CVector3f aimPos = player->GetAimPosition();
-                                    CAnimal* animal = reserveWorld->GetSpawnSystem()->SpawnAtPosition(reserveWorld->m_PopulationManager,
-                                        spawnable.tag, aimPos, settings.machinesForceSpawn);
+                                    const auto& spawnable = category.data[i];
 
-                                    if (hackMachineOnSpawn && animal)
+                                    ImGui::TableNextColumn();
+
+                                    // button for spawn
+                                    char buttonLabel[256];
+                                    snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
+                                    if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) // -FLT_MIN makes it fill column width
                                     {
-                                        QueueHack(animal);
+                                        CVector3f aimPos = player->GetAimPosition();
+                                        CAnimal* animal = reserveWorld->GetSpawnSystem()->SpawnAtPosition(reserveWorld->m_PopulationManager,
+                                            spawnable.tag, aimPos, settings.machinesForceSpawn);
+
+                                        if (hackMachineOnSpawn && animal)
+                                        {
+                                            QueueHack(animal);
+                                        }
+                                    }
+
+                                    // tooltip with details
+                                    if (ImGui::IsItemHovered())
+                                    {
+                                        ImGui::BeginTooltip();
+                                        ImGui::Text("%s - %s", category.displayName, spawnable.name);
+                                        ImGui::Text("Tag: %s", spawnable.tag);
+                                        ImGui::Text("Hash: 0x%08X", spawnable.hash);
+                                        ImGui::Spacing();
+
+                                        ImGui::Text("Machines will be spawned at your aim position. Spawning may take some time as the game handles that internally.");
+                                        ImGui::Spacing();
+                                        UI::WarningText("Spawning functionality is experimental and may cause issues. Use at your own risk!");
+                                        UI::WarningText("Spawning may take some time, the game will decide when to spawn your machines. Avoid spamming the spawn buttons.");
+                                        UI::WarningText("Spawned machines will disappear when you leave the area they are spawned in (this is intended).");
+                                        ImGui::EndTooltip();
                                     }
                                 }
-
-                                // tooltip with details
-                                if (ImGui::IsItemHovered())
-                                {
-                                    ImGui::BeginTooltip();
-                                    ImGui::Text("%s - %s", category.displayName, spawnable.name);
-                                    ImGui::Text("Tag: %s", spawnable.tag);
-                                    ImGui::Text("Hash: 0x%08X", spawnable.hash);
-                                    ImGui::Spacing();
-
-                                    ImGui::Text("Machines will be spawned at your aim position. Spawning may take some time as the game handles that internally.");
-                                    ImGui::Spacing();
-                                    UI::WarningText("Spawning functionality is experimental and may cause issues. Use at your own risk!");
-                                    UI::WarningText("Spawning may take some time, the game will decide when to spawn your machines. Avoid spamming the spawn buttons.");
-                                    ImGui::EndTooltip();
-                                }
+                                ImGui::EndTable();
                             }
-                            ImGui::EndTable();
                         }
                     }
+                    ImGui::Unindent();
                 }
                 ImGui::Unindent();
             }
-            ImGui::Unindent();
         }
 
         ImGui::Spacing();
