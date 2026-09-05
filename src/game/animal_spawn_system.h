@@ -59,6 +59,9 @@ namespace gz
             }
             CAnimal* animal = groupAnimals[0];
 
+            // 0x02 = "do not save" (prevents machine from being written into save & being chosen as rival)
+            animal->m_Flags = (std::byte)((uint8_t)animal->m_Flags | 0x02);
+
             if (forceSpawn)
             {
                 // mark position (bits 0x10 + 0x20) so SpawnAnimal trusts it directly instead of running navmesh search
