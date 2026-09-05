@@ -38,6 +38,8 @@
 - **Unrestricted Base Building** (removing build limits and restrictions)
 - Adding **Command Tokens**
 - **Infinite Vehicle Fuel**
+- **Vehicle Acceleration & Speed** modification
+- **Disable Air Resistance** for vehicles (increases top speed)
 - **Vehicle Health Modification** & **Vehicle Invincibility**
 - Setting **Player Level & XP**
 - Adding **Skill Points**
