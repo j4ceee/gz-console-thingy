@@ -231,7 +231,7 @@ void UI::Render()
     // --- THIRD PERSON CONTROLLER LOGIC ---
     static float s_lastR3PressTime = -999.f;
 
-    if (ImGui::IsKeyPressed(ImGuiKey_GamepadR3)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_GamepadR3, false)) {
         const float now = ImGui::GetTime();
         if (now - s_lastR3PressTime < 0.35f) {
             TpState::g_toggleRequested.store(true, std::memory_order_relaxed);
