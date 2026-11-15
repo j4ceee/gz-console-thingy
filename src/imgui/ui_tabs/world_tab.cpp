@@ -245,8 +245,10 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
                     }
                 }
             }
+            ImGui::Unindent();
         }
 
+        ImGui::Indent();
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Spawning")) {
             ImGui::Text("CSpawnSystem: %p", spawnSys);
             ImGui::Spacing();
@@ -270,7 +272,6 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
             }
             ImGui::TreePop();
         }
-
         ImGui::Unindent();
     }
 
