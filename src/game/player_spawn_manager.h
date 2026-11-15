@@ -4,6 +4,7 @@
 #include "hook_helpers.h"
 #include "log.h"
 #include "meow_hook/util.h"
+#include "custom/tp_state.h"
 #include <string>
 
 #pragma pack(push, 1)

@@ -21,6 +21,7 @@ namespace gz
         int teleportToAimKey = VK_F2;
         int hideHUDKey = VK_F3;
         int thirdPersonKey = VK_F4;
+        int freeCamKey = VK_F5;
 
         float fontSize = 1.0f;
         float lastAppliedFontSize = 1.0f;

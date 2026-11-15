@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data_types.h"
+#include "addresses.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -62,9 +63,12 @@ namespace gz
     class CAnimationDriverTransition
     {
     public:
-        char _pad0[0xA8]; // 0x00 → 0xA8
-        void* m_Blender;// 0xA8
+        char _pad0[0x20]; // 0x00 → 0x20
+        int32_t m_CurrentBaseAnimID; // 0x20 → 0x24 (game zeroes it when a custom track is reset)
+        char _pad1[0x84]; // 0x24 → 0xA8
+        void* m_Blender; // 0xA8
     };
+    static_assert(offsetof(CAnimationDriverTransition, m_CurrentBaseAnimID) == 0x20);
     static_assert(offsetof(CAnimationDriverTransition, m_Blender) == 0xA8);
 
 
@@ -114,6 +118,20 @@ namespace gz
             auto* bodyPart = GetBodyPart(index);
             if (!bodyPart || !bodyPart->m_Driver) return nullptr;
             return bodyPart->m_Driver->m_Blender;
+        }
+
+        /// true while a custom animation track (emote) is playing on any layer
+        /// id is registered lazily by the game, 0 = no custom animation was ever played
+        [[nodiscard]] bool IsPlayingCustomAnimation() const
+        {
+            const int32_t customId = *reinterpret_cast<const int32_t*>(GetAddress(VAR_CUSTOM_ANIMATION_ID));
+            if (customId == 0) return false;
+            for (int i = 0; i < GetBodyPartCount(); ++i)
+            {
+                const auto* part = GetBodyPart(i);
+                if (part && part->m_Driver && part->m_Driver->m_CurrentBaseAnimID == customId) return true;
+            }
+            return false;
         }
     };
     static_assert(sizeof(CAnimationControl) == 0xD0);

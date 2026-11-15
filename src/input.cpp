@@ -9,6 +9,8 @@
 #include "game/game_world.h"
 #include "game/input_manager.h"
 #include "game/ui_manager.h"
+#include "game/custom/free_cam.h"
+#include "game/custom/tp_state.h"
 #include "imgui/ui.h"
 
 static constexpr float FONT_SIZE_INPUT = 0.0155f;
@@ -97,7 +99,17 @@ bool Input::FeedEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
             gz::TpState::g_toggleRequested.store(true, std::memory_order_relaxed);
             return true;
         }
+
+        if (wParam == settings.freeCamKey)
+        {
+            gz::FreeCamera::Toggle();
+            return true;
+        }
     }
+
+    // free cam owns the input while it's active
+    if (gz::FreeCamera::HandleInput(message, wParam, lParam))
+        return true;
 
     if (message == WM_MOUSEWHEEL)
     {

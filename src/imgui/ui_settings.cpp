@@ -17,7 +17,7 @@ namespace gz
     {
         if (!m_cacheInitialized)
         {
-            m_settingsCache.reserve(28); // pre-allocate space
+            m_settingsCache.reserve(29); // pre-allocate space
 
             m_settingsCache.push_back({"ToggleUIKey",'i',const_cast<int*>(&toggleUIKey),
                 nullptr
@@ -29,6 +29,9 @@ namespace gz
                 nullptr
             });
             m_settingsCache.push_back({"ThirdPersonKey",'i',const_cast<int*>(&thirdPersonKey),
+                nullptr
+            });
+            m_settingsCache.push_back({"FreeCamKey",'i',const_cast<int*>(&freeCamKey),
                 nullptr
             });
             m_settingsCache.push_back({"FontSize",'f',const_cast<float*>(&fontSize),

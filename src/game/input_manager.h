@@ -7,6 +7,9 @@
 namespace gz::NInput
 {
     inline bool g_isUsingGamepad = false;
+    // latest real pad state, written by the xinput proxy, so mod features can read it while the game's own copy is muted
+    struct SPadState { float lx, ly, rx, ry, lt, rt; uint16_t buttons; };
+    inline SPadState g_pad{};
 
     using FocusFunc_t = void(*)(void*);
     inline FocusFunc_t g_origGotFocus  = nullptr;
@@ -79,7 +82,8 @@ namespace gz::NInput
 
     inline void HookedUpdateGamepad(CGamepad* thisptr, uint32_t timestamp, bool force)
     {
-        if (UI::Get()->IsVisible()) {
+        if (UI::Get()->IsVisible())
+        {
             memset(thisptr->m_Impl->stateBuffer, 0, sizeof(CGamepadImpl::stateBuffer));
             return;
         }

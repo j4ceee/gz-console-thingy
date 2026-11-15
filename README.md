@@ -24,6 +24,7 @@
 ### Player Settings
 - **Hiding the HUD** for a cleaner experience (Hotkey: _F3_ by default)
 - **Third Person** mode (Hotkey: _F4_ by default / _2x Right Stick_ on controllers)
+- **Free Cam** (Hotkey: _F5_ by default)
 - **Health Modification** & **Invincibility**
 - **Infinite Stamina**
 - **Unlimited Carry Weight** for the player inventory

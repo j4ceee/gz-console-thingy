@@ -4,6 +4,7 @@
 #include "player.h"
 #include "player_network_manager.h"
 #include "data_types.h"
+#include "custom/free_cam_state.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -43,6 +44,8 @@ namespace gz
 
         void SafeTeleportToPosition(CVector3f targetPos, CPlayer* player = nullptr)
         {
+            if (FreeCamState::IsInUse()) return; // free cam owns the player until it hands it back
+
             if (!player)
             {
                 auto playerMgr = CNetworkPlayerManager::instance();

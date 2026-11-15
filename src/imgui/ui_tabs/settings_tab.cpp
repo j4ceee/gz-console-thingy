@@ -38,6 +38,7 @@ void RenderSettingsTab()
                 ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingHideHUDKey = false;
                 ui->m_isCapturingThirdPersonKey = false;
+                ui->m_isCapturingFreeCamKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for toggling the UI");
 
@@ -60,6 +61,7 @@ void RenderSettingsTab()
                 ui->m_isCapturingTeleportKey = true;
                 ui->m_isCapturingHideHUDKey = false;
                 ui->m_isCapturingThirdPersonKey = false;
+                ui->m_isCapturingFreeCamKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for teleporting to aim position");
 
@@ -81,6 +83,7 @@ void RenderSettingsTab()
                 ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingHideHUDKey = true;
                 ui->m_isCapturingThirdPersonKey = false;
+                ui->m_isCapturingFreeCamKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for hiding the HUD");
 
@@ -102,8 +105,31 @@ void RenderSettingsTab()
                 ui->m_isCapturingTeleportKey = false;
                 ui->m_isCapturingHideHUDKey = false;
                 ui->m_isCapturingThirdPersonKey = true;
+                ui->m_isCapturingFreeCamKey = false;
             }
             UI::HoverTooltip("Click to change the hotkey for toggling third person view");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // -- FREE CAM HOTKEY --
+            ImGui::Text("Free Cam:");
+
+            ImGui::TableNextColumn();
+
+            std::string freeCamKeyLabel = ui->m_isCapturingFreeCamKey
+                                                  ? "Press a key...##freecam"
+                                                  : (ConsoleSettings::GetKeyName(settings.freeCamKey) + "##freecam");
+
+            if (ImGui::Button(freeCamKeyLabel.c_str(), ImVec2(120, 0)))
+            {
+                ui->m_isCapturingToggleUI = false;
+                ui->m_isCapturingTeleportKey = false;
+                ui->m_isCapturingHideHUDKey = false;
+                ui->m_isCapturingThirdPersonKey = false;
+                ui->m_isCapturingFreeCamKey = true;
+            }
+            UI::HoverTooltip("Click to change the hotkey for toggling free camera mode");
 
             ImGui::EndTable();
         }
@@ -116,15 +142,17 @@ void RenderSettingsTab()
             ui->m_isCapturingTeleportKey = false;
             ui->m_isCapturingHideHUDKey = false;
             ui->m_isCapturingThirdPersonKey = false;
+            ui->m_isCapturingFreeCamKey = false;
 
             settings.toggleUIKey = VK_F1;
             settings.teleportToAimKey = VK_F2;
             settings.hideHUDKey = VK_F3;
             settings.thirdPersonKey = VK_F4;
+            settings.freeCamKey = VK_F5;
             ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         }
         ImGui::SameLine();
-        UI::HelpMarker("Reset hotkeys to F1 (Toggle UI), F2 (Teleport to Aim), F3 (Hide HUD) and F4 (Third Person)");
+        UI::HelpMarker("Reset hotkeys to F1 (Toggle UI), F2 (Teleport to Aim), F3 (Hide HUD), F4 (Third Person) & F5 (Free Cam)");
     }
 
     ImGui::Spacing();

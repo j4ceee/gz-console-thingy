@@ -11,6 +11,7 @@
 #include "game/damageable.h"
 #include "game/game_state.h"
 #include "game/input_manager.h"
+#include "game/custom/tp_state.h"
 
 namespace gz
 {
@@ -162,7 +163,7 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
 {
     UI* ui = Get();
 
-    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey && !ui->m_isCapturingHideHUDKey && !ui->m_isCapturingThirdPersonKey) {
+    if (!ui->m_isCapturingToggleUI && !ui->m_isCapturingTeleportKey && !ui->m_isCapturingHideHUDKey && !ui->m_isCapturingThirdPersonKey && !ui->m_isCapturingFreeCamKey) {
         return false;
     }
 
@@ -197,6 +198,13 @@ bool UI::HandleHotkeyCapture(WPARAM wParam)
         ui->m_isCapturingThirdPersonKey = false;
         ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
         Log("Third Person key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
+    }
+    else if (ui->m_isCapturingFreeCamKey)
+    {
+        ui->m_settings.freeCamKey = static_cast<int>(wParam);
+        ui->m_isCapturingFreeCamKey = false;
+        ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        Log("Free Cam key bound to: %s", ConsoleSettings::GetKeyName(static_cast<int>(wParam)).c_str());
     }
 
     return true;

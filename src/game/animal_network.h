@@ -7,6 +7,7 @@
 #include "hook_helpers.h"
 #include "network_manager.h"
 #include "imgui/ui.h"
+#include "custom/free_cam_state.h"
 
 #pragma pack(push, 1)
 namespace gz
@@ -143,6 +144,7 @@ namespace gz
     inline void ProcessPendingHacks()
     {
         if (g_pendingHacks.empty()) return;
+        if (FreeCamState::IsInUse()) return;
 
         constexpr auto kTimeout = std::chrono::seconds(15);
 

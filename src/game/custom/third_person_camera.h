@@ -4,6 +4,8 @@
 #include <iterator>
 #include <utility>
 #include "../camera_registry.h"
+#include "../util/hash_utils.h"
+#include "log.h"
 #include "tp_state.h"
 
 namespace gz::ThirdPersonCamera

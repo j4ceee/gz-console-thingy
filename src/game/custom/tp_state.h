@@ -10,11 +10,14 @@ namespace gz::TpState
     inline bool g_primingResources = false;
     inline bool g_resourcesPrimed = false;
 
-    // --- animation layers (character.h / TpLayers) ---
+    // --- animation layers (third_person.h / TpLayers) ---
     inline void* g_layerOwner = nullptr; // character parked instances belong to. they die with it, so a character swap (world reload, new save) has to reset the install state
     inline bool g_layersInstalled = false;
     inline bool g_animationsActive = false;
 
     // --- camera (camera/third_person_camera.h) ---
     inline bool g_cameraActive = false;
+
+    [[nodiscard]] inline bool IsInstalled() { return g_layersInstalled; }
+    [[nodiscard]] inline bool IsActive() { return g_animationsActive; } // tp animation set, not the camera
 }

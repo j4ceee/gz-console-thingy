@@ -1,6 +1,7 @@
 #pragma once
 #include <xinput.h>
 #include "game/input_manager.h"
+#include "game/custom/free_cam_state.h"
 
 namespace
 {
@@ -17,8 +18,13 @@ __declspec(dllexport) DWORD XInputGetState(DWORD dwUserIndex, uintptr_t pState)
         if (result == ERROR_SUCCESS)
         {
             // track active input device
-            const auto* state = reinterpret_cast<XINPUT_STATE*>(pState);
+            auto* state = reinterpret_cast<XINPUT_STATE*>(pState);
             const auto& gp = state->Gamepad;
+            gz::NInput::g_pad = {
+                gp.sThumbLX / 32767.0f, gp.sThumbLY / 32767.0f,
+                gp.sThumbRX / 32767.0f, gp.sThumbRY / 32767.0f,
+                gp.bLeftTrigger / 255.0f, gp.bRightTrigger / 255.0f, gp.wButtons
+            };
             constexpr SHORT DEADZONE = 8000;
             if (gp.wButtons
                 || abs(gp.sThumbLX) > DEADZONE || abs(gp.sThumbLY) > DEADZONE
@@ -27,6 +33,10 @@ __declspec(dllexport) DWORD XInputGetState(DWORD dwUserIndex, uintptr_t pState)
             {
                 gz::NInput::g_isUsingGamepad = true;
             }
+
+            // free cam owns the pad; game polls through here, so it gets an idle pad while g_pad keeps the real state
+            if (gz::FreeCamState::g_enabled)
+                state->Gamepad = {};
         }
         return result;
     }

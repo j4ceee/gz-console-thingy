@@ -25,10 +25,12 @@
 #include "game/map.h"
 #include "game/custom/player_eq_utils.h"
 #include "game/player_spawn_manager.h"
+#include "game/ui_hud.h"
 #include "game/ui_manager.h"
 #include "game/ui_static_handler.h"
 #include "game/weather.h"
 #include "game/custom/damage_multipliers.h"
+#include "game/custom/free_cam.h"
 #include "game/custom/vehicle_speed.h"
 #include "game/custom/weapon_consumption.h"
 #include "patches/resource_patch.h"
@@ -176,6 +178,9 @@ bool InitPatchesAndHooks()
             throw std::runtime_error("Failed to setup loading third person body");
         }
 
+        if (!FreeCamera::SetupUpdateRenderContextsHook())
+            Log("Failed to setup Free Camera hook");
+
         if (!CSpawnedAnimalNetworkComponent::SetupHackRequestHook())
             Log("Failed to setup Animal Hack Request hook");
 
@@ -236,6 +241,9 @@ bool InitPatchesAndHooks()
 
         if (!CUIManager::SetupIsUIShownHook())
             Log("Failed to setup IsUIShown hook");
+
+        if (!CHUDUI::SetupUpdateStateHook())
+            Log("Failed to setup HUD UpdateState hook");
 
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());

@@ -20,7 +20,8 @@
 #include "game/camera_director.h"
 #include "game/camera_registry.h"
 #include "game/custom/damage_multipliers.h"
-#include "game/custom/third_person_camera.h"
+#include "game/custom/free_cam.h"
+#include "game/custom/third_person.h"
 #include "game/custom/vehicle_speed.h"
 
 namespace gz::UITabs
@@ -228,20 +229,17 @@ namespace gz::UITabs
         ImGui::Spacing();
         ImGui::Spacing();
 
+        // -- Camera --
         if (ImGui::CollapsingHeader(ICON_MD_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (TpState::g_resourcesPrimed && character)
+            if (character)
             {
-                if (character->IsControllingEntity() || (vehicleManager && vehicleManager->GetPlayerVehicle() &&
-                    vehicleManager->GetPlayerVehicle()->IsPlayerInVehicle()))
+                const char* tpBlock = ThirdPerson::GetBlockReason(character);
+                ImGui::BeginDisabled(tpBlock != nullptr);
                 {
-                    UI::WarningText("You can't switch to third person while controlling a machine or vehicle.", true);
-                }
-                else
-                {
-                    bool tp = CCharacter::IsThirdPersonActive();
+                    bool tp = TpState::IsActive();
                     if (ImGui::Checkbox("Third Person", &tp))
-                        character->SetThirdPerson(tp);
+                        ThirdPerson::Set(character, tp);
                     ImGui::SameLine();
                     UI::HelpMarker(("Toggles between First Person & Third Person view. "
                                        " Hotkey: " + ConsoleSettings::GetKeyName(settings.thirdPersonKey) + " / 2x Right Stick on controllers").c_str(),
@@ -251,7 +249,23 @@ namespace gz::UITabs
                                        "After switching to TP and back to FP once, reload weapon animations in FP will be delayed"
                                    });
                 }
+                ImGui::EndDisabled();
+                if (tpBlock) UI::WarningText(tpBlock, true);
             }
+
+            const char* blockReason = FreeCamState::IsEnabled() ? nullptr : FreeCamera::GetBlockReason();
+            ImGui::BeginDisabled(blockReason != nullptr);
+            {
+                bool enabled = FreeCamState::IsEnabled();
+                if (ImGui::Checkbox("Free Camera", &enabled)) FreeCamera::Enable(enabled);
+                ImGui::SameLine();
+                UI::HelpMarker("WASD move, E/Space up, Q/Ctrl down, Shift boost, mouse wheel speed. Pad: sticks, triggers up/down, RB boost.");
+            }
+            ImGui::EndDisabled();
+            if (blockReason) UI::WarningText(blockReason, true);
+
+            ImGui::SliderFloat("Free Cam Speed", &FreeCamera::g_speed, 0.5f, 500.0f, "%.1f m/s", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderFloat("Free Cam Sensitivity", &FreeCamera::g_sensitivity, 0.1f, 5.0f, "%.1f");
 
             if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##camera"))
             {
@@ -313,12 +327,12 @@ namespace gz::UITabs
 
                 if (character && ImGui::Button("Enable TP Body (Blackboard)"))
                 {
-                    character->SetThirdPersonBodyVisible(true);
+                    ThirdPerson::SetBodyVisible(character, true);
                 }
                 ImGui::SameLine();
                 if (character && ImGui::Button("Disable TP Body (Blackboard)"))
                 {
-                    character->SetThirdPersonBodyVisible(false);
+                    ThirdPerson::SetBodyVisible(character, false);
                 }
 
                 ImGui::Separator();
@@ -675,23 +689,6 @@ namespace gz::UITabs
                 ImGui::Checkbox("Ignore Deep Water", &g_noDeepWaterEffects);
                 ImGui::SameLine();
                 UI::HelpMarker("Allows the player to travel underwater.");
-
-                ImGui::Spacing();
-
-                // -- ghost mode
-                if (ImGui::Button("Enable Ghost Mode"))
-                {
-                    character->SetGhostMode(true);
-                }
-                ImGui::SameLine();
-                if (ImGui::Button(ICON_MD_REFRESH "##ghostMode"))
-                {
-                    character->SetGhostMode(false);
-                }
-                ImGui::SameLine();
-                UI::HelpMarker(
-                    "Enables ghost mode for the player, allowing to float through the environment and objects without collision.",
-                    "Note: To disable ghost mode, press the refresh button or teleport (via hotkey or world tab).");
             }
         }
     }

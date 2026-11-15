@@ -12,6 +12,7 @@
 #include "game/spawn_system.h"
 #include "game/weather.h"
 #include "game/world_time.h"
+#include "game/custom/free_cam.h"
 #include "game/custom/preset_override.h"
 #include "game/data/collectibles_data.h"
 #include "game/data/data_funcs.h"
@@ -176,91 +177,97 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     auto* spawnSys = CSpawnSystem::instance();
     if (ImGui::CollapsingHeader(ICON_MD_ADD_CIRCLE " Spawning", ImGuiTreeNodeFlags_DefaultOpen) && spawnSys)
     {
-        ImGui::Indent();
-        for (const auto & category : Data::spawnCategories)
+        if (FreeCamState::IsInUse())
         {
-            if (ImGui::CollapsingHeader(category.displayName))
-            {
-                for (size_t idx = 0; idx < category.count; idx++)
-                {
-                    ImGui::Indent();
-
-                    const auto & spawnableCategory = category.category[idx];
-
-                    if (ImGui::CollapsingHeader(spawnableCategory.displayName))
-                    {
-                        if (spawnableCategory.description)
-                        {
-                            ImGui::TextWrapped("%s", spawnableCategory.description);
-                        }
-                        if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
-                        {
-                            for (size_t i = 0; i < spawnableCategory.count; i++) {
-                                const auto& spawnable = spawnableCategory.data[i];
-
-                                ImGui::TableNextColumn();
-
-                                // button for spawn
-                                char buttonLabel[256];
-                                snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
-                                if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
-                                    spawnSys->SpawnCategoryAtAimPosition(spawnable.tag, category.spawnSystemType);
-                                }
-
-                                // tooltip with details
-                                if (ImGui::IsItemHovered()) {
-                                    ImGui::BeginTooltip();
-                                    ImGui::Text("%s", spawnable.name);
-                                    ImGui::Text("Tag: %s", spawnable.tag);
-                                    ImGui::Text("Hash: 0x%08X", spawnable.hash);
-                                    ImGui::Spacing();
-
-                                    ImGui::Text("Objects will be spawned at your aim position. Some objects will not despawn until you exit to menu.");
-
-                                    ImGui::Spacing();
-
-                                    UI::WarningText("Spawning functionality is experimental and may not work correctly for all objects.\n"
-                                        "Use at your own risk!");
-
-                                    if (category.spawnSystemType == 'v')
-                                    {
-                                        ImGui::Spacing();
-                                        ImGui::Separator();
-                                        ImGui::Text("For more vehicles please spawn a 'Vehicle Station' object from the 'Buildings & Props' category.");
-                                    }
-                                    ImGui::EndTooltip();
-                                }
-                            }
-                            ImGui::EndTable();
-                        }
-                    }
-                    ImGui::Unindent();
-                }
-            }
+            UI::WarningText("Exit free cam to spawn objects.", true);
         }
-
-        if (ImGui::CollapsingHeader("Custom"))
+        else
         {
-            static char tagBuffer[128] = "skir_classa_load01";
-            ImGui::InputText("Resource Tag", tagBuffer, sizeof(tagBuffer));
+            ImGui::Indent();
+            for (const auto & category : Data::spawnCategories)
+            {
+                if (ImGui::CollapsingHeader(category.displayName))
+                {
+                    for (size_t idx = 0; idx < category.count; idx++)
+                    {
+                        ImGui::Indent();
 
-            static uint32_t typeId = 0x37C;
-            static char typeIdHex[16] = "37C";
+                        const auto & spawnableCategory = category.category[idx];
 
-            ImGui::SetNextItemWidth(100.0f);
-            if (ImGui::InputText("Type ID", typeIdHex, sizeof(typeIdHex), ImGuiInputTextFlags_CharsHexadecimal)) {
-                typeId = (uint32_t)strtoul(typeIdHex, nullptr, 16);
-            }
-            ImGui::SameLine();
-            ImGui::Text("(0x%X = %u)", typeId, typeId);
+                        if (ImGui::CollapsingHeader(spawnableCategory.displayName))
+                        {
+                            if (spawnableCategory.description)
+                            {
+                                ImGui::TextWrapped("%s", spawnableCategory.description);
+                            }
+                            if (ImGui::BeginTable("##spawnables_grid", 2, ImGuiTableFlags_SizingStretchSame))
+                            {
+                                for (size_t i = 0; i < spawnableCategory.count; i++) {
+                                    const auto& spawnable = spawnableCategory.data[i];
 
-            if (ImGui::Button("Spawn at Aim Position")) {
-                spawnSys->SpawnTagAtAimPosition(tagBuffer, typeId);
+                                    ImGui::TableNextColumn();
+
+                                    // button for spawn
+                                    char buttonLabel[256];
+                                    snprintf(buttonLabel, sizeof(buttonLabel), "%s##0x%08X", spawnable.name, spawnable.hash);
+                                    if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
+                                        spawnSys->SpawnCategoryAtAimPosition(spawnable.tag, category.spawnSystemType);
+                                    }
+
+                                    // tooltip with details
+                                    if (ImGui::IsItemHovered()) {
+                                        ImGui::BeginTooltip();
+                                        ImGui::Text("%s", spawnable.name);
+                                        ImGui::Text("Tag: %s", spawnable.tag);
+                                        ImGui::Text("Hash: 0x%08X", spawnable.hash);
+                                        ImGui::Spacing();
+
+                                        ImGui::Text("Objects will be spawned at your aim position. Some objects will not despawn until you exit to menu.");
+
+                                        ImGui::Spacing();
+
+                                        UI::WarningText("Spawning functionality is experimental and may not work correctly for all objects.\n"
+                                            "Use at your own risk!");
+
+                                        if (category.spawnSystemType == 'v')
+                                        {
+                                            ImGui::Spacing();
+                                            ImGui::Separator();
+                                            ImGui::Text("For more vehicles please spawn a 'Vehicle Station' object from the 'Buildings & Props' category.");
+                                        }
+                                        ImGui::EndTooltip();
+                                    }
+                                }
+                                ImGui::EndTable();
+                            }
+                        }
+                        ImGui::Unindent();
+                    }
+                }
             }
         }
 
         if (settings.showDebugInfo && ImGui::TreeNode("Debug Info##Spawning")) {
             ImGui::Text("CSpawnSystem: %p", spawnSys);
+            ImGui::Spacing();
+            {
+                static char tagBuffer[128] = "skir_classa_load01";
+                ImGui::InputText("Resource Tag", tagBuffer, sizeof(tagBuffer));
+
+                static uint32_t typeId = 0x37C;
+                static char typeIdHex[16] = "37C";
+
+                ImGui::SetNextItemWidth(100.0f);
+                if (ImGui::InputText("Type ID", typeIdHex, sizeof(typeIdHex), ImGuiInputTextFlags_CharsHexadecimal)) {
+                    typeId = (uint32_t)strtoul(typeIdHex, nullptr, 16);
+                }
+                ImGui::SameLine();
+                ImGui::Text("(0x%X = %u)", typeId, typeId);
+
+                if (ImGui::Button("Spawn at Aim Position")) {
+                    spawnSys->SpawnTagAtAimPosition(tagBuffer, typeId);
+                }
+            }
             ImGui::TreePop();
         }
 
@@ -343,109 +350,116 @@ void RenderWorldTab(CNetworkPlayerManager* playerMgr)
     auto* player = playerMgr->GetPlayer();
     auto* gameWorld = CGameWorld::instance();
     if (ImGui::CollapsingHeader(ICON_MD_PIN_DROP " Teleportation", ImGuiTreeNodeFlags_DefaultOpen) && player && gameWorld) {
-        CVector3f    playerPos = player->GetPositionVector();
-        static float x         = playerPos.x;
-        static float y         = playerPos.y;
-        static float z         = playerPos.z;
-
-        if (ImGui::Button("Use Current Position")) {
-            x = playerPos.x;
-            y = playerPos.y;
-            z = playerPos.z;
-        }
-        ImGui::InputFloat("X", &x, 1.0f, 10.0f, "%.1f");
-        ImGui::InputFloat("Y", &y, 1.0f, 10.0f, "%.1f");
-        ImGui::InputFloat("Z", &z, 1.0f, 10.0f, "%.1f");
-
-        // 2 buttons side by side
-        if (ImGui::Button("Teleport")) {
-            gameWorld->TeleportToPositionXYZ(x, y, z);
-        }
-        UI::HoverTooltip("Teleport the player to the specified XYZ coordinates.");
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Teleport to Aim Position")) {
-            gameWorld->TeleportToAimPosition(player);
-        }
-        UI::HoverTooltip(("Teleport the player to the position they are currently aiming at. "
-            "This is generally the safest way to teleport. Hotkey: " + ConsoleSettings::GetKeyName(settings.teleportToAimKey)).c_str());
-
-        ImGui::Spacing();
-
-        ImGui::Indent();
-        if (ImGui::CollapsingHeader(ICON_MD_LOCATION_ON " Predefined Locations"))
+        if (FreeCamState::IsInUse())
         {
-            // search bar
-            ImGui::SetNextItemWidth(-1); // Full width
-            bool searchChanged = ImGui::InputTextWithHint("##search", "Search...", searchBuffer,
-                                                          sizeof(searchBuffer));
+            UI::WarningText("Exit free cam to teleport.", true);
+        }
+        else
+        {
+            CVector3f    playerPos = player->GetPositionVector();
+            static float x         = playerPos.x;
+            static float y         = playerPos.y;
+            static float z         = playerPos.z;
 
-            // cache filtered results when search changes
-            if (searchChanged) {
-                lastSearchTerm = searchBuffer;
+            if (ImGui::Button("Use Current Position")) {
+                x = playerPos.x;
+                y = playerPos.y;
+                z = playerPos.z;
             }
+            ImGui::InputFloat("X", &x, 1.0f, 10.0f, "%.1f");
+            ImGui::InputFloat("Y", &y, 1.0f, 10.0f, "%.1f");
+            ImGui::InputFloat("Z", &z, 1.0f, 10.0f, "%.1f");
+
+            // 2 buttons side by side
+            if (ImGui::Button("Teleport")) {
+                gameWorld->TeleportToPositionXYZ(x, y, z);
+            }
+            UI::HoverTooltip("Teleport the player to the specified XYZ coordinates.");
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Teleport to Aim Position")) {
+                gameWorld->TeleportToAimPosition(player);
+            }
+            UI::HoverTooltip(("Teleport the player to the position they are currently aiming at. "
+                "This is generally the safest way to teleport. Hotkey: " + ConsoleSettings::GetKeyName(settings.teleportToAimKey)).c_str());
 
             ImGui::Spacing();
 
-            // iterate through all categories
-            for (const auto & category : Data::all_collectibles) {
-                // count matches
-                int matchCount = Data::CountMatches(category, searchBuffer);
+            ImGui::Indent();
+            if (ImGui::CollapsingHeader(ICON_MD_LOCATION_ON " Predefined Locations"))
+            {
+                // search bar
+                ImGui::SetNextItemWidth(-1); // Full width
+                bool searchChanged = ImGui::InputTextWithHint("##search", "Search...", searchBuffer,
+                                                              sizeof(searchBuffer));
 
-                // hide categories with no matches
-                if (matchCount == 0)
-                    continue;
-
-                // build header text with match count
-                char headerText[256];
-                if (searchBuffer[0] != '\0') {
-                    snprintf(headerText, sizeof(headerText), "%s [%d/%zu]",
-                             category.displayName, matchCount, category.count);
-                } else {
-                    snprintf(headerText, sizeof(headerText), "%s [%zu]",
-                             category.displayName, category.count);
+                // cache filtered results when search changes
+                if (searchChanged) {
+                    lastSearchTerm = searchBuffer;
                 }
 
-                if (ImGui::CollapsingHeader(headerText)) {
-                    if (ImGui::BeginTable("##collectibles_grid", 2, ImGuiTableFlags_SizingStretchSame)) {
-                        for (size_t i = 0; i < category.count; i++) {
-                            const auto& collectible = category.data[i];
+                ImGui::Spacing();
 
-                            // filter check
-                            if (!Data::ContainsIgnoreCase(collectible.name, searchBuffer)) {
-                                continue;
-                            }
+                // iterate through all categories
+                for (const auto & category : Data::all_collectibles) {
+                    // count matches
+                    int matchCount = Data::CountMatches(category, searchBuffer);
 
-                            ImGui::TableNextColumn();
+                    // hide categories with no matches
+                    if (matchCount == 0)
+                        continue;
 
-                            // button for teleport
-                            char buttonLabel[256];
-                            snprintf(buttonLabel, sizeof(buttonLabel), "%s##%s", collectible.name, collectible.collectable_id);
-                            if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
-                                gameWorld->TeleportToPositionXYZ(collectible.x, collectible.y, collectible.z);
-                            }
+                    // build header text with match count
+                    char headerText[256];
+                    if (searchBuffer[0] != '\0') {
+                        snprintf(headerText, sizeof(headerText), "%s [%d/%zu]",
+                                 category.displayName, matchCount, category.count);
+                    } else {
+                        snprintf(headerText, sizeof(headerText), "%s [%zu]",
+                                 category.displayName, category.count);
+                    }
 
-                            // tooltip with details
-                            if (ImGui::IsItemHovered()) {
-                                ImGui::BeginTooltip();
-                                ImGui::Text("%s", collectible.name);
-                                ImGui::Text("Position: %.1f, %.1f, %.1f", collectible.x, collectible.y, collectible.z);
-                                if (collectible.description && collectible.description[0] != '\0') {
-                                    ImGui::Separator();
-                                    ImGui::PushTextWrapPos(400.0f);
-                                    ImGui::Text("%s", Data::TruncateText(collectible.description, 500));
-                                    ImGui::PopTextWrapPos();
+                    if (ImGui::CollapsingHeader(headerText)) {
+                        if (ImGui::BeginTable("##collectibles_grid", 2, ImGuiTableFlags_SizingStretchSame)) {
+                            for (size_t i = 0; i < category.count; i++) {
+                                const auto& collectible = category.data[i];
+
+                                // filter check
+                                if (!Data::ContainsIgnoreCase(collectible.name, searchBuffer)) {
+                                    continue;
                                 }
-                                ImGui::EndTooltip();
+
+                                ImGui::TableNextColumn();
+
+                                // button for teleport
+                                char buttonLabel[256];
+                                snprintf(buttonLabel, sizeof(buttonLabel), "%s##%s", collectible.name, collectible.collectable_id);
+                                if (ImGui::Button(buttonLabel, ImVec2(-FLT_MIN, 0))) { // -FLT_MIN makes it fill column width
+                                    gameWorld->TeleportToPositionXYZ(collectible.x, collectible.y, collectible.z);
+                                }
+
+                                // tooltip with details
+                                if (ImGui::IsItemHovered()) {
+                                    ImGui::BeginTooltip();
+                                    ImGui::Text("%s", collectible.name);
+                                    ImGui::Text("Position: %.1f, %.1f, %.1f", collectible.x, collectible.y, collectible.z);
+                                    if (collectible.description && collectible.description[0] != '\0') {
+                                        ImGui::Separator();
+                                        ImGui::PushTextWrapPos(400.0f);
+                                        ImGui::Text("%s", Data::TruncateText(collectible.description, 500));
+                                        ImGui::PopTextWrapPos();
+                                    }
+                                    ImGui::EndTooltip();
+                                }
                             }
+                            ImGui::EndTable();
                         }
-                        ImGui::EndTable();
                     }
                 }
             }
+            ImGui::Unindent();
         }
-        ImGui::Unindent();
     }
 
     ImGui::Spacing();

@@ -10,6 +10,7 @@
 #include "game/damageable.h"
 #include "game/reserve_world.h"
 #include "game/spawn_system.h"
+#include "game/custom/free_cam.h"
 #include "game/data/spawnables_data.h"
 
 namespace gz::UITabs
@@ -30,6 +31,10 @@ namespace gz::UITabs
             if (manager->GetNetworkPlayer() == nullptr || !manager->GetNetworkPlayer()->IsHost())
             {
                 UI::WarningText("You must be the host to spawn machines.", true);
+            }
+            else if (FreeCamState::IsInUse())
+            {
+                UI::WarningText("Exit free cam to spawn machines.", true);
             }
             else
             {
@@ -206,7 +211,11 @@ namespace gz::UITabs
                     UI::HelpMarker("Changes the faction of the targeted machine. It will become hostile towards all other factions than the selected one.");
 
                     // -- control machine (only if not already controlling one and machine is hosted by player)
-                    if (rc && !character->IsControllingEntity() && component->IsOwnedByLocalPlayer())
+                    if (FreeCamState::IsInUse())
+                    {
+                        UI::WarningText("Exit free cam to take control of a machine.", true);
+                    }
+                    else if (rc && !character->IsControllingEntity() && component->IsOwnedByLocalPlayer())
                     {
                         ImGui::Spacing();
 
@@ -250,12 +259,12 @@ namespace gz::UITabs
                                      "Too far away: %.1fm / max. %.1fm", distance, maxRange);
                             UI::WarningText(buffer, true);
                         }
-                    } else if (!component->IsOwnedByLocalPlayer())
+                    }
+                    else if (!component->IsOwnedByLocalPlayer())
                     {
                         UI::WarningText("This machine is hosted by another player. You can't take control of it or make it invulnerable.", true);
                     }
                 }
-
             } else {
                 ImGui::TextWrapped("Look at a machine to modify it here.");
                 UI::StartDisabledText();

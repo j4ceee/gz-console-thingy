@@ -216,6 +216,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_HUD_UI", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? 48 85 C0 74 ? C7 ? ? ? ? ? ? ? ? ? C6", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("INST_CLOCK", game_file, result, [&] {
         auto match = pattern("48 ? ? ? ? ? ? E8 ? ? ? ? F3 ? ? ? ? ? ? ? 0F 57 C9 48", game_file)
             .count(1)
@@ -531,6 +539,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    FindPattern("VAR_CUSTOM_ANIMATION_ID", game_file, result, [&] {
+        auto match = pattern("7F ? 48 ? ? ? ? ? ? 48 ? ? ? C3 48 ? ? ? ? ? ? E8 ? ? ? ? 83 ? ? ? ? ? ? 75 ? E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(5);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     FindPattern("CHARACTER_ON_STATE_TRANSITION", game_file, result, [&] {
         auto match = pattern("4C ? ? ? ? ? ? 49 ? ? ? ? ? ? E8 ? ? ? ? 49 8B CE E8 ? ? ? ? 49 ? ? ? ? ? ? 48 ? ? ? ? ? ? ? 74 ? 8B", game_file)
             .count(1)
@@ -558,9 +574,102 @@ FindPatternResult Generate(const char* name, const char* exepath)
         return rebase(game_file, match);
     });
 
+    // -- camera --
+
+    FindPattern("CAMERA_CHECK_COLLISION", game_file, result, [&] {
+       auto match = pattern("E8 ? ? ? ? F3 0F ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? ? ? ? 48", game_file)
+           .count(1)
+           .get(0)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("DIRECTOR_PUSH_CAMERA", game_file, result, [&] {
+        auto match = pattern("48 ? ? ? ? ? ? 48 ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F E9 B5 ? ? ? 48", game_file)
+            .count(1)
+            .get(0)
+            .adjust(25)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("DIRECTOR_POP_CAMERA", game_file, result, [&] {
+        auto match = pattern("48 8B D0 E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 CC", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CAMERA_TREE_UPDATE_RENDER_CONTEXTS", game_file, result, [&] {
+        auto match = pattern("48 8B D3 E8 ? ? ? ? 4C ? ? ? ? ? ? ? F3", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // -- character --
+
+    FindPattern("CHARACTER_ENABLE", game_file, result, [&]
+    {
+        auto match = pattern("40 57 41 56 48 ? ? ? 48 ? ? 44", game_file)
+             .count(1)
+             .get(0)
+             .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_SET_TRANSFORM", game_file, result, [&]
+    {
+        auto match = pattern("48 89 ? ? ? 56 48 ? ? ? ? ? ? 0F ? ? 48", game_file)
+             .count(1)
+             .get(0)
+             .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_REVIVE", game_file, result, [&] {
+       auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
+           .count(1)
+           .get(0)
+           .adjust(5)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_GHOST_MODE", game_file, result, [&] {
+       auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
+           .count(1)
+           .get(0)
+           .adjust(12)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_SET_VISIBLE", game_file, result, [&] {
+       auto match = pattern("33 D2 48 8B CB E8 ? ? ? ? 48 ? ? ? 48 ? ? ? 33", game_file)
+           .count(1)
+           .get(0)
+           .adjust(5)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
+    FindPattern("CHARACTER_FORCE_NEUTRAL_STATE", game_file, result, [&] {
+       auto match = pattern("57 48 83 ? ? 48 8B D9 E8 ? ? ? ? 48 ? ? ? ? ? ? 48 85 FF", game_file)
+           .count(1)
+           .get(0)
+           .adjust(8)
+           .extract_call();
+       return rebase(game_file, match);
+    });
+
     // -- random bullshit go --
 
-    FindPattern("FUNC_SET_BLACKBOARD_INT_GET_WRAPPER", game_file, result, [&] {
+    FindPattern("FUNC_SET_BLACKBOARD_BOOL", game_file, result, [&] {
         auto match = pattern("45 ? ? 41 ? 01 ? 71 1E DF 41 E8 ? ? ? ? 48 ? FF FF FF FF FF 00 00 00 48 89", game_file)
             .count(1)
             .get(0)
@@ -592,6 +701,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(4)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_HUD_UPDATE_STATE", game_file, result, [&] {
+        auto match = pattern("48 8B D0 48 8B CF E8 ? ? ? ? 49 ? ? ? E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6)
             .extract_call();
         return rebase(game_file, match);
     });
@@ -735,24 +853,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
-    FindPattern("CHARACTER_REVIVE", game_file, result, [&] {
-       auto match = pattern("B2 ? 48 ? ? E8 ? ? ? ? EB ? C7 ? ? ? ?", game_file)
-           .count(1)
-           .get(0)
-           .adjust(5)
-           .extract_call();
-       return rebase(game_file, match);
-    });
-
-    FindPattern("CHARACTER_GHOST_MODE", game_file, result, [&] {
-       auto match = pattern("83 ? ? ? ? ? ? ? ? 48 ? ? E8 ? ? ? ? 41 ? ? ? ? ? ? ? 48 ? ? E8", game_file)
-           .count(1)
-           .get(0)
-           .adjust(12)
-           .extract_call();
-       return rebase(game_file, match);
-    });
-
     FindPattern("ANIMATED_MODEL_SET_STATE", game_file, result, [&] {
        auto match = pattern("48 8B C8 E8 ? ? ? ? 48 8B CD E8", game_file)
            .count(1)
@@ -820,32 +920,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
            .adjust(8)
            .extract_call();
        return rebase(game_file, match);
-    });
-
-    FindPattern("CAMERA_CHECK_COLLISION", game_file, result, [&] {
-       auto match = pattern("E8 ? ? ? ? F3 0F ? ? ? ? ? ? 41 ? ? ? ? ? 48 ? ? ? ? ? ? 48", game_file)
-           .count(1)
-           .get(0)
-           .extract_call();
-       return rebase(game_file, match);
-    });
-
-    FindPattern("DIRECTOR_PUSH_CAMERA", game_file, result, [&] {
-        auto match = pattern("48 ? ? ? ? ? ? 48 ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F E9 B5 ? ? ? 48", game_file)
-            .count(1)
-            .get(0)
-            .adjust(25)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("DIRECTOR_POP_CAMERA", game_file, result, [&] {
-        auto match = pattern("48 8B D0 E8 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? 48 ? ? ? 5F C3 CC", game_file)
-            .count(1)
-            .get(0)
-            .adjust(3)
-            .extract_call();
-        return rebase(game_file, match);
     });
 
     FindPattern("DEEP_WATER_CACHED_HEIGHT", game_file, result, [&] {

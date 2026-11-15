@@ -10,6 +10,8 @@
 #include "game/vehicle.h"
 #include "game/vehicle_manager.h"
 #include "game/world_time.h"
+#include "game/custom/free_cam.h"
+#include "game/custom/third_person.h"
 #include "game/custom/preset_override.h"
 #include "imgui/ui.h"
 
@@ -44,11 +46,11 @@ namespace gz::Utils
                     // third person stuff
                     if (TpState::g_toggleRequested.exchange(false, std::memory_order_relaxed) && TpState::g_resourcesPrimed)
                     {
-                        playerCharacter->SetThirdPerson(!CCharacter::IsThirdPersonActive());
+                        ThirdPerson::Set(playerCharacter, !TpState::IsActive());
                     }
-                    if (TpState::g_animationsActive)
+                    if (TpState::IsActive())
                     {
-                        playerCharacter->SetThirdPersonBodyVisible(true);
+                        ThirdPerson::SetBodyVisible(playerCharacter, true);
                     }
                     if (!TpState::g_resourcesPrimed)
                     {
@@ -57,6 +59,9 @@ namespace gz::Utils
                     CharacterTasks::g_jumpSeededThisFrame = false;
                     if (ThirdPersonCamera::NeedsRepush())
                         ThirdPersonCamera::Reapply();
+
+                    // free cam stuff
+                    FreeCamera::OnGameUpdate(playerCharacter);
                 }
             }
 
