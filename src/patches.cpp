@@ -245,6 +245,9 @@ bool InitPatchesAndHooks()
         if (!CHUDUI::SetupUpdateStateHook())
             Log("Failed to setup HUD UpdateState hook");
 
+        if (!CHUDUI::SetupVehicleDataHook())
+            Log("Failed to setup car HUD vehicle data hook");
+
     } catch (const std::exception &e) {
         Log("Exception during patch initialization: %s", e.what());
         return false;

@@ -280,6 +280,14 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return disp_rebase(game_file, match).as<uintptr_t>();
     });
 
+    FindPattern("INST_SETTINGS_MANAGER", game_file, result, [&] {
+       auto match = pattern("BA ? ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 85 C0 0F ? ? ? BA", game_file)
+           .count(1)
+           .get(0)
+           .adjust(8);
+       return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
     // -- base functions --
 
     FindPattern("WND_PROC", game_file, result, [&] {
@@ -667,6 +675,117 @@ FindPatternResult Generate(const char* name, const char* exepath)
        return rebase(game_file, match);
     });
 
+    // -- vehicle stuff --
+
+    FindPattern("GET_VEHICLE_TORQUE", game_file, result, [&] {
+    auto match = pattern("CC 4C ? ? ? ? ? ? 48 ? ? 4C ? ? ? ? ? ? 43", game_file)
+            .count(1)
+            .get(0)
+            .adjust(1)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("VEHICLE_CAR_VTABLE", game_file, result, [&] {
+    auto match = pattern("40 53 48 ? ? ? 48 8b d9 E8 ? ? ? ? 48 ? ? ? ? ? ? 48 89 03 48 ? ? ? ? ? ? 48 ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? ? ? ? ?", game_file)
+            .count(1)
+            .get(0)
+            .adjust(17);
+        return disp_rebase(game_file, match).as<uintptr_t>();
+    });
+
+    FindPattern("CALC_LAND_AERODYNAMICS", game_file, result, [&] {
+        auto match = pattern("48 8B CF E8 ? ? ? ? F3 ? ? ? ? ? 4C ? ? ? ? ? ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("VEHICLE_SET_FUEL_LEVEL", game_file, result, [&] {
+        auto match = pattern("0F 5B C9 48 8B CF E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("VEHICLE_GET_SPEED_MS", game_file, result, [&] {
+        auto match = pattern("48 8b cb e8 ? ? ? ? 44 0f 28 c0 f3 ? ? ? ? 48 8b cb", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    // -- UI Stuff --
+
+    FindPattern("FUNC_IS_UI_SHOWN", game_file, result, [&] {
+        auto match = pattern("F1 11 B5 97 E8 ? ? ? ? 84", game_file)
+            .count(1)
+            .get(0)
+            .adjust(4)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("FUNC_HUD_UPDATE_STATE", game_file, result, [&] {
+        auto match = pattern("48 8B D0 48 8B CF E8 ? ? ? ? 49 ? ? ? E8", game_file)
+            .count(1)
+            .get(0)
+            .adjust(6)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("UI_SET_FLOAT_FIELD", game_file, result, [&] {
+        auto match = pattern("F3 ? ? ? ? ? 48 ? ? ? ? ? ? 49 8b cf E8 ? ? ? ? 4C ? ? ? ? ? ? 45", game_file)
+            .count(1)
+            .get(0)
+            .adjust(16)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("UI_SET_INT_FIELD", game_file, result, [&] {
+        auto match = pattern("44 8b c6 48 ? ? ? ? ? ? 48 ? ? ? E8 ? ? ? ? 47", game_file)
+            .count(1)
+            .get(0)
+            .adjust(14)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("UI_GET_UINT64", game_file, result, [&] {
+        auto match = pattern("48 8B CA E8 ? ? ? ? 4C ? ? 48 ? ? ? 0F", game_file)
+            .count(1)
+            .get(0)
+            .adjust(3)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("UI_SET_MEMBER", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 66 ? ? ? ? ? ? ? F3 ? ? ? ? ? 4C ? ? ? 44 ? ? ? 8B", game_file)
+            .count(1)
+            .get(0)
+            .adjust(0)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("HUD_VEHICLE_DATA_RETURN", game_file, result, [&] {
+        auto match = pattern("E8 ? ? ? ? 66 ? ? ? ? ? ? ? F3 ? ? ? ? ? 4C ? ? ? 44 ? ? ? 8B", game_file)
+            .count(1)
+            .get(0)
+            .adjust(5)
+            .as<uintptr_t>();
+        return rebase(game_file, match);
+    });
+
     // -- random bullshit go --
 
     FindPattern("FUNC_SET_BLACKBOARD_BOOL", game_file, result, [&] {
@@ -674,6 +793,15 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(11)
+            .extract_call();
+        return rebase(game_file, match);
+    });
+
+    FindPattern("SETTINGS_GET_VALUE", game_file, result, [&] {
+        auto match = pattern("BA ? ? ? ? 48 ? ? ? ? ? ? E8 ? ? ? ? 85 C0 0F ? ? ? BA", game_file)
+            .count(1)
+            .get(0)
+            .adjust(12)
             .extract_call();
         return rebase(game_file, match);
     });
@@ -692,24 +820,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
             .count(1)
             .get(0)
             .adjust(10)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("FUNC_IS_UI_SHOWN", game_file, result, [&] {
-        auto match = pattern("F1 11 B5 97 E8 ? ? ? ? 84", game_file)
-            .count(1)
-            .get(0)
-            .adjust(4)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("FUNC_HUD_UPDATE_STATE", game_file, result, [&] {
-        auto match = pattern("48 8B D0 48 8B CF E8 ? ? ? ? 49 ? ? ? E8", game_file)
-            .count(1)
-            .get(0)
-            .adjust(6)
             .extract_call();
         return rebase(game_file, match);
     });
@@ -1031,33 +1141,6 @@ FindPatternResult Generate(const char* name, const char* exepath)
 
     FindPattern("MAP_FAST_TRAVEL", game_file, result, [&] {
         auto match = pattern("48 8B D3 E8 ? ? ? ? E9 ? ? ? ? 81 ? ? ? ? ? 0F", game_file)
-            .count(1)
-            .get(0)
-            .adjust(3)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("GET_VEHICLE_TORQUE", game_file, result, [&] {
-        auto match = pattern("CC 4C ? ? ? ? ? ? 48 ? ? 4C ? ? ? ? ? ? 43", game_file)
-            .count(1)
-            .get(0)
-            .adjust(1)
-            .as<uintptr_t>();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("CALC_LAND_AERODYNAMICS", game_file, result, [&] {
-        auto match = pattern("48 8B CF E8 ? ? ? ? F3 ? ? ? ? ? 4C ? ? ? ? ? ? 0F", game_file)
-            .count(1)
-            .get(0)
-            .adjust(3)
-            .extract_call();
-        return rebase(game_file, match);
-    });
-
-    FindPattern("UI_GET_UINT64", game_file, result, [&] {
-        auto match = pattern("48 8B CA E8 ? ? ? ? 4C ? ? 48 ? ? ? 0F", game_file)
             .count(1)
             .get(0)
             .adjust(3)
